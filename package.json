@@ -17,6 +17,8 @@
     "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "1.2.0",
+    "@opennextjs/cloudflare": "1.20.13",
     "dotenv": "17.3.1",
     "drizzle-orm": "0.45.2",
     "framer-motion": "^14.6.0",
@@ -25,9 +27,15 @@
     "pg": "8.20.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "zod": "^4.6.7",
-    "@opennextjs/cloudflare": "1.20.13",
-    "@neondatabase/serverless": "1.2.0"
+    "zod": "^4.6.7"
+  },
+  "overrides": {
+    "@node-minify/core": {
+      "glob": "10.5.0"
+    },
+    "miniflare": {
+      "undici": "7.30.1"
+    }
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.17",
@@ -38,10 +46,10 @@
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
     "eslint-config-next": "16.4.3",
-    "postcss": "8.5.8",
+    "postcss": "8.5.31",
     "tailwindcss": "4.1.17",
+    "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "wrangler": "4.152.0",
-    "tsx": "4.21.0"
+    "wrangler": "4.152.0"
   }
 }

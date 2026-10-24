@@ -10,6 +10,7 @@ import { projects, comments } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
+import { publicCommentFields } from "@/lib/public-comments";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -43,7 +44,7 @@ export default async function ProjectPage({ params }: Props) {
   if (!project) notFound();
 
   const projectComments = await getDb()
-    .select()
+    .select(publicCommentFields)
     .from(comments)
     .where(and(eq(comments.projectId, project.id), eq(comments.approved, true)))
     .orderBy(desc(comments.createdAt));

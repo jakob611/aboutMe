@@ -70,6 +70,15 @@ Deploy the updated configuration as well as the code so the limiter is present.
 The limiter namespace `710611` should be unique to this feature within the account.
 See https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
 
+The same password-attempt budget also covers POST/DELETE on `/api/files`, so
+the legacy file manager cannot bypass the admin login's rate limit. Use a long,
+unique UPLOAD_PASSWORD for production; a short numeric password is for testing.
+
+ADMIN_SESSION_SECRET is read only while handling login/session requests. Its
+absence prevents a successful login; it does not prevent this application's build.
+Investigate a failed Cloudflare build from its actual build log rather than
+assuming that adding this runtime secret will fix it.
+
 Keep SITE_OWNER, SITE_TAGLINE, CONTACT_EMAIL and NEXT_PUBLIC_SITE_URL consistent
 between build/runtime settings as described in DEPLOYMENT.md. Keep the actual
 owned domain; no DNS or domain changes are required for this feature.

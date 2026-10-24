@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { projects, comments } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { publicCommentFields } from "@/lib/public-comments";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -17,7 +18,7 @@ export async function GET(_req: Request, ctx: Params) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
     const rows = await getDb()
-      .select()
+      .select(publicCommentFields)
       .from(comments)
       .where(
         and(eq(comments.projectId, project.id), eq(comments.approved, true))
@@ -75,7 +76,7 @@ export async function POST(req: Request, ctx: Params) {
         email: email || null,
         content,
       })
-      .returning();
+      .returning(publicCommentFields);
 
     return NextResponse.json({ ok: true, comment: inserted });
   } catch (err) {
