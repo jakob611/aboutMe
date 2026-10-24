@@ -1,27 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import type { Translation, Lang } from "@/lib/i18n";
-import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-type Props = { lang: Lang; t: Translation };
+type Props = { lang: Lang; t: Translation; name: string };
 
-export function Navbar({ lang, t }: Props) {
+export function Navbar({ lang, t, name }: Props) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  const links: { href: string; label: string }[] = [
+  const headerRef = useRef<HTMLElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const links = [
     { href: "/", label: t.nav.home },
     { href: "/projects", label: t.nav.projects },
     { href: "/about", label: t.nav.about },
@@ -29,90 +23,154 @@ export function Navbar({ lang, t }: Props) {
     { href: "/files", label: t.nav.files },
     { href: "/contact", label: t.nav.contact },
   ];
+  const isCurrent = (href: string) =>
+    href === "/"
+      ? pathname === "/"
+      : pathname === href || pathname.startsWith(href + "/");
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("");
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !headerRef.current?.contains(event.target)
+      )
+        setOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () =>
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [open]);
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Escape" || !open) return;
+    event.preventDefault();
+    setOpen(false);
+    toggleRef.current?.focus();
+  };
 
   return (
     <header
-      className={cn(
-        "sticky top-0 z-50 w-full transition-all duration-300",
-        scrolled
-          ? "backdrop-blur-xl bg-[color-mix(in_oklab,var(--color-bg)_75%,transparent)] border-b border-white/5"
-          : "bg-transparent"
-      )}
+      ref={headerRef}
+      onKeyDown={handleKeyDown}
+      className="sticky top-0 z-50 border-b border-white/[0.08] bg-[color:var(--color-bg)]/90 backdrop-blur-xl"
     >
-      <nav className="mx-auto max-w-7xl px-5 sm:px-8 h-16 flex items-center justify-between">
+      <nav
+        aria-label={lang === "sl" ? "Glavna navigacija" : "Main navigation"}
+        className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-5 sm:px-8"
+      >
         <Link
           href="/"
-          className="group flex items-center gap-2 font-semibold text-lg"
-          aria-label={siteConfig.name}
+          onClick={() => setOpen(false)}
+          className="group flex shrink-0 items-center gap-3"
+          aria-label={`${name} — ${t.nav.home}`}
         >
-          <span className="relative inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#7c5cff] to-[#22d3ee] text-white shadow-lg shadow-[#7c5cff]/30 transition-transform group-hover:scale-105">
-            <span className="text-sm font-bold">
-              {siteConfig.name.charAt(0).toUpperCase()}
-            </span>
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 text-xs font-semibold tracking-[-0.08em] text-[color:var(--color-fg)] transition-colors group-hover:border-[color:var(--color-accent-2)]"
+          >
+            {initials}
           </span>
-          <span className="hidden sm:inline tracking-tight">
-            {siteConfig.name}
+          <span className="hidden text-sm font-medium tracking-tight sm:inline">
+            {name}
           </span>
         </Link>
-
-        <ul className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
-            <li key={l.href}>
+        <ul className="hidden items-center gap-1 lg:flex">
+          {links.map((link) => (
+            <li key={link.href}>
               <Link
-                href={l.href}
-                className="relative px-3.5 py-2 rounded-full text-sm text-[color:var(--color-fg-muted)] hover:text-white transition-colors"
+                href={link.href}
+                aria-current={isCurrent(link.href) ? "page" : undefined}
+                className={cn(
+                  "relative block rounded-md px-3 py-2 text-[13px] transition-colors",
+                  isCurrent(link.href)
+                    ? "bg-white/[0.05] text-[color:var(--color-fg)]"
+                    : "text-[color:var(--color-fg-muted)] hover:text-[color:var(--color-fg)]",
+                )}
               >
-                {l.label}
+                {link.label}
+                {isCurrent(link.href) && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-3 -bottom-1 h-px bg-[color:var(--color-accent-2)]"
+                  />
+                )}
               </Link>
             </li>
           ))}
         </ul>
-
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher lang={lang} label={t.common.switchLang} />
-          <Link href="/contact" className="btn-primary hidden sm:inline-flex text-sm">
-            {t.services.getQuote}
+          <Link
+            href="/contact"
+            className="hidden items-center gap-1.5 rounded-md border border-white/15 px-3.5 py-2 text-xs font-medium transition-colors hover:border-white/35 sm:inline-flex"
+          >
+            {lang === "sl" ? "Začniva pogovor" : "Let’s talk"}{" "}
+            <ArrowUpRight aria-hidden="true" size={14} />
           </Link>
           <button
-            aria-label="Toggle menu"
-            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10"
-            onClick={() => setOpen((v) => !v)}
+            ref={toggleRef}
+            type="button"
+            aria-label={
+              open
+                ? lang === "sl"
+                  ? "Zapri meni"
+                  : "Close menu"
+                : lang === "sl"
+                  ? "Odpri meni"
+                  : "Open menu"
+            }
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/15 lg:hidden"
+            onClick={() => setOpen((value) => !value)}
           >
-            {open ? <X size={18} /> : <Menu size={18} />}
+            {open ? (
+              <X aria-hidden="true" size={18} />
+            ) : (
+              <Menu aria-hidden="true" size={18} />
+            )}
           </button>
         </div>
       </nav>
-
-      {/* Mobile menu */}
-      <div
-        className={cn(
-          "md:hidden overflow-hidden transition-[max-height,opacity] duration-300",
-          open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-        )}
-      >
-        <ul className="px-5 pb-5 flex flex-col gap-1">
-          {links.map((l) => (
-            <li key={l.href}>
-              <Link
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="block px-4 py-3 rounded-xl text-[color:var(--color-fg-muted)] hover:text-white hover:bg-white/5"
-              >
-                {l.label}
-              </Link>
-            </li>
-          ))}
-          <li>
-            <Link
-              href="/donate"
-              onClick={() => setOpen(false)}
-              className="block px-4 py-3 rounded-xl text-[color:var(--color-fg-muted)] hover:text-white hover:bg-white/5"
-            >
-              {t.nav.donate}
-            </Link>
-          </li>
-        </ul>
-      </div>
+      {open && (
+        <nav
+          id="mobile-navigation"
+          aria-label={
+            lang === "sl" ? "Mobilna navigacija" : "Mobile navigation"
+          }
+          className="border-t border-white/[0.08] bg-[color:var(--color-bg)] lg:hidden"
+        >
+          <ul className="mx-auto grid max-w-7xl gap-1 px-5 py-4 sm:px-8">
+            {[...links, { href: "/donate", label: t.nav.donate }].map(
+              (link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={isCurrent(link.href) ? "page" : undefined}
+                    className={cn(
+                      "flex items-center justify-between rounded-md px-3 py-3 text-sm transition-colors hover:bg-white/[0.04]",
+                      isCurrent(link.href)
+                        ? "bg-white/[0.05] text-[color:var(--color-accent-2)]"
+                        : "text-[color:var(--color-fg-muted)]",
+                    )}
+                  >
+                    {link.label}
+                    <ArrowUpRight aria-hidden="true" size={14} />
+                  </Link>
+                </li>
+              ),
+            )}
+          </ul>
+        </nav>
+      )}
     </header>
   );
 }

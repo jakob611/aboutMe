@@ -1,7 +1,6 @@
 "use client";
 
-import { motion, type Variant } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 type Props = {
   children: ReactNode;
@@ -10,23 +9,60 @@ type Props = {
   y?: number;
 };
 
-const initial: Variant = { opacity: 0, y: 24 };
-const animate: Variant = { opacity: 1, y: 0 };
-
-/**
- * A reusable reveal-on-scroll wrapper. Uses framer-motion's whileInView
- * so children animate the first time they enter the viewport.
- */
+/** Content is visible in the server HTML; animation is an optional enhancement. */
 export function Reveal({ children, className, delay = 0, y = 24 }: Props) {
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (
+      !element ||
+      preference.matches ||
+      !element.animate ||
+      !("IntersectionObserver" in window)
+    )
+      return;
+    let animation: Animation | undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        observer.disconnect();
+        animation = element.animate(
+          [
+            {
+              opacity: 0,
+              transform: `translateY(${Math.min(Math.max(y, 0), 32)}px)`,
+            },
+            { opacity: 1, transform: "translateY(0)" },
+          ],
+          {
+            duration: 600,
+            delay: Math.min(Math.max(delay, 0), 0.4) * 1000,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            fill: "backwards",
+          },
+        );
+      },
+      { threshold: 0.08 },
+    );
+    observer.observe(element);
+    const reduceMotion = () => {
+      if (!preference.matches) return;
+      animation?.cancel();
+      observer.disconnect();
+    };
+    preference.addEventListener("change", reduceMotion);
+    return () => {
+      observer.disconnect();
+      animation?.cancel();
+      preference.removeEventListener("change", reduceMotion);
+    };
+  }, [delay, y]);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
-      className={className}
-    >
+    <div ref={elementRef} className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }

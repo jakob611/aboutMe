@@ -10,7 +10,7 @@ import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
 
 export const viewport: Viewport = {
-  themeColor: "#07070c",
+  themeColor: "#111513",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
@@ -29,7 +29,10 @@ export async function generateMetadata(): Promise<Metadata> {
     authors: [{ name: siteConfig.name, url: siteConfig.url }],
     creator: siteConfig.name,
     publisher: siteConfig.name,
-    alternates: { canonical: "./", languages: { en: "/?lang=en", sl: "/?lang=sl" } },
+    alternates: {
+      canonical: "./",
+      languages: { en: "/?lang=en", sl: "/?lang=sl" },
+    },
     openGraph: {
       type: "website",
       siteName: siteConfig.name,
@@ -68,7 +71,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const lang = await getLang();
   const t = translations[lang];
   const jsonLd = {
@@ -78,27 +85,42 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     url: siteConfig.url,
     jobTitle: siteConfig.tagline,
     sameAs: Object.values(siteConfig.socials).filter(Boolean),
-    email: siteConfig.email,
+    email: siteConfig.email || undefined,
   };
 
   return (
     <html lang={lang} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#07070c" />
+        <meta name="theme-color" content="#111513" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+          }}
         />
       </head>
       <body className="mesh-bg min-h-screen relative grain">
-        <Navbar key={lang} lang={lang} t={t} />
-        <main className="relative z-10 page-fade">{children}</main>
+        <a href="#main-content" className="skip-link">
+          {lang === "sl" ? "Preskoči na vsebino" : "Skip to content"}
+        </a>
+        <Navbar key={lang} name={siteConfig.name} lang={lang} t={t} />
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="relative z-10 page-fade"
+        >
+          {children}
+        </main>
         <Footer lang={lang} t={t} />
       </body>
     </html>

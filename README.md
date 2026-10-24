@@ -41,13 +41,15 @@ Worker and static assets. After building, `npm run preview` runs the Worker loca
 requires the account setup in DEPLOYMENT.md.
 
 Database credentials are read per request, so builds need no database connection.
-The application does need a runtime `DATABASE_URL` and initialized tables to serve
-its database-backed pages. `/api/health` checks the database connection.
+The application needs a runtime `DATABASE_URL` and initialized tables to load
+projects, services and files, and to store contact submissions. Public collection
+pages show an honest unavailable state when the database cannot be reached.
+`/api/health` checks the database connection.
 
 ## Content and features
 
-- Edit `src/lib/site.ts` for social links, skills, statistics and donation links.
-  Template statistics and example content are placeholders, not verified personal facts.
+- Edit `src/lib/site.ts` for real profile links, tools and optional support links.
+  The site deliberately omits invented statistics and unconfigured profiles.
 - Manage real projects and view contact messages at `/admin`, using UPLOAD_PASSWORD.
   Add service records through Neon's Tables UI or SQL Editor.
 - `npm run db:seed` optionally adds **fictional example content**. It loads `.env`,
@@ -59,6 +61,15 @@ its database-backed pages. `/api/health` checks the database connection.
 - Contact submissions are saved in `contact_messages`; they do not send email.
 - Google Drive integration is optional: configure `GOOGLE_DRIVE_API_KEY` and
   `GOOGLE_DRIVE_FOLDER_ID` for a public folder.
+- Optional `BUY_ME_A_COFFEE_URL` and `KO_FI_URL` enable real support links. When
+  absent, the support page offers feedback, sharing and source exploration.
+- The home-page sketchbook is an original SVG illustration, not a portfolio
+  screenshot. Project cover/gallery images always come from the project records.
+- Project categories have shareable URLs (for example `/projects?category=android`).
+  Text/tag search and the image viewer run locally in the browser.
+- Motion respects reduced-motion preferences; reveal effects keep server-rendered
+  content visible before JavaScript loads. The social card source is `public/og.svg`
+  and its exported PNG is `public/og.png`.
 
 ## Database changes
 

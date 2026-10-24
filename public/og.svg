@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#111513"/>
+  <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#637166" opacity=".3"/></pattern></defs>
+  <rect x="740" y="40" width="420" height="550" fill="url(#dots)"/>
+  <path d="M64 88h1072M64 543h1072" stroke="#39443b"/>
+  <circle cx="73" cy="53" r="5" fill="#a5c9ba"/>
+  <g fill="#b6c1b6" font-family="Arial, sans-serif" font-size="19" letter-spacing="3"><text x="94" y="61">JAKOB TOMINC</text><text x="857" y="61">PERSONAL WORKSHOP</text></g>
+  <g fill="#eeeae0" font-family="Arial, sans-serif" font-size="88" font-weight="600" letter-spacing="-4"><text x="62" y="219">Code, bricks,</text><text x="62" y="319">and the bits</text><text x="62" y="419" fill="#a5c9ba">in between.</text></g>
+  <g stroke-linejoin="round" transform="translate(750 148)">
+    <path d="m20 195 133-72 170 71-133 74Z" fill="#a99571" stroke="#d4c29d"/><path d="m20 195 170 73v37L20 233Z" fill="#4a4939" stroke="#8d8264"/><path d="m190 268 133-74v37l-133 74Z" fill="#6b6850" stroke="#9c9273"/>
+    <path d="m64 135 96-51 115 48-96 54Z" fill="#85a891" stroke="#b8ccad"/><path d="m64 135 115 51v44L64 179Z" fill="#354e40" stroke="#6f8b72"/><path d="m179 186 96-54v44l-96 54Z" fill="#526e57" stroke="#8aa787"/>
+    <path d="m115 72 62-34 79 33-62 35Z" fill="#b1a8c8" stroke="#d7cde7"/><path d="m115 72 79 34v36l-79-34Z" fill="#514b65" stroke="#9485ad"/><path d="m194 106 62-35v36l-62 35Z" fill="#72647e" stroke="#b3a0c0"/>
+    <g fill="#d0c5df" stroke="#9585aa"><ellipse cx="158" cy="63" rx="17" ry="7"/><ellipse cx="202" cy="82" rx="17" ry="7"/></g>
+  </g>
+  <text x="64" y="588" fill="#aeb9ae" font-family="Arial, sans-serif" font-size="20">Projects, experiments &amp; ideas.</text><text x="1136" y="588" text-anchor="end" fill="#a5c9ba" font-family="Arial, sans-serif" font-size="20">jakobtominc.com</text>
+</svg>

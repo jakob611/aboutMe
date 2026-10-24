@@ -11,13 +11,17 @@ import { eq, and, desc } from "drizzle-orm";
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
 import { publicCommentFields } from "@/lib/public-comments";
+import { ProjectGallery } from "@/components/ProjectGallery";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const lang = await getLang();
-  const [row] = await getDb().select().from(projects).where(eq(projects.slug, slug));
+  const [row] = await getDb()
+    .select()
+    .from(projects)
+    .where(eq(projects.slug, slug));
   if (!row) return { title: "Not found" };
   const title = lang === "sl" ? row.titleSl : row.titleEn;
   const description = lang === "sl" ? row.summarySl : row.summaryEn;
@@ -54,7 +58,8 @@ export default async function ProjectPage({ params }: Props) {
   const description =
     lang === "sl" ? project.descriptionSl : project.descriptionEn;
   const catLabel =
-    (t.categories as Record<string, string>)[project.category] ?? project.category;
+    (t.categories as Record<string, string>)[project.category] ??
+    project.category;
 
   // Structured data for SEO
   const jsonLd = {
@@ -70,10 +75,12 @@ export default async function ProjectPage({ params }: Props) {
   };
 
   return (
-    <article className="pt-12 sm:pt-20 pb-20">
+    <article className="pt-12 pb-24 sm:pt-20">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
       />
 
       <div className="mx-auto max-w-4xl px-5 sm:px-8">
@@ -82,26 +89,23 @@ export default async function ProjectPage({ params }: Props) {
             href="/projects"
             className="inline-flex items-center gap-1.5 text-sm text-[color:var(--color-fg-muted)] hover:text-white mb-8"
           >
-            <ArrowLeft size={14} /> {t.projects.backToProjects}
+            <ArrowLeft size={14} />{" "}
+            {t.projects.backToProjects.replace(/^←\s*/, "")}
           </Link>
         </Reveal>
 
         <Reveal>
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className="px-2.5 py-1 rounded-full text-xs font-medium border border-white/10 bg-white/5">
-              {catLabel}
-            </span>
+            <span className="section-label">{catLabel}</span>
             <span className="text-xs text-[color:var(--color-fg-muted)] inline-flex items-center gap-1">
               <Calendar size={12} />{" "}
               {project.createdAt.toLocaleDateString(
                 lang === "sl" ? "sl-SI" : "en-GB",
-                { year: "numeric", month: "long", day: "numeric" }
+                { year: "numeric", month: "long", day: "numeric" },
               )}
             </span>
           </div>
-          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
-            {title}
-          </h1>
+          <h1 className="display-title max-w-3xl">{title}</h1>
           <p className="mt-4 text-lg text-[color:var(--color-fg-muted)] max-w-3xl leading-relaxed">
             {summary}
           </p>
@@ -114,7 +118,8 @@ export default async function ProjectPage({ params }: Props) {
                 rel="noreferrer"
                 className="btn-primary"
               >
-                {t.projects.visit} <ExternalLink size={15} />
+                {project.linkLabel || t.projects.visit}{" "}
+                <ExternalLink size={15} />
               </a>
             )}
             {project.repoUrl && (
@@ -135,36 +140,32 @@ export default async function ProjectPage({ params }: Props) {
             <img
               src={project.coverImage}
               alt={title}
-              className="mt-10 w-full rounded-2xl border border-white/10"
+              width={1400}
+              height={900}
+              className="mt-10 max-h-[75vh] w-full rounded-2xl border border-white/10 bg-white/[0.02] object-contain"
             />
           </Reveal>
         )}
 
         {project.gallery && project.gallery.length > 0 && (
-          <div className="mt-6 grid sm:grid-cols-2 gap-4">
-            {project.gallery.map((img, i) => (
-              <Reveal key={i} delay={0.05 * i}>
-                <img
-                  src={img}
-                  alt={`${title} ${i + 1}`}
-                  loading="lazy"
-                  className="w-full rounded-xl border border-white/10"
-                />
-              </Reveal>
-            ))}
-          </div>
+          <ProjectGallery images={project.gallery} title={title} lang={lang} />
         )}
 
         <Reveal delay={0.15}>
-          <div className="prose prose-invert mt-12 max-w-none">
-            {description.split("\n\n").map((p, i) => (
-              <p
-                key={i}
-                className="text-[color:var(--color-fg-muted)] leading-relaxed mb-4"
-              >
-                {p}
-              </p>
-            ))}
+          <div className="section-rule mt-12 grid gap-6 pt-8 sm:grid-cols-[140px_1fr]">
+            <h2 className="section-label">
+              {lang === "sl" ? "O projektu" : "Project notes"}
+            </h2>
+            <div>
+              {description.split("\n\n").map((p, i) => (
+                <p
+                  key={i}
+                  className="text-[color:var(--color-fg-muted)] leading-relaxed mb-4"
+                >
+                  {p}
+                </p>
+              ))}
+            </div>
           </div>
         </Reveal>
 

@@ -7,7 +7,7 @@ import { LANG_COOKIE } from "@/lib/i18n";
  * Precedence:
  *   1. ?lang=en|sl query parameter (sticky — saved to cookie)
  *   2. lang cookie
- *   3. IP-based detection (Slovenia → sl, otherwise en)
+ *   3. Accept-Language (Cloudflare country selection is persisted by middleware)
  *   4. DEFAULT_LANG
  */
 export async function getLang(): Promise<Lang> {
@@ -38,26 +38,6 @@ export async function getLang(): Promise<Lang> {
 function safeUrl(u: string): URL | null {
   try {
     return new URL(u);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Detect language from IP using a free, no-auth geolocation service.
- * Used by middleware on the very first visit.
- */
-export async function detectLangFromIp(
-  ip: string | null
-): Promise<Lang | null> {
-  if (!ip || ip === "127.0.0.1" || ip === "::1") return null;
-  try {
-    const res = await fetch(`https://ipapi.co/${encodeURIComponent(ip)}/json/`, {
-      next: { revalidate: 60 * 60 * 24 },
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { country_code?: string };
-    return data.country_code === "SI" ? "sl" : "en";
   } catch {
     return null;
   }

@@ -1,9 +1,10 @@
 # Portfolio review — 24 October 2026
 
-The implementation is a workable portfolio foundation. It is not yet a polished,
-personal site, and production readiness is not established by a successful local
-build alone. This review covers the source and automated checks; current browser
-permissions prevented a new visual inspection of the live site or Cloudflare logs.
+The portfolio now has a personal workshop direction: clearer typography, restrained
+graphite/ivory/sage colors, original interactive sketches and practical bilingual
+copy. Production readiness is not established by a successful local build alone.
+This review covers the source and automated checks; browser permissions have
+prevented a new visual inspection of the live site or Cloudflare logs.
 
 ## Deployment
 
@@ -48,24 +49,34 @@ permissions prevented a new visual inspection of the live site or Cloudflare log
 
 ## Content and design
 
-The purple/cyan gradients, glass panels and reveal animations provide a consistent
-visual style, but the source is visibly based on a generic developer template.
-`src/lib/site.ts` still contains platform-root social links, a placeholder
-open-source repository and hard-coded example statistics (12 apps, 8 years,
-24 clients, 1430 coffees). These are not verified claims about the owner.
+- Removed fabricated statistics, placeholder profile/payment links, fictional
+  service fallback prices and empty emoji photo galleries. Configured real
+  service prices and project records are preserved.
+- Default identity and GitHub point to verified Jakob Tominc / jakob611 values.
+  Unconfigured contact/social/payment links are omitted.
+- Added an interactive SVG sketchbook for web, Android and LEGO, with links to
+  the corresponding project categories. These are illustrations, not fake
+  screenshots of finished projects. No stock portrait or fictional project was added.
+- Refined About, Services, Contact, Files and Support while preserving their routes.
+  Service inquiries prefill the contact subject. Project text/tag search, counted
+  filters, shareable category URLs and an accessible native gallery were added.
+- Reveal animation is progressive enhancement: server-rendered content stays
+  visible without JavaScript, and motion respects reduced-motion preferences.
+  A language-cookie precedence bug and request-header forwarding were corrected.
+- Added a real `/og.png` share preview, its editable SVG source, and an SVG icon.
+- Missing local database configuration now gives clear public unavailable states
+  instead of crashing the main collection pages. This does not verify live data.
 
-Replace or remove those claims, add real project screenshots and case studies,
-and rewrite the biography and service copy in the owner's own words. The About
-page has emoji placeholders instead of gallery photos, and includes developer
-setup instructions in visitor-facing text. Metadata references `/og.png`, which
-is absent from the committed public assets. Images, animation accessibility,
-metadata and mobile behavior deserve a focused polish pass once real content
-is available. A new design or framework is not required to make this credible.
+Real project images, descriptions and any personal photographs still need to come
+from the owner. Those will make the collection more distinctive than additional
+decoration or invented marketing claims.
 
 ## Checks
 
-25 automated tests pass, including shared password throttling, private-comment
+29 automated tests pass, including shared password throttling, private-comment
 fields, and failure to mint sessions without a signing secret. TypeScript and
 ESLint pass without errors. The Cloudflare Worker builds and starts locally with
-the updated dependencies. Database integration tests mock Neon; they do not
+the updated dependencies. New regressions cover language switching, combined
+project filters and file-uploader responses that must remain locked. Database
+integration tests mock Neon; they do not
 certify production credentials, permissions or existing table contents.

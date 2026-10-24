@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, Code2 } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
 import { translations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -17,87 +17,99 @@ export type Project = {
   repoUrl: string | null;
   tags: string[] | null;
 };
-
 type Props = { project: Project; lang: Lang; featured?: boolean };
-
-const categoryColors: Record<string, string> = {
-  android: "from-emerald-500/30 to-emerald-500/5 text-emerald-300 border-emerald-400/20",
-  lego: "from-amber-500/30 to-amber-500/5 text-amber-300 border-amber-400/20",
-  web: "from-sky-500/30 to-sky-500/5 text-sky-300 border-sky-400/20",
-  other: "from-fuchsia-500/30 to-fuchsia-500/5 text-fuchsia-300 border-fuchsia-400/20",
+const categoryAccents: Record<string, string> = {
+  android: "#91b99e",
+  lego: "#d4ac79",
+  web: "#8ab9c2",
+  other: "#aaa0c9",
 };
 
 export function ProjectCard({ project, lang, featured }: Props) {
-  const t = translations[lang].categories;
   const title = lang === "sl" ? project.titleSl : project.titleEn;
   const summary = lang === "sl" ? project.summarySl : project.summaryEn;
-  const cat = project.category || "other";
-  const catLabel = (t as Record<string, string>)[cat] ?? cat;
-  const colorClass = categoryColors[cat] ?? categoryColors.other;
-
+  const category =
+    (translations[lang].categories as Record<string, string>)[
+      project.category
+    ] ?? project.category;
+  const accent = categoryAccents[project.category] ?? categoryAccents.other;
   return (
     <Link
       href={`/projects/${project.slug}`}
       className={cn(
-        "card relative block overflow-hidden group",
-        featured && "md:col-span-2"
+        "group block h-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.015] transition-colors hover:border-white/25",
+        featured && "md:col-span-2",
       )}
     >
-      {/* Cover / gradient */}
-      <div
-        className={cn(
-          "relative aspect-[16/10] w-full bg-gradient-to-br",
-          colorClass
-        )}
-      >
+      <div className="relative aspect-[16/10] overflow-hidden border-b border-white/10 bg-[#14171b]">
         {project.coverImage ? (
           <img
             src={project.coverImage}
-            alt={title}
+            alt=""
+            width={960}
+            height={600}
             loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.035]"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-70">
-            {cat === "android" ? "📱" : cat === "lego" ? "🧱" : cat === "web" ? "🌐" : "✨"}
+          <div
+            className="absolute inset-0 flex flex-col justify-between p-6 sm:p-7"
+            aria-hidden="true"
+          >
+            <div
+              className="absolute inset-0 opacity-[0.09]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(to right, #cbd5e1 1px, transparent 1px), linear-gradient(to bottom, #cbd5e1 1px, transparent 1px)",
+                backgroundSize: "32px 32px",
+              }}
+            />
+            <span className="relative font-mono text-[10px] uppercase tracking-[0.2em] text-white/40">
+              {project.category} / {String(project.id).padStart(2, "0")}
+            </span>
+            <div className="relative flex items-end justify-between gap-6">
+              <span
+                className="max-w-[80%] break-words text-3xl font-medium tracking-tight sm:text-4xl"
+                style={{ color: accent }}
+              >
+                {title}
+              </span>
+              <span
+                className="mb-1 h-12 w-1 shrink-0 rounded-full"
+                style={{ background: accent }}
+              />
+            </div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-black/40 backdrop-blur border border-white/10">
-          {catLabel}
+        <span
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-sm transition-colors group-hover:bg-white group-hover:text-black"
+          aria-hidden="true"
+        >
+          <ArrowUpRight size={17} />
         </span>
       </div>
-
-      <div className="p-5">
-        <h3 className="font-semibold text-lg tracking-tight line-clamp-1">
+      <div className="p-5 sm:p-6">
+        <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.15em] text-[color:var(--color-fg-muted)]">
+          <span
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ background: accent }}
+          />
+          {category}
+        </div>
+        <h3 className="text-xl font-medium tracking-tight text-[color:var(--color-fg)]">
           {title}
         </h3>
-        <p className="text-sm text-[color:var(--color-fg-muted)] mt-1.5 line-clamp-2">
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
           {summary}
         </p>
-        {project.tags && project.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {project.tags.slice(0, 4).map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 rounded-full text-[11px] border border-white/10 text-[color:var(--color-fg-muted)]"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="mt-4 flex items-center gap-3 text-sm">
-          {project.linkUrl && (
-            <span className="inline-flex items-center gap-1 text-[color:var(--color-fg-muted)] group-hover:text-white transition-colors">
-              <ExternalLink size={14} /> {translations[lang].projects.visit}
-            </span>
-          )}
-          {project.repoUrl && (
-            <span className="inline-flex items-center gap-1 text-[color:var(--color-fg-muted)] group-hover:text-white transition-colors">
-              <Code2 size={14} /> {translations[lang].projects.code}
-            </span>
-          )}
+        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4 text-[11px] text-[color:var(--color-fg-muted)]">
+          {(project.tags ?? []).slice(0, 3).map((tag) => (
+            <span key={tag}>{tag}</span>
+          ))}
+          <span className="ml-auto inline-flex items-center gap-1.5 text-[color:var(--color-fg)]">
+            {lang === "sl" ? "O projektu" : "Project notes"}
+            <ArrowUpRight size={12} />
+          </span>
         </div>
       </div>
     </Link>
