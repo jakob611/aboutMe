@@ -133,8 +133,8 @@ export function FilesClient({ initialFiles, lang }: Props) {
   const remove = async (id: number) => {
     if (!password) return;
     const res = await fetch(
-      `/api/files?id=${id}&password=${encodeURIComponent(password)}`,
-      { method: "DELETE" }
+      `/api/files?id=${id}`,
+      { method: "DELETE", headers: { Authorization: `Bearer ${password}` } }
     );
     if (res.ok) setFiles((f) => f.filter((x) => x.id !== id));
   };

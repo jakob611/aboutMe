@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects, comments } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -9,7 +9,7 @@ type Params = { params: Promise<{ slug: string }> };
 export async function GET(_req: Request, ctx: Params) {
   try {
     const { slug } = await ctx.params;
-    const [row] = await db
+    const [row] = await getDb()
       .select()
       .from(projects)
       .where(eq(projects.slug, slug));
@@ -17,7 +17,7 @@ export async function GET(_req: Request, ctx: Params) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const projectComments = await db
+    const projectComments = await getDb()
       .select()
       .from(comments)
       .where(and(eq(comments.projectId, row.id), eq(comments.approved, true)))

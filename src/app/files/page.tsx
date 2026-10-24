@@ -2,7 +2,7 @@ import { Reveal } from "@/components/Reveal";
 import { FilesClient } from "@/components/FilesClient";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { files } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import type { Metadata } from "next";
@@ -17,7 +17,7 @@ export default async function FilesPage() {
   const lang = await getLang();
   const t = translations[lang];
 
-  const allFiles = await db.select().from(files).orderBy(desc(files.createdAt));
+  const allFiles = await getDb().select().from(files).orderBy(desc(files.createdAt));
 
   return (
     <section className="pt-16 sm:pt-24 pb-20">

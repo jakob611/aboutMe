@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects, comments } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -9,14 +9,14 @@ type Params = { params: Promise<{ slug: string }> };
 export async function GET(_req: Request, ctx: Params) {
   try {
     const { slug } = await ctx.params;
-    const [project] = await db
+    const [project] = await getDb()
       .select()
       .from(projects)
       .where(eq(projects.slug, slug));
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
-    const rows = await db
+    const rows = await getDb()
       .select()
       .from(comments)
       .where(
@@ -37,7 +37,7 @@ export async function GET(_req: Request, ctx: Params) {
 export async function POST(req: Request, ctx: Params) {
   try {
     const { slug } = await ctx.params;
-    const [project] = await db
+    const [project] = await getDb()
       .select()
       .from(projects)
       .where(eq(projects.slug, slug));
@@ -67,7 +67,7 @@ export async function POST(req: Request, ctx: Params) {
       );
     }
 
-    const [inserted] = await db
+    const [inserted] = await getDb()
       .insert(comments)
       .values({
         projectId: project.id,

@@ -1,6 +1,8 @@
+export const dynamic = "force-dynamic";
+
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/site";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects } from "@/db/schema";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -17,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let projectSlugs: string[] = [];
   try {
-    const rows = await db.select({ slug: projects.slug, updatedAt: projects.createdAt }).from(projects);
+    const rows = await getDb().select({ slug: projects.slug, updatedAt: projects.createdAt }).from(projects);
     projectSlugs = rows.map((r) => r.slug);
   } catch {
     // DB may not be ready during build – fail soft.

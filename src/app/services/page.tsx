@@ -3,7 +3,7 @@ import { Code2, Cpu, Palette, Rocket, Shield, Sparkles, Zap } from "lucide-react
 import { Reveal } from "@/components/Reveal";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { services } from "@/db/schema";
 import { asc } from "drizzle-orm";
 import type { Metadata } from "next";
@@ -18,7 +18,7 @@ export default async function ServicesPage() {
   const lang = await getLang();
   const t = translations[lang];
 
-  const servicesList = await db
+  const servicesList = await getDb()
     .select()
     .from(services)
     .orderBy(asc(services.orderIndex));

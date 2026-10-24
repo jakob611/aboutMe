@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
@@ -95,7 +97,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
       </head>
       <body className="mesh-bg min-h-screen relative grain">
-        <Navbar lang={lang} t={t} />
+        <Navbar key={lang} lang={lang} t={t} />
         <main className="relative z-10 page-fade">{children}</main>
         <Footer lang={lang} t={t} />
       </body>

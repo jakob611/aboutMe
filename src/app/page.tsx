@@ -5,7 +5,7 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects, services } from "@/db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import type { Metadata } from "next";
@@ -25,13 +25,13 @@ export default async function HomePage() {
 
   // Fetch featured projects + a few services for the home page.
   const [featuredProjects, servicesList] = await Promise.all([
-    db
+    getDb()
       .select()
       .from(projects)
       .where(eq(projects.featured, true))
       .orderBy(desc(projects.createdAt))
       .limit(6),
-    db.select().from(services).orderBy(asc(services.orderIndex)).limit(3),
+    getDb().select().from(services).orderBy(asc(services.orderIndex)).limit(3),
   ]);
 
   const stats = [

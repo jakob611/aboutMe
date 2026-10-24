@@ -21,11 +21,6 @@ export function Navbar({ lang, t }: Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile menu when route changes (user clicked a link).
-  useEffect(() => {
-    setOpen(false);
-  }, [lang]);
-
   const links: { href: string; label: string }[] = [
     { href: "/", label: t.nav.home },
     { href: "/projects", label: t.nav.projects },

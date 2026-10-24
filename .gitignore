@@ -32,3 +32,11 @@ Thumbs.db
 .cache/
 dist/
 build/
+
+.open-next/
+.wrangler/
+.dev.vars*
+.env.*
+!.env.example
+*.tsbuildinfo
+next-env.d.ts

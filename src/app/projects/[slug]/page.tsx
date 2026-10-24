@@ -5,7 +5,7 @@ import { Reveal } from "@/components/Reveal";
 import { CommentSection } from "@/components/CommentSection";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects, comments } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { Metadata } from "next";
@@ -16,7 +16,7 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const lang = await getLang();
-  const [row] = await db.select().from(projects).where(eq(projects.slug, slug));
+  const [row] = await getDb().select().from(projects).where(eq(projects.slug, slug));
   if (!row) return { title: "Not found" };
   const title = lang === "sl" ? row.titleSl : row.titleEn;
   const description = lang === "sl" ? row.summarySl : row.summaryEn;
@@ -36,13 +36,13 @@ export default async function ProjectPage({ params }: Props) {
   const lang = await getLang();
   const t = translations[lang];
 
-  const [project] = await db
+  const [project] = await getDb()
     .select()
     .from(projects)
     .where(eq(projects.slug, slug));
   if (!project) notFound();
 
-  const projectComments = await db
+  const projectComments = await getDb()
     .select()
     .from(comments)
     .where(and(eq(comments.projectId, project.id), eq(comments.approved, true)))

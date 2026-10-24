@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir, readdir, readFile, unlink } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
-import { db } from "@/db";
+import { getUploads } from "@/lib/storage";
+import { getDb } from "@/db";
 import { files } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
-
-async function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-  }
-}
 
 // GET /api/files — public list of files for download
 export async function GET() {
   try {
-    const rows = await db
+    const rows = await getDb()
       .select()
       .from(files)
       .orderBy(desc(files.createdAt));
@@ -35,8 +26,6 @@ export async function GET() {
 // POST /api/files — password-protected upload
 export async function POST(req: NextRequest) {
   try {
-    await ensureUploadDir();
-
     const form = await req.formData();
     const password = (form.get("password") as string) ?? "";
     const file = form.get("file") as File | null;
@@ -69,14 +58,16 @@ export async function POST(req: NextRequest) {
     const safeBase = file.name
       .replace(/[^\w.\-]+/g, "_")
       .replace(/^\.+/, "_");
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const id = crypto.randomUUID();
     const storedName = `${id}-${safeBase}`;
-    const fullPath = path.join(UPLOAD_DIR, storedName);
+    const bucket = await getUploads();
+    await bucket.put(storedName, await file.arrayBuffer(), {
+      httpMetadata: { contentType: file.type || "application/octet-stream" },
+    });
 
-    const buf = Buffer.from(await file.arrayBuffer());
-    await writeFile(fullPath, buf);
-
-    const [inserted] = await db
+    let inserted;
+    try {
+      [inserted] = await getDb()
       .insert(files)
       .values({
         name: storedName,
@@ -86,6 +77,10 @@ export async function POST(req: NextRequest) {
         description: description || null,
       })
       .returning();
+    } catch (error) {
+      await bucket.delete(storedName);
+      throw error;
+    }
 
     return NextResponse.json({ ok: true, file: inserted });
   } catch (err) {
@@ -94,12 +89,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE /api/files?id=...&password=... — password-protected delete
+// DELETE /api/files?id=... — password is sent in the Authorization header.
 export async function DELETE(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
-    const password = url.searchParams.get("password") ?? "";
+    const password = req.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
     const expected = process.env.UPLOAD_PASSWORD ?? "";
     if (!expected || password !== expected) {
       return NextResponse.json({ error: "Wrong password" }, { status: 401 });
@@ -108,7 +103,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
 
-    const [row] = await db
+    const [row] = await getDb()
       .select()
       .from(files)
       .where(eq(files.id, Number(id)));
@@ -116,11 +111,9 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const fullPath = path.join(UPLOAD_DIR, row.name);
-    if (existsSync(fullPath)) {
-      await unlink(fullPath);
-    }
-    await db.delete(files).where(eq(files.id, row.id));
+    const bucket = await getUploads();
+    await bucket.delete(row.name);
+    await getDb().delete(files).where(eq(files.id, row.id));
 
     return NextResponse.json({ ok: true });
   } catch (err) {

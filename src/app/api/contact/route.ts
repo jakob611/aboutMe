@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { contactMessages } from "@/db/schema";
 
 // POST /api/contact
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
-    await db.insert(contactMessages).values({
+    await getDb().insert(contactMessages).values({
       name,
       email,
       subject: subject || null,

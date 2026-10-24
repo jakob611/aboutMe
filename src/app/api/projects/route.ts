@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 
@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     const featured = url.searchParams.get("featured");
     const category = url.searchParams.get("category");
 
-    let q = db.select().from(projects);
+    let q = getDb().select().from(projects);
     // Apply filters with drizzle query builder via chained where calls.
     let builder: any = q;
     if (featured === "1") {
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
     if (category) {
       builder =
         featured === "1"
-          ? db
+          ? getDb()
               .select()
               .from(projects)
               .where(eq(projects.category, category))

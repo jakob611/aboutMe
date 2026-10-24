@@ -4,18 +4,16 @@
  *
  *   npx tsx src/db/seed.ts
  */
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects, services } from "@/db/schema";
-import { sql } from "drizzle-orm";
+
 
 async function seed() {
   console.log("🌱 Seeding projects + services…");
 
-  // Truncate so the script is idempotent.
-  await db.delete(projects);
-  await db.delete(services);
+  // Optional sample data: never delete existing projects or their comments.
 
-  await db.insert(services).values([
+  await getDb().insert(services).values([
     {
       slug: "websites",
       icon: "web",
@@ -64,9 +62,9 @@ async function seed() {
       priceFrom: "€600",
       orderIndex: 4,
     },
-  ]);
+  ]).onConflictDoNothing();
 
-  await db.insert(projects).values([
+  await getDb().insert(projects).values([
     {
       slug: "taskflow-android",
       titleEn: "TaskFlow — Android productivity app",
@@ -136,7 +134,7 @@ async function seed() {
       tags: ["LEGO", "MOC", "Castle", "Stud.io"],
       featured: false,
     },
-  ]);
+  ]).onConflictDoNothing();
 
   console.log("✅ Seed complete.");
 }

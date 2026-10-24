@@ -3,7 +3,7 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { ProjectsClient } from "@/components/ProjectsClient";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { projects } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import type { Metadata } from "next";
@@ -21,7 +21,7 @@ export default async function ProjectsPage() {
   const lang = await getLang();
   const t = translations[lang];
 
-  const allProjects = await db
+  const allProjects = await getDb()
     .select()
     .from(projects)
     .orderBy(desc(projects.createdAt));

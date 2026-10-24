@@ -1,6 +1,4 @@
-import { readdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { galleryImages } from "@/lib/gallery";
 import { Code2, Cpu, Palette, Rocket, Sparkles } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { getLang } from "@/lib/lang";
@@ -14,24 +12,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.about.title, description: t.about.subtitle };
 }
 
-async function getGalleryImages(): Promise<string[]> {
-  const dir = path.join(process.cwd(), "public", "gallery");
-  if (!existsSync(dir)) return [];
-  try {
-    const files = await readdir(dir);
-    return files
-      .filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f))
-      .sort()
-      .map((f) => `/gallery/${f}`);
-  } catch {
-    return [];
-  }
-}
-
 export default async function AboutPage() {
   const lang = await getLang();
   const t = translations[lang];
-  const gallery = await getGalleryImages();
+  const gallery = galleryImages;
 
   return (
     <section className="pt-16 sm:pt-24 pb-20">

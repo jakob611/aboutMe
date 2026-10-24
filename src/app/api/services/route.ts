@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { getDb } from "@/db";
 import { services } from "@/db/schema";
 import { asc } from "drizzle-orm";
 
 // GET /api/services
 export async function GET() {
   try {
-    const rows = await db
+    const rows = await getDb()
       .select()
       .from(services)
       .orderBy(asc(services.orderIndex));
