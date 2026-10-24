@@ -72,7 +72,7 @@ export default async function ProjectPage({ params }: Props) {
     <article className="pt-12 sm:pt-20 pb-20">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
 
       <div className="mx-auto max-w-4xl px-5 sm:px-8">

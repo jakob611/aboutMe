@@ -1,5 +1,7 @@
 # Deploy aboutMe to Cloudflare Workers
 
+For the admin dashboard and local preview, see [ADMIN.md](ADMIN.md).
+
 The existing Cloudflare Worker is named **aboutme**. Keep that name: it matches
 `wrangler.jsonc`. GitHub's repository name `aboutMe` does not need to change.
 
@@ -49,7 +51,9 @@ with **Production** selected. This section was empty in the screenshot. Add:
 | Type | Name | Value |
 | --- | --- | --- |
 | Secret | DATABASE_URL | The new complete Neon connection string |
-| Secret | UPLOAD_PASSWORD | A long, random password you choose for uploads |
+| Secret | UPLOAD_PASSWORD | Keep your existing password; it now signs in to `/admin` as well as managing `/files` |
+| Secret | ADMIN_PASSWORD | Optional fallback if UPLOAD_PASSWORD is absent; not required |
+| Secret | ADMIN_SESSION_SECRET | An independent random signing secret, at least 32 characters |
 | Variable | SITE_OWNER | Jakob Tominc |
 | Variable | SITE_TAGLINE | Your chosen short description |
 | Variable | CONTACT_EMAIL | Your contact email address |

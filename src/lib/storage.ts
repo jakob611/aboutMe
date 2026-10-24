@@ -2,7 +2,11 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 interface UploadBucket {
   put(key: string, value: ArrayBuffer, options?: { httpMetadata: { contentType: string } }): Promise<unknown>;
-  get(key: string): Promise<{ body: ReadableStream<Uint8Array>; size: number } | null>;
+  get(key: string): Promise<{
+    body: ReadableStream<Uint8Array>;
+    size: number;
+    httpMetadata?: { contentType?: string };
+  } | null>;
   delete(key: string): Promise<void>;
 }
 

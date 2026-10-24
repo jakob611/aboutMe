@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:cloudflare": "npm run build:cloudflare && npm run preview",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

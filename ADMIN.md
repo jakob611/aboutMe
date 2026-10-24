@@ -1,0 +1,102 @@
+# Local development and admin dashboard
+
+The dashboard is at `/admin`. It manages projects (English and Slovenian),
+cover/gallery uploads, and incoming contact messages. Services are not editable
+through this dashboard.
+
+## Local setup
+
+Install dependencies with `npm ci`. Copy `.env.example` to `.dev.vars` for
+the Cloudflare preview and replace its placeholders. Wrangler reads
+`.dev.vars`; this ignored file must never be committed. Use a Neon development
+branch if you want to create and delete test projects without changing live data.
+
+- `npm run dev:cloudflare` builds the production Worker and starts its local
+  preview, normally at http://localhost:8787. Use localhost consistently rather
+  than 127.0.0.1: Wrangler canonicalizes the local request hostname, and mixing
+  the two can fail the same-origin check.
+- `npm run build:cloudflare` only builds.
+- `npm run dev` runs Next.js development mode. Copy the values into an ignored
+  `.env.local` too if you use this mode, since Next reads environment variables
+  from that file; Cloudflare bindings are initialized by `next.config.ts`.
+- `npm test`, `npm run typecheck`, and `npm run lint` run the checks.
+
+Local R2 storage is emulated and persisted under `.wrangler`. Local uploads do
+not write to the live R2 bucket. A DATABASE_URL still connects to the actual Neon
+branch named in that connection string; Neon is not emulated.
+
+On this Windows machine, the roaming npm installation may mask the bundled npm.
+If `npm` reports a missing `npm-cli.js`, use
+`& 'C:\Program Files\nodejs\npm.cmd' run dev:cloudflare` in PowerShell.
+The application does not require changing the global npm installation.
+
+OpenNext has limited native Windows support. If its build fails with filesystem
+or toolchain errors, use WSL/Linux or the existing Cloudflare build integration:
+https://opennext.js.org/cloudflare
+
+## Production variables and bindings
+
+Keep the Neon and R2 setup in DEPLOYMENT.md. Add these as **runtime secrets** in
+the existing Cloudflare Worker `aboutme`:
+
+| Name | Purpose |
+| --- | --- |
+| DATABASE_URL | Complete Neon Postgres connection URL, with SSL parameters |
+| ADMIN_PASSWORD | Optional fallback only when UPLOAD_PASSWORD is not set |
+| ADMIN_SESSION_SECRET | A separate random signing secret of at least 32 characters |
+| UPLOAD_PASSWORD | Existing password shared by `/admin` and `/files`; keep its value |
+
+Keep all existing production variables and secrets. The only additional required
+secret is ADMIN_SESSION_SECRET. The existing UPLOAD_PASSWORD is used for both
+the admin login and the file-upload feature. If both UPLOAD_PASSWORD and
+ADMIN_PASSWORD exist, UPLOAD_PASSWORD takes priority, so the previous upload
+password still works. ADMIN_PASSWORD is only a fallback when UPLOAD_PASSWORD is
+absent. Changing the effective password or ADMIN_SESSION_SECRET invalidates
+existing sessions.
+
+Cloudflare production secrets are not downloaded into local development. Set
+UPLOAD_PASSWORD and ADMIN_SESSION_SECRET in your ignored local .dev.vars file
+as well. Add DATABASE_URL locally to use the database features; without it the
+dashboard shows a configuration error after login. Never place a real password
+in .env.example or wrangler.jsonc.
+Generate the signing secret locally with
+`node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
+Do not put these values in NEXT_PUBLIC_ variables, source code or build settings.
+
+The committed Wrangler config binds `aboutme-uploads` as `UPLOADS` and includes
+`ADMIN_LOGIN_LIMITER` (5 login attempts per IP per minute per Cloudflare location).
+No additional database migration or R2 API keys are needed for the dashboard.
+Deploy the updated configuration as well as the code so the limiter is present.
+The limiter namespace `710611` should be unique to this feature within the account.
+See https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
+
+Keep SITE_OWNER, SITE_TAGLINE, CONTACT_EMAIL and NEXT_PUBLIC_SITE_URL consistent
+between build/runtime settings as described in DEPLOYMENT.md. Keep the actual
+owned domain; no DNS or domain changes are required for this feature.
+
+## Image behavior
+
+Uploads accept JPEG, PNG, WebP, GIF and AVIF files up to 12 MiB each and check
+their file headers. Image URLs use `/api/media/projects/...`; other R2 keys cannot
+be read through that route. New uploads are public images once their URL is known.
+
+Removing a photo changes the project only after **Save project**. Cancelling the
+editor leaves the published project unchanged. R2 objects are deliberately retained
+when an image is detached, an editor is cancelled, or a project is deleted, so
+shared URLs stay valid and a storage outage cannot turn a successful database save
+into a reported failure. You may remove confirmed unused objects in the Cloudflare
+R2 dashboard; retained objects continue to consume storage.
+
+## Verification after configuring secrets
+
+1. Open `/admin`: signed-out visitors should see only the login form.
+2. Sign in, create a temporary project with both languages, upload a cover and
+   gallery photo, then Save. Check its public project page.
+3. Edit and save it. Remove a gallery photo and cancel: the public image should
+   remain. Remove and save: it should disappear from the project.
+4. Submit the contact form; open **Messages → Refresh** to see it.
+5. Delete the temporary project, sign out, and verify `/api/admin/messages`
+   returns 401.
+
+Automated tests mock Neon and R2 and do not certify production account
+permissions, secrets, table availability, or domain routing.

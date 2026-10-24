@@ -2,7 +2,8 @@
 
 Bilingual Next.js portfolio using PostgreSQL (Neon) and Cloudflare Workers.
 
-**Deployment instructions: [DEPLOYMENT.md](DEPLOYMENT.md).** This is a server-rendered
+**Deployment instructions: [DEPLOYMENT.md](DEPLOYMENT.md).** Admin dashboard and
+local Cloudflare preview: [ADMIN.md](ADMIN.md). This is a server-rendered
 application, not a static Pages site. Do not publish `.next` as a Pages output directory.
 
 ## Development
@@ -47,7 +48,8 @@ its database-backed pages. `/api/health` checks the database connection.
 
 - Edit `src/lib/site.ts` for social links, skills, statistics and donation links.
   Template statistics and example content are placeholders, not verified personal facts.
-- Add real project/service records through Neon's Tables UI or SQL Editor.
+- Manage real projects and view contact messages at `/admin`, using UPLOAD_PASSWORD.
+  Add service records through Neon's Tables UI or SQL Editor.
 - `npm run db:seed` optionally adds **fictional example content**. It loads `.env`,
   skips existing slugs and never deletes your projects, services or comments.
 - Put gallery photos in `public/gallery/` and list `/gallery/filename.jpg` URLs in
