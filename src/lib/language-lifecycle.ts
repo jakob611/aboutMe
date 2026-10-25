@@ -13,7 +13,7 @@ type BrowserEvents = Pick<
   "location" | "addEventListener" | "removeEventListener"
 >;
 
-/** Keep a restored/shared document's language aligned with future server requests. */
+/** Keep intentional navigation consistent without reloading an active draft on focus. */
 export function synchronizeDocumentLanguage(
   lang: Lang,
   {
@@ -30,24 +30,6 @@ export function synchronizeDocumentLanguage(
       lang,
       browser.location.protocol === "https:",
     );
-  };
-  const synchronize = () => {
-    if (matchesDocument()) return;
-    saveDocumentLanguage();
-    const current = new URL(browser.location.href);
-    const href = languageHref(current.href, lang);
-    // Same-URL replacement with a fragment may be a same-document navigation.
-    // reload() guarantees that the old layout/prefetch cache is discarded.
-    if (href === current.pathname + current.search + current.hash)
-      browser.location.reload();
-    else browser.location.replace(href);
-  };
-  const pageShow = (event: Event) => {
-    if ("persisted" in event && event.persisted === true) synchronize();
-  };
-  const focus = () => synchronize();
-  const visibility = () => {
-    if (documentEvents.visibilityState === "visible") synchronize();
   };
   const routeClick = (event: Event) => {
     if (event.defaultPrevented || matchesDocument()) return;
@@ -83,14 +65,10 @@ export function synchronizeDocumentLanguage(
     browser.location.assign(languageHref(url.href, lang));
   };
 
-  browser.addEventListener("pageshow", pageShow);
-  browser.addEventListener("focus", focus);
-  documentEvents.addEventListener("visibilitychange", visibility);
+  // Another tab may change the shared cookie. Keep this document and its form
+  // state intact until the visitor deliberately follows a link or switches language.
   documentEvents.addEventListener("click", routeClick, true);
   return () => {
-    browser.removeEventListener("pageshow", pageShow);
-    browser.removeEventListener("focus", focus);
-    documentEvents.removeEventListener("visibilitychange", visibility);
     documentEvents.removeEventListener("click", routeClick, true);
   };
 }

@@ -97,29 +97,30 @@ function fixture(
   };
 }
 
-test("Back restores the document's language and discards stale layout/prefetch state", () => {
+test("Back keeps the restored document and draft intact without overwriting another tab's preference", () => {
   const f = fixture();
-  assert.equal(f.listeners(), 4);
+  assert.equal(f.listeners(), 1);
   f.show(false);
   assert.equal(f.reloaded(), 0);
   f.show(true);
-  assert.equal(f.cookie(), "lang=en");
-  assert.equal(f.reloaded(), 1);
+  assert.equal(f.cookie(), "lang=sl");
+  assert.equal(f.reloaded(), 0);
   f.focus();
-  assert.equal(f.reloaded(), 1);
+  assert.equal(f.reloaded(), 0);
   f.cleanup();
   assert.equal(f.listeners(), 0);
 });
 
-test("a language change from another tab reconciles on focus or visibility", () => {
+test("a language change from another tab never reloads a focused form", () => {
   for (const event of ["focus", "visible"] as const) {
     const f = fixture(
       "lang=sl",
       "https://example.com/services?topic=web#start",
     );
     f[event]();
-    assert.equal(f.cookie(), "lang=en");
-    assert.deepEqual(f.replaced, ["/services?topic=web&lang=en#start"]);
+    assert.equal(f.cookie(), "lang=sl");
+    assert.deepEqual(f.replaced, []);
+    assert.equal(f.reloaded(), 0);
     f.cleanup();
   }
   const f = fixture();

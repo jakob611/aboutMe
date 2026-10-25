@@ -71,7 +71,8 @@ pages show an honest unavailable state when the database cannot be reached.
 - Project categories have shareable URLs (for example `/projects?category=android`).
   Text/tag search and the image viewer run locally in the browser.
 - Motion respects reduced-motion preferences; reveal effects keep server-rendered
-  content visible before JavaScript loads. Below-the-fold sections reveal on scroll;
+  content visible before JavaScript loads. Visible content animates on entry and
+  below-the-fold sections reveal on scroll;
   keyboard focus makes pending content visible immediately. Hover lifts and image
   zoom are limited to mouse pointers with motion enabled.
 - Language selection uses a full document navigation so the page, header, footer
@@ -79,6 +80,8 @@ pages show an honest unavailable state when the database cannot be reached.
   Cloudflare country (Slovenia → Slovenian, other countries → English), then
   weighted browser language when country data is unavailable. Manual choices win
   over automatic detection. No third-party IP lookup is made.
+  Contact drafts survive an explicit language switch through a one-use, tab-scoped
+  session-storage handoff. Returning to another tab does not reload a draft.
 - The social card source is `public/og.svg`
   and its exported PNG is `public/og.png`.
 

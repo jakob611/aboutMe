@@ -4,6 +4,11 @@ The dashboard is at `/admin`. It manages projects (English and Slovenian),
 cover/gallery uploads, and incoming contact messages. Services are not editable
 through this dashboard.
 
+A successful login remains valid in that browser for up to seven days or until
+**Sign out**. Reopening `/admin` during that period intentionally reuses the signed
+HTTP-only session cookie. The login URL is public; private data and actions still
+require a valid session. The login and dashboard explain this persistence.
+
 ## Local setup
 
 Install dependencies with `npm ci`. Copy `.env.example` to `.dev.vars` for

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 import {
   ArrowUpRight,
   Mail,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import type { Translation, Lang } from "@/lib/i18n";
+import { LANGUAGE_CHANGE_EVENT, saveContactDraft, takeContactDraft } from "@/lib/contact-draft";
 
 type Props = {
   lang: Lang;
@@ -35,6 +36,34 @@ export function ContactClient({
     null | "ok" | "err" | "limit" | "required"
   >(null);
   const [pending, startTransition] = useTransition();
+  useEffect(() => {
+    let draft;
+    try {
+      draft = takeContactDraft(window.sessionStorage, window.location.href);
+    } catch {
+      return;
+    }
+    if (!draft) return;
+    // Synchronize the one-use browser handoff after hydration, keeping SSR stable.
+    startTransition(() => {
+      setName(draft.name);
+      setEmail(draft.email);
+      setSubject(draft.subject);
+      setMessage(draft.message);
+    });
+  }, []);
+
+  useEffect(() => {
+    const preserveForLanguageChange = () => {
+      try {
+        saveContactDraft(window.sessionStorage, window.location.href, { name, email, subject, message });
+      } catch {
+        // Accessing sessionStorage itself may be blocked by browser policy.
+      }
+    };
+    window.addEventListener(LANGUAGE_CHANGE_EVENT, preserveForLanguageChange);
+    return () => window.removeEventListener(LANGUAGE_CHANGE_EVENT, preserveForLanguageChange);
+  }, [name, email, subject, message]);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim()) {

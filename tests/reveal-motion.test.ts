@@ -92,24 +92,24 @@ function fixture({ reduced = false, top = 1000, height = 500 } = {}) {
   };
 }
 
-test("scroll reveals are prepared, staggered, played once, then cleaned up", () => {
+test("scroll content stays readable until entry, then animates once and cleans up", () => {
   const f = fixture();
   const cleanup = enhanceReveal(
     f.element,
     { delay: 0.16, y: 30 },
     f.environment,
   );
-  assert.equal(f.calls.pause, 1);
-  assert.equal(f.calls.play, 0);
-  assert.equal(f.animation.currentTime, 0);
-  assert.equal(f.options()?.delay, 160);
-  assert.equal(f.options()?.fill, "both");
+  assert.equal(f.calls.animate, 0);
+  assert.equal(f.calls.pause, 0);
   assert.equal(f.listenerCount(), 2);
   f.intersect(false);
-  assert.equal(f.calls.play, 0);
+  assert.equal(f.calls.animate, 0);
   f.intersect();
   f.intersect();
-  assert.equal(f.calls.play, 1);
+  assert.equal(f.calls.animate, 1);
+  assert.equal(f.options()?.delay, 160);
+  assert.equal(f.options()?.fill, "backwards");
+  assert.equal(f.options()?.id, "reveal-scroll");
   f.animation.onfinish?.();
   assert.equal(f.calls.cancel, 1);
   cleanup();
@@ -117,8 +117,18 @@ test("scroll reveals are prepared, staggered, played once, then cleaned up", () 
   assert.ok(f.calls.disconnect >= 2);
 });
 
-test("initial viewport, passed sections and reduced motion never become hidden", () => {
-  for (const settings of [{ top: 100 }, { top: -1000 }, { reduced: true }]) {
+test("initial viewport gets entry motion without waiting for an observer", () => {
+  const f = fixture({ top: 100 });
+  const cleanup = enhanceReveal(f.element, { delay: 0.06, y: 30 }, f.environment);
+  assert.equal(f.calls.animate, 1);
+  assert.equal(f.calls.observe, 0);
+  assert.equal(f.options()?.id, "reveal-entry");
+  assert.equal(f.options()?.delay, 60);
+  cleanup();
+});
+
+test("passed sections and reduced motion stay untouched", () => {
+  for (const settings of [{ top: -1000 }, { reduced: true }]) {
     const f = fixture(settings);
     enhanceReveal(f.element, { delay: 0, y: 30 }, f.environment)();
     assert.equal(f.calls.animate, 0);
@@ -136,9 +146,9 @@ test("keyboard focus and preference changes reveal pending content immediately",
       f.environment,
     );
     f[action]();
-    assert.equal(f.calls.cancel, 1);
+    assert.equal(f.calls.cancel, 0);
     f.intersect();
-    assert.equal(f.calls.play, 0);
+    assert.equal(f.calls.animate, 0);
     cleanup();
   }
 });
@@ -148,7 +158,7 @@ test("very tall content triggers on entry and observer failure restores visibili
   const cleanup = enhanceReveal(f.element, { delay: 0, y: 30 }, f.environment);
   assert.equal(f.observerOptions()?.threshold, 0);
   f.intersect();
-  assert.equal(f.calls.play, 1);
+  assert.equal(f.calls.animate, 1);
   cleanup();
   const broken = fixture();
   enhanceReveal(
@@ -161,6 +171,27 @@ test("very tall content triggers on entry and observer failure restores visibili
       },
     },
   );
-  assert.equal(broken.calls.cancel, 1);
+  assert.equal(broken.calls.animate, 0);
   assert.equal(broken.listenerCount(), 0);
+});
+
+test("missing observer still permits entry and leaves offscreen content visible", () => {
+  for (const top of [100, 1000]) {
+    const f = fixture({ top });
+    const cleanup = enhanceReveal(
+      f.element,
+      { delay: 0, y: 30 },
+      { ...f.environment, createObserver: undefined },
+    );
+    assert.equal(f.calls.animate, top === 100 ? 1 : 0);
+    cleanup();
+  }
+});
+
+test("changing to reduced motion cancels an active entry immediately", () => {
+  const f = fixture({ top: 100 });
+  const cleanup = enhanceReveal(f.element, { delay: 0, y: 30 }, f.environment);
+  f.reduceMotion();
+  assert.equal(f.calls.cancel, 1);
+  cleanup();
 });

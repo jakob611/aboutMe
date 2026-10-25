@@ -3,8 +3,11 @@
 The portfolio now has a personal workshop direction: clearer typography, restrained
 graphite/ivory/sage colors, original interactive sketches and practical bilingual
 copy. Production readiness is not established by a successful local build alone.
-This review covers the source and automated checks; browser permissions have
-prevented a new visual inspection of the live site or Cloudflare logs.
+This review describes the broader redesign. The current repair acceptance,
+independent browser evidence and release blockers are tracked in
+[VERIFICATION.md](VERIFICATION.md), which supersedes earlier verification claims.
+Local browser access now works. The owner supplied Cloudflare's dependency-install
+error; its repair and local clean-install evidence are recorded in VERIFICATION.md.
 
 ## Deployment
 
@@ -12,9 +15,12 @@ prevented a new visual inspection of the live site or Cloudflare logs.
   successful login; this application does not require it during the build.
 - Keep `UPLOAD_PASSWORD`, `DATABASE_URL`, site settings and the `UPLOADS` binding.
   The existing upload password is also the admin password.
-- Cloudflare's check on the admin PR failed. GitHub exposes no diagnostic log,
-  and Cloudflare account access was unavailable. The cause remains unknown;
-  adding a runtime signing secret is not evidence that the build failure is fixed.
+- Cloudflare's check failed during npm 10.9.2 dependency installation: its broad
+  Miniflare override did not apply to the installed prerelease, making lockfile
+  validation reject undici 7.30.1 against the original 7.29.1 requirement. A
+  version-qualified prerelease override preserves 7.30.1 and passes isolated full
+  clean installs with npm 10.9.2 and npm 11.21.1. A successful Cloudflare rerun is
+  still required. No runtime signing-secret change was needed for this failure.
 - Production Neon health and public project-list requests passed in the earlier
   deployment check. Live admin writes and contact-message access remain unverified.
 
@@ -66,16 +72,20 @@ prevented a new visual inspection of the live site or Cloudflare logs.
   expandable details; distinct database offerings remain separate.
 - Reveal animation is progressive enhancement: server-rendered content stays
   visible without JavaScript, and motion respects reduced-motion preferences.
-  Offscreen content gets a prepared scroll reveal; keyboard focus cancels pending
-  effects. Card lift, image zoom and hover feedback have been restored. Initially
-  visible content stays visible during hydration.
+  Offscreen content remains readable until intersection starts its reveal;
+  keyboard focus cancels effects. Initially visible content receives an entry
+  animation after hydration. Card feedback works with reduced motion; lift and
+  image zoom remain motion-gated. Actual motion acceptance is still pending
+  because the test browser reports reduced motion enabled.
 - Language switching performs a document navigation, updating page, header,
   footer, metadata and document language together. Client-router query changes
   previously retained a stale root layout and switch target. The translation icon
   is restored. Manual choices override country/browser detection, browser language
   quality weights are respected, and unrelated cookies (including admin sessions)
-  are retained. Restored documents and other-tab cookie changes are reconciled
-  before stale layout/prefetch state can mix languages on later navigation.
+  are retained. Other-tab cookie conflicts cause a fresh document only on
+  deliberate local navigation; merely focusing or restoring a tab does not reload
+  a form. Explicit language switches preserve an unsent Contact draft using a
+  bounded, one-use tab-scoped handoff.
 - Added a real `/og.png` share preview, its editable SVG source, and an SVG icon.
 - Missing local database configuration now gives clear public unavailable states
   instead of crashing the main collection pages. This does not verify live data.
@@ -86,12 +96,13 @@ decoration or invented marketing claims.
 
 ## Checks
 
-50 automated tests pass, covering shared password throttling, private-comment
+59 automated tests pass, covering shared password throttling, private-comment
 fields, and failure to mint sessions without a signing secret. TypeScript and
 ESLint pass without errors. The Cloudflare Worker builds and starts locally with
 the updated dependencies. New regressions cover language selection and repeated
 navigation targets, bilingual services/footer rendering, scroll reveal lifecycle,
 combined project filters and file-uploader responses that must remain locked.
-These are source/component tests; browser click/visual checks remain blocked by
-the saved localhost permission. Database integration tests mock Neon; they do not
-certify production credentials, permissions or existing table contents.
+These are source/component tests. Independent desktop browser checks now run on
+the rebuilt Worker; see VERIFICATION.md for their actual coverage and limitations.
+Database integration tests mock Neon; they do not certify production credentials,
+permissions or existing table contents.

@@ -251,6 +251,9 @@ export function AdminDashboard({ projects, messages, loadError }: Props) {
             <p className="text-[color:var(--color-fg-muted)] mt-1">
               Projects, R2 images, and contact messages.
             </p>
+            <p className="text-sm text-[color:var(--color-fg-muted)] mt-2">
+              Signed in on this browser for up to 7 days. Sign out when you finish on a shared computer.
+            </p>
           </div>
           <button type="button" onClick={logout} disabled={busy} className="btn-ghost text-sm">
             <LogOut size={14} /> Sign out

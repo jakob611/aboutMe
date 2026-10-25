@@ -33,7 +33,7 @@
     "@node-minify/core": {
       "glob": "10.5.0"
     },
-    "miniflare": {
+    "miniflare@5.20261019.2-beta": {
       "undici": "7.30.1"
     }
   },

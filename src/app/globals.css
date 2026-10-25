@@ -277,7 +277,8 @@ main[tabindex="-1"]:focus {
   transition: color 160ms ease;
 }
 
-.link-arrow:hover {
+.link-arrow:hover,
+.link-arrow:focus-visible {
   color: var(--color-accent-2);
 }
 
@@ -547,9 +548,28 @@ main[tabindex="-1"]:focus {
 .interactive-card:focus-within,
 .service-preview:focus-visible {
   border-color: var(--color-accent-2);
+  background: var(--color-surface-2);
 }
 
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+@media (any-hover: hover) and (any-pointer: fine) {
+  .card:hover,
+  .project-card:hover,
+  .interactive-card:hover,
+  .service-preview:hover {
+    border-color: var(--color-accent-2);
+    background: var(--color-surface-2);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .project-card:focus-visible .project-card-arrow,
+  .service-preview:focus-visible > svg,
+  .link-arrow:focus-visible > svg {
+    transform: translate(2px, -2px);
+  }
+}
+
+@media (any-hover: hover) and (any-pointer: fine) and (prefers-reduced-motion: no-preference) {
   .card:hover,
   .project-card:hover,
   .interactive-card:hover,

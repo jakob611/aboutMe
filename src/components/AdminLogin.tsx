@@ -43,6 +43,7 @@ export function AdminLogin() {
           </div>
           <p className="text-sm text-[color:var(--color-fg-muted)] mb-6">
             Enter the admin password to manage projects, uploads, and messages.
+            {" "}This browser stays signed in for up to 7 days, or until you sign out.
           </p>
           <form onSubmit={submit} className="space-y-3">
             <input

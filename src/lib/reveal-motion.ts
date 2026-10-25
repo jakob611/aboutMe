@@ -12,13 +12,13 @@ type Observer = {
 type Environment = {
   preference: MotionPreference;
   viewportHeight: number;
-  createObserver(
+  createObserver?(
     callback: (entries: readonly { isIntersecting: boolean }[]) => void,
     options: IntersectionObserverInit,
   ): Observer;
 };
 
-/** Enhance below-the-fold content while leaving the initial server paint intact. */
+/** Keep server content readable; enhance entry and scrolling after hydration. */
 export function enhanceReveal(
   element: HTMLElement,
   { delay, y }: { delay: number; y: number },
@@ -27,8 +27,8 @@ export function enhanceReveal(
   const noop = () => {};
   if (preference.matches || !element.animate) return noop;
   const rect = element.getBoundingClientRect();
-  // Already visible (or already passed) content must not flash back to hidden.
-  if (rect.top < viewportHeight || rect.bottom <= 0) return noop;
+  if (rect.bottom <= 0) return noop;
+  const inViewport = rect.top < viewportHeight;
 
   let animation: Animation | undefined;
   let observer: Observer | undefined;
@@ -37,7 +37,28 @@ export function enhanceReveal(
     if (started) return;
     started = true;
     observer?.disconnect();
-    animation?.play();
+    try {
+      animation = element.animate(
+        [
+          {
+            // Entry stays partly readable even when hydration arrives late.
+            opacity: inViewport ? 0.2 : 0,
+            transform: `translate3d(0, ${Math.min(Math.max(y, 0), 48)}px, 0)`,
+          },
+          { opacity: 1, transform: "translate3d(0, 0, 0)" },
+        ],
+        {
+          id: inViewport ? "reveal-entry" : "reveal-scroll",
+          duration: 800,
+          delay: Math.min(Math.max(delay, 0), 0.3) * 1000,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          fill: "backwards",
+        },
+      );
+      animation.onfinish = () => animation?.cancel();
+    } catch {
+      animation?.cancel();
+    }
   };
   const showImmediately = () => {
     started = true;
@@ -46,32 +67,21 @@ export function enhanceReveal(
   };
 
   try {
-    animation = element.animate(
-      [
-        {
-          opacity: 0,
-          transform: `translate3d(0, ${Math.min(Math.max(y, 0), 48)}px, 0)`,
+    if (inViewport) {
+      reveal();
+    } else if (createObserver) {
+      // Do not pause an invisible animation while waiting: a silent observer
+      // failure must leave the content readable. Animate only upon entry.
+      observer = createObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) reveal();
         },
-        { opacity: 1, transform: "translate3d(0, 0, 0)" },
-      ],
-      {
-        duration: 720,
-        delay: Math.min(Math.max(delay, 0), 0.4) * 1000,
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-        fill: "both",
-      },
-    );
-    animation.pause();
-    animation.currentTime = 0;
-    animation.onfinish = () => animation?.cancel();
-    observer = createObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) reveal();
-      },
-      // Any intersection can trigger, even for a very tall description section.
-      { threshold: 0, rootMargin: "0px 0px -40px 0px" },
-    );
-    observer.observe(element);
+        { threshold: 0, rootMargin: "0px 0px -24px 0px" },
+      );
+      observer.observe(element);
+    } else {
+      return noop;
+    }
   } catch {
     animation?.cancel();
     observer?.disconnect();

@@ -3,6 +3,7 @@
 import { Languages } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
 import { languageNavigation } from "@/lib/language-preference";
+import { LANGUAGE_CHANGE_EVENT } from "@/lib/contact-draft";
 
 type Props = { lang: Lang; label: string };
 
@@ -10,6 +11,7 @@ export function LanguageSwitcher({ lang, label }: Props) {
   const next: Lang = lang === "en" ? "sl" : "en";
   const toggle = () => {
     const target = languageNavigation(window.location.href, next);
+    window.dispatchEvent(new Event(LANGUAGE_CHANGE_EVENT));
     document.cookie = target.cookie;
     // A client-router query change retains the root layout, including its old
     // translated header/footer and lang prop. Reload the document on a deliberate

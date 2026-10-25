@@ -112,6 +112,55 @@ test("admin security, CRUD, messages, and image regressions", async t => {
     assert.equal((await edit(request("/api/admin/projects/1", "PATCH", input, cookie, "https://evil.test"), ctx)).status, 403);
     assert.equal(sql.length, 0);
   });
+  await t.test("missing, forged, tampered and expired sessions cannot read or mutate private data", async () => {
+    const token = cookie.slice(ADMIN_COOKIE.length + 1);
+    const parts = token.split(".");
+    parts[2] = (parts[2][0] === "A" ? "B" : "A") + parts[2].slice(1);
+    const now = Date.now;
+    let expired: string;
+    try {
+      Date.now = () => now() - 8 * 86400000;
+      expired = (await createAdminSession()).token;
+    } finally { Date.now = now; }
+
+    for (const invalidToken of [undefined, "forged", parts.join("."), expired!]) {
+      const invalidCookie = invalidToken ? `${ADMIN_COOKIE}=${invalidToken}` : undefined;
+      const context = { params: Promise.resolve({ id: "1" }) };
+      const responses = [
+        await list(request("/api/admin/projects", "GET", undefined, invalidCookie)),
+        await messages(request("/api/admin/messages", "GET", undefined, invalidCookie)),
+        await create(request("/api/admin/projects", "POST", input, invalidCookie)),
+        await edit(request("/api/admin/projects/1", "PATCH", input, invalidCookie), context),
+        await remove(request("/api/admin/projects/1", "DELETE", undefined, invalidCookie), context),
+        await upload(new NextRequest("https://example.com/api/admin/upload", {
+          method: "POST",
+          headers: { origin: "https://example.com", ...(invalidCookie ? { cookie: invalidCookie } : {}) },
+          // No body: authorization must fail before parsing uploads or touching R2.
+        })),
+      ];
+      for (const response of responses) {
+        assert.equal(response.status, 401);
+        assert.equal(response.headers.get("cache-control"), "private, no-store");
+        assert.deepEqual(await response.json(), { error: "Unauthorized" });
+      }
+    }
+    assert.equal(sql.length, 0);
+    assert.equal(objects.size, 0);
+    assert.equal(storageReads, 0);
+  });
+  await t.test("production cookies stay Secure, HTTP-only and same-site protected", () => {
+    const before = process.env.NODE_ENV;
+    try {
+      Object.assign(process.env, { NODE_ENV: "production" });
+      assert.deepEqual(adminCookieOptions(604800), {
+        httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 604800,
+      });
+      assert.equal(adminCookieOptions(0).maxAge, 0);
+    } finally {
+      if (before === undefined) Reflect.deleteProperty(process.env, "NODE_ENV");
+      else Object.assign(process.env, { NODE_ENV: before });
+    }
+  });
   await t.test("projects can be created, listed, edited and deleted through Drizzle", async () => {
     assert.equal((await create(request("/api/admin/projects", "POST", input, cookie))).status, 200);
     const listed = await list(request("/api/admin/projects", "GET", undefined, cookie));
