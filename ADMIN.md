@@ -78,15 +78,20 @@ The existing production Worker still needs ADMIN_SESSION_SECRET and deployment
 of the committed limiter before the new dashboard can be released there.
 
 The committed Wrangler config binds `aboutme-uploads` as `UPLOADS` and includes
-`ADMIN_LOGIN_LIMITER` (5 login attempts per IP per minute per Cloudflare location).
+`ADMIN_LOGIN_LIMITER` (a nominal 5 password attempts per IP per minute per
+Cloudflare location). Cloudflare's binding is approximate and eventually
+consistent: bursts can exceed the threshold, even within one location.
 No additional database migration or R2 API keys are needed for the dashboard.
 Deploy the updated configuration as well as the code so the limiter is present.
 The limiter namespace `710611` should be unique to this feature within the account.
-See https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/
+See [Cloudflare's rate-limit accuracy documentation](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/#accuracy).
 
-The same password-attempt budget also covers POST/DELETE on `/api/files`, so
-the legacy file manager cannot bypass the admin login's rate limit. Use a long,
-unique UPLOAD_PASSWORD for production; a short numeric password is for testing.
+POST/DELETE on `/api/files` call the same limiter as admin login. This shares the
+approximate budget; it does not guarantee a strict sixth-request denial.
+Bounded remote tests returned wrong-password responses throughout, without 429.
+Actual throttling and shared denial across those routes remain unverified; see
+[VERIFICATION.md](VERIFICATION.md). Use a long, unique UPLOAD_PASSWORD for
+production; a short numeric password is for testing.
 
 ADMIN_SESSION_SECRET is read only while handling login/session requests. Its
 absence prevents a successful login; it does not prevent this application's build.

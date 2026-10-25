@@ -3,7 +3,8 @@
 Local preview: http://localhost:8787. Branch: `codex/admin-dashboard`, PR #1.
 Remote Preview:
 [codex-admin-dashboard-aboutme.tomincjakob.workers.dev](https://codex-admin-dashboard-aboutme.tomincjakob.workers.dev).
-Release remains pending development-database verification and production setup.
+Release remains pending development-database verification, actual throttling
+acceptance and production setup.
 The isolated remote Preview is deployed; authentication and R2 checks passed.
 
 ## Implemented
@@ -257,8 +258,34 @@ description and reviewed the mobile screenshots without visible clipping or
 overlap. That critique used the saved reports and supplied build evidence; it
 was not another independent Cloudflare/GitHub metadata query.
 
+### Live throttling remains unverified
+
+The deployed Preview binding was confirmed as namespace `710612` with
+`simple: { limit: 5, period: 60 }`. This is a nominal five-attempt threshold per
+IP per minute per Cloudflare location. Cloudflare documents approximate,
+eventually consistent counts: bursts can exceed a threshold even with serial
+awaited calls in one location. A strict sixth-request 429 assertion therefore
+does not follow from this binding's contract. See
+[Cloudflare's accuracy documentation](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/#accuracy).
+
+An independent rapid six-request sequence and another six-request sequence
+spaced two seconds apart each returned 401 `Wrong password`, including the
+legacy files route. The spaced requests all reported location HAM. Seven
+lead-orchestrator browser attempts within a window also showed `Wrong password`.
+No 429 or shared throttled denial was observed. These bounded tests confirm
+wrong-password rejection; they neither establish live throttling acceptance nor
+prove an authentication defect. The existing limiter architecture was preserved.
+
+Evidence: `artifacts/browser-final/rate-limit-preview-report.md`,
+`rate-limit-preview-results.json`, `rate-limit-preview-spaced-results.json` and
+`browser-rate-limit-evidence.json`. Passing session/R2 checks above do not mean
+all security acceptance is complete.
+
 ## Outstanding release requirements
 
+- [ ] Actual 429 throttling and shared denial across admin/legacy password
+  routes. The configured approximate limiter and wrong-password rejection are
+  verified; live enforcement was not demonstrated in the bounded tests.
 - [ ] Physical touch-device behavior. The verified mobile viewport checks above
   used pointer and keyboard interaction, not a physical touchscreen.
 - [ ] An isolated fresh private-session browser test. Signed-out testing of the
