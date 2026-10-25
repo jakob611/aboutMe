@@ -68,6 +68,15 @@ Generate the signing secret locally with
 `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
 Do not put these values in NEXT_PUBLIC_ variables, source code or build settings.
 
+The branch Cloudflare Preview has dedicated credentials, R2 bucket
+`aboutme-uploads-preview` and limiter namespace `710612`. It has no DATABASE_URL,
+so login works but project management and the inbox display a configuration
+error. Independent remote checks passed login persistence, logout/Back,
+invalid-session rejection, cookie flags and one disposable PNG upload/read/delete.
+This does not establish successful project CRUD or contact-message delivery.
+The existing production Worker still needs ADMIN_SESSION_SECRET and deployment
+of the committed limiter before the new dashboard can be released there.
+
 The committed Wrangler config binds `aboutme-uploads` as `UPLOADS` and includes
 `ADMIN_LOGIN_LIMITER` (5 login attempts per IP per minute per Cloudflare location).
 No additional database migration or R2 API keys are needed for the dashboard.

@@ -1,9 +1,10 @@
 # Repair acceptance — 25 October 2026
 
-Preview: http://localhost:8787. Branch: `codex/admin-dashboard`, PR #1.
-Release is pending. The supplied Cloudflare log identified a dependency-install
-failure; its repair passed the next remote dependency install and application
-build. That build then failed while configuring the non-production Preview.
+Local preview: http://localhost:8787. Branch: `codex/admin-dashboard`, PR #1.
+Remote Preview:
+[codex-admin-dashboard-aboutme.tomincjakob.workers.dev](https://codex-admin-dashboard-aboutme.tomincjakob.workers.dev).
+Release remains pending development-database verification and production setup.
+The isolated remote Preview is deployed; authentication and R2 checks passed.
 
 ## Implemented
 
@@ -74,8 +75,9 @@ No source-only check is counted as browser acceptance.
   `/#top`. No mobile or normal-motion claim comes from these desktop checks.
 
 This was a signed-out state in the available browser, not an isolated fresh
-private profile: that context-control API is unavailable. Forged/tampered/expired
-cookie operations are covered by automated tests, not browser cookie injection.
+private profile: that context-control API is unavailable. Invalid-cookie checks
+also passed against the remote Preview using real HTTP requests, as recorded
+below; they were not browser cookie injection.
 The first final pass omitted hash/focus checks. A follow-up keyboard browser check
 confirmed skip-to-main and a visible two-pixel CTA focus outline, then exposed a
 history regression: skip to `/#main-content`, follow a service anchor, and Back
@@ -104,6 +106,46 @@ SL → EN Contact switch cleared the unsent name/message before this repair.
 The browser reported reduced motion enabled, fine pointer and hover support,
 with no console errors. This explains disabled animation in this test browser;
 it does not establish the owner's browser setting.
+
+### Normal-motion follow-up
+
+After the owner enabled Windows animation effects, an independent tester opened
+a fresh ordinary in-app browser tab on the final local Worker. The browser
+reported reduced-motion false, hover support and a fine pointer at 1280×720.
+No media emulation, DOM mutation or forced animation was used.
+
+- [x] Home reload visibly progressed from partial opacity/vertical translation
+  to fully opaque, untransformed hero content. Ordinary scrolling revealed its
+  lower heading and service cards.
+- [x] Real pointer hover lifted the Android service card by approximately 6px
+  and changed its border.
+- [x] About reload and scrolling showed entry and lower-section reveals that
+  settled fully visible. Tab exposed a visible two-pixel skip-link focus outline.
+
+Evidence: `artifacts/browser-final/independent-motion-brief.md`,
+`independent-motion-evidence.json`, `independent-about-focus.png` and
+`independent-about-scroll.png`. This pass verifies desktop motion only.
+
+### Responsive viewport follow-up
+
+Lead-orchestrator browser QA used a verified 390×844 viewport on the final local
+Worker; this succeeded after the earlier ineffective viewport requests.
+
+- [x] Home, About, Services, Contact, Projects, Files, Support and signed-out
+  Admin rendered with document scrollWidth 382px and no horizontal overflow.
+  Projects/Files retained explicit unavailable-data states; Admin's login and
+  seven-day session notice fit the viewport.
+- [x] Mobile menu links close the menu. Escape closes it and returns keyboard
+  focus to its toggle.
+- [x] Contact EN → SL → EN retained all four unsent fields, with email verified
+  visually. Document language and labels agreed; the draft was cleared without
+  submission.
+
+This establishes responsive layout and pointer/keyboard interaction at an actual
+mobile viewport, not physical touch-device behavior. Evidence is in
+`artifacts/browser-final/mobile-report.md`, `mobile-evidence.json`,
+`home-mobile.png`, `services-mobile.png`, `contact-mobile.png`,
+`contact-mobile-sl.png` and `admin-mobile.png`.
 
 ## Cloudflare dependency-install repair
 
@@ -137,28 +179,96 @@ The owner then supplied the next Cloudflare log for build
 application build succeeded. The later `npx wrangler preview` step failed because
 the non-production Preview needs its own R2/rate-limit configuration and safe
 resources. Preview is the current non-production command, not a typo to replace
-with a production deployment. Existing production bindings and secrets remain
-unchanged; authenticated account setup is still required before a successful
-Preview rerun.
+with a production deployment. Those resources have since been configured without
+altering production, as recorded below.
+
+## Isolated remote Preview acceptance
+
+The committed Preview configuration uses `aboutme-uploads-preview` and limiter
+namespace `710612`, separate from production's `aboutme-uploads` and committed
+namespace `710611`. Dedicated Preview UPLOAD_PASSWORD and ADMIN_SESSION_SECRET
+are present; DATABASE_URL is absent. Local secret copies remain only in ignored
+`.dev.vars.preview`. No production credentials were copied into Preview.
+
+Manual branch deployment `42025799-f2fb-4a47-a8fb-1a17e20a0cfa` succeeded.
+An independent tester then opened the stable origin normally in the in-app
+browser and completed the following actual remote checks:
+
+- [x] Home, Services and Contact render; unavailable project data is explicit.
+- [x] First visit to Admin shows login. Wrong password fails; dedicated Preview
+  credentials sign in; reload preserves the seven-day session.
+- [x] Sign out, reload and navigation/Back show login without dashboard controls.
+  Signed-out projects/messages APIs display Unauthorized without private data.
+- [x] Browser warning/error console is empty at the end of this sequence.
+- [x] Real HTTP requests with missing, forged, signature-byte-tampered and signed
+  expired cookies return 401 from projects GET, messages GET and upload POST.
+  Private responses use `Cache-Control: private, no-store`.
+- [x] Actual login cookie has Secure, HttpOnly, SameSite=Strict, Path=/ and
+  Max-Age=604800; logout clears it. No cookie/credential values were saved.
+- [x] One disposable 68-byte PNG uploaded to the Preview bucket and downloaded
+  byte-for-byte through its media URL with image/png, nosniff and immutable
+  public cache headers. Only that new object was deleted; a subsequent
+  cache-busted read returned 404.
+
+The authenticated dashboard displays its database-configuration error and
+disables Add project. Placeholder counts do not establish an empty real database.
+Project CRUD, saved cover/gallery associations and the contact inbox remain
+unverified until a development Neon branch is configured. No migrations, contact
+submissions, sample projects or production mutations were performed.
+
+Secret-free evidence is in `artifacts/browser-final/remote-preview-report.md`
+and `remote-preview-api-results.json`, alongside screenshots. A corrected tamper
+fixture changes actual signature bytes; an earlier base64 padding alias did not
+and is explicitly excluded from invalid-signature evidence in that report.
+
+### Cloudflare Builds rerun
+
+The later automatic branch build had retained `npm run build`, which creates
+Next output only; its Preview step failed because `.open-next/worker.js` was
+absent. Using the Cloudflare plugin, only the build commands for Previews Base
+and the existing `codex/admin-dashboard` Preview were changed to
+`npm run build:cloudflare`. Readback confirmed both deploy commands remained
+`npx wrangler preview`; production retained `npm run build:cloudflare` and
+`npm run deploy`. Variables and secrets were not changed by this correction.
+
+- [x] Actual Cloudflare build `8a4fb352-9d0b-4bcc-99c6-7d718df09366`, explicitly
+  targeting branch commit `b5a3dfcc58173f6c211a7ea05523689d48dd4b58`, finished
+  with outcome `success` at 2026-10-25 17:15:58 UTC.
+- [x] Remote npm 10.9.2 / Node 24.22.1 dependency installation completed.
+  OpenNext generated `.open-next/worker.js`, Preview deployment completed,
+  and the final build log reported success.
+- [x] GitHub's `Workers Builds: aboutme` check run `121236010464` on that commit
+  is completed with conclusion `success` and no annotations. Its details link
+  points to the same Cloudflare build.
+- [x] The stable Preview URL is unchanged. This rerun's unique deployment URL is
+  [e4a8c67c-aboutme.tomincjakob.workers.dev](https://e4a8c67c-aboutme.tomincjakob.workers.dev).
+
+The earlier independent remote browser/HTTP acceptance ran on manual deployment
+`42025799`, not this later CI deployment. A subsequent lead-orchestrator smoke
+check opened the stable Preview after the CI deployment: Home rendered in the
+country-selected Slovenian language, switching to English produced matching
+URL/document language and heading, and Admin showed login without authenticated
+dashboard controls. The warning/error console was empty. This smoke check did
+not repeat the earlier authenticated HTTP/R2 acceptance. No production deploy or
+merge occurred.
+
+An independent final critic found no actionable issue in the documentation/PR
+description and reviewed the mobile screenshots without visible clipping or
+overlap. That critique used the saved reports and supplied build evidence; it
+was not another independent Cloudflare/GitHub metadata query.
 
 ## Outstanding release requirements
 
-- [ ] Visible entry/scroll/hover motion under `no-preference` in a real browser.
-  The available browser exposes no media emulation. Reduced-motion behavior can
-  be inspected, but successful motion acceptance cannot be inferred from it.
-- [ ] Mobile/touch checks: the browser viewport setter reported success while
-  `innerWidth` and screenshots stayed 1280×720. These are not mobile evidence.
+- [ ] Physical touch-device behavior. The verified mobile viewport checks above
+  used pointer and keyboard interaction, not a physical touchscreen.
 - [ ] An isolated fresh private-session browser test. Signed-out testing of the
   available shared browser context does not verify a fresh private profile.
 - [ ] Live project CRUD, cover/gallery upload and contact inbox. The local preview
   has no DATABASE_URL, so unavailable local data is not evidence about production.
-- [ ] Successful Cloudflare non-production Preview deployment/check after safe
-  Preview resources/secrets are configured. The dependency override repair has
-  passed the next remote install and app build; it did not configure Previews.
-  Cloudflare CLI remains signed out.
 - [ ] Production cookies, cache behavior, credentials and Neon/R2 end-to-end
   operations. Unit coverage and local packaging do not verify production.
 
-No migrations, sample data, production mutations, storage cleanup or deployment
-were performed. Keep existing runtime secrets/bindings. Do not merge until the
-Cloudflare failure and required release verification are resolved.
+No migrations, sample data, production mutations, broad storage cleanup or
+production deployment were performed. The single new Preview test object was
+removed. Keep existing production runtime secrets/bindings. Do not merge until
+required release verification is resolved.

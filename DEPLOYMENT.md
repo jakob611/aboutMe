@@ -34,8 +34,9 @@ the fictional sample projects as your own work.
 
 ## 3. Create storage for uploads
 
-In Cloudflare, open **R2 Object Storage → Create bucket**. Create a private bucket
-named exactly **aboutme-uploads**. Do not enable public bucket access: the site's
+The existing private production bucket is **aboutme-uploads**; preserve it. For a
+new account only, create that bucket under **R2 Object Storage → Create bucket**.
+Do not enable public bucket access: the site's
 API handles downloads. R2 may ask you to enable the service / enter billing details;
 review what Cloudflare shows before doing so.
 
@@ -46,7 +47,9 @@ The build itself does not access R2, but deployment requires this bucket to exis
 ## 4. Add RUNTIME variables and secrets
 
 Open **Workers & Pages → aboutme → Settings → Runtime variables and secrets**,
-with **Production** selected. This section was empty in the screenshot. Add:
+with **Production** selected. Current account inspection confirms DATABASE_URL
+and UPLOAD_PASSWORD already exist; preserve their values. ADMIN_SESSION_SECRET
+is absent and must be added before releasing the dashboard. Required settings:
 
 | Type | Name | Value |
 | --- | --- | --- |
@@ -101,21 +104,19 @@ password issue. Do not commit a Cloudflare token to GitHub.
 
 ### Non-production Preview setup
 
-The latest branch log passed dependency installation and the application build,
-then failed in the Preview step. `npx wrangler preview` is Cloudflare's current
-default for non-production branches. Version uploads use the Worker's configured
-resources, so changing to `versions upload` or a production deploy would not
-provide the missing Preview isolation. See
+The branch Preview is configured separately from production. `npx wrangler
+preview` is Cloudflare's current default for non-production branches. Keep the
+Preview build command at `npm run build:cloudflare` in both **Previews Base** and
+the existing branch Preview settings: `npm run build` creates Next output only,
+so the later Preview command cannot find `.open-next/worker.js`. See
 [Cloudflare's build commands](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
 
 This differs from this repository's `npm run preview`, which starts the local
 OpenNext/Wrangler emulator. See
 [OpenNext's development workflow](https://opennext.js.org/cloudflare/howtos/dev-deploy).
 
-Select an existing dedicated non-production R2 bucket and a rate-limit namespace
-ID unused by production. The following is an **inert documentation example**,
-not the active `wrangler.jsonc` and not a complete deployable configuration.
-Replace both placeholders only with confirmed account values:
+The active `wrangler.jsonc` now uses the confirmed private non-production bucket
+`aboutme-uploads-preview` and separate rate-limit namespace `710612`:
 
 ```jsonc
 {
@@ -123,13 +124,13 @@ Replace both placeholders only with confirmed account values:
     "r2_buckets": [
       {
         "binding": "UPLOADS",
-        "bucket_name": "<EXISTING_NONPRODUCTION_BUCKET>"
+        "bucket_name": "aboutme-uploads-preview"
       }
     ],
     "ratelimits": [
       {
         "name": "ADMIN_LOGIN_LIMITER",
-        "namespace_id": "<UNUSED_PREVIEW_NAMESPACE_ID>",
+        "namespace_id": "710612",
         "simple": { "limit": 5, "period": 60 }
       }
     ]
@@ -138,9 +139,11 @@ Replace both placeholders only with confirmed account values:
 ```
 
 In the Worker's Settings, select **Previews Base** in Variables and secrets.
-Set `DATABASE_URL` to a development Neon branch, a dedicated preview
-`UPLOAD_PASSWORD`, and an independent random `ADMIN_SESSION_SECRET` of at least
-32 characters. Add the public site settings needed by the preview as well.
+Dedicated Preview `UPLOAD_PASSWORD` and `ADMIN_SESSION_SECRET` bindings are
+configured. Their local copies remain only in ignored `.dev.vars.preview`.
+`DATABASE_URL` is intentionally absent until a development Neon branch is
+available; do not copy the production connection string. Add public site settings
+needed by the preview as well.
 Production variables/secrets are not inherited. Base secret changes apply to new
 Previews; existing ones need their own update. Follow
 [Preview configuration](https://developers.cloudflare.com/workers/previews/configuration/)
@@ -152,17 +155,20 @@ its matching Preview. The current [OpenNext config](open-next.config.ts) enables
 no ISR cache or revalidation queue: the installed adapter defaults those
 overrides to `dummy`. Optional generated Durable Object queue code still contains
 a self-reference, but that revalidation implementation is not enabled here.
-This Preview recipe therefore omits service bindings while preserving the
-production binding. Verify that behavior in the
-actual Preview once its resources are configured. If an ISR/revalidation queue
+The active Preview configuration therefore omits service bindings while
+preserving the production binding. The deployed Preview rendered public pages,
+authenticated, and served a disposable uploaded PNG successfully. If an ISR/revalidation queue
 is enabled later, reevaluate isolation rather than sending those calls to
 production; the platform's `ctx.exports` option still needs adapter compatibility
 evaluation before use here. See
 [Preview resources and service-binding limitations](https://developers.cloudflare.com/workers/previews/resources/).
 
-Authenticated Cloudflare access and the actual non-production resource choices
-are still required. The active production bindings, secrets and Wrangler config
-have been preserved; a successful Preview deployment has not been verified.
+The branch Preview is available at
+[codex-admin-dashboard-aboutme.tomincjakob.workers.dev](https://codex-admin-dashboard-aboutme.tomincjakob.workers.dev).
+Independent browser and HTTP checks passed authentication, logout, invalid-session
+rejection and an isolated R2 upload/read/delete. See [VERIFICATION.md](VERIFICATION.md)
+for deployment/build evidence and remaining limits. Project CRUD and the contact
+inbox still need the development database. No production deployment was performed.
 
 ## 6. Deploy, verify, then connect the domain
 

@@ -40,6 +40,12 @@ Worker and static assets. After building, `npm run preview` runs the Worker loca
 `npm run deploy` publishes the already-built Worker. Production deployment still
 requires the account setup in DEPLOYMENT.md.
 
+The isolated branch Preview is
+[available here](https://codex-admin-dashboard-aboutme.tomincjakob.workers.dev).
+Its authentication and R2 upload/read/delete checks passed; it has no development
+database yet. See [VERIFICATION.md](VERIFICATION.md) for current acceptance and
+remaining release requirements.
+
 Database credentials are read per request, so builds need no database connection.
 The application needs a runtime `DATABASE_URL` and initialized tables to load
 projects, services and files, and to store contact submissions. Public collection

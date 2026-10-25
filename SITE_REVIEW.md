@@ -20,9 +20,11 @@ error; its repair and local clean-install evidence are recorded in VERIFICATION.
   validation reject undici 7.30.1 against the original 7.29.1 requirement. A
   version-qualified prerelease override preserves 7.30.1 and passes isolated full
   clean installs with npm 10.9.2 and npm 11.21.1. The next Cloudflare install and
-  application build succeeded, then its Preview deployment failed for missing
-  separate Preview configuration/resources. That account setup and a successful
-  Preview rerun remain required. No signing-secret change fixed the install step.
+  application build succeeded. Separate Preview resources/secrets are now
+  configured, and the Preview build command was corrected in both Previews Base
+  and the existing branch settings to generate the OpenNext Worker. Actual
+  Cloudflare branch build `8a4fb352-9d0b-4bcc-99c6-7d718df09366` succeeded at
+  `b5a3dfc`. No signing-secret change fixed the install step.
 - Production Neon health and public project-list requests passed in the earlier
   deployment check. Live admin writes and contact-message access remain unverified.
 
@@ -52,8 +54,10 @@ error; its repair and local clean-install evidence are recorded in VERIFICATION.
    its development server; this app does not use that server to serve the Worker.
    Avoid forcing npm's suggested downgrade of drizzle-kit. The audit excluding
    dev dependencies reports zero known vulnerabilities after the targeted fixes.
-4. Resolve the Cloudflare check and verify all three admin features against the
-   actual Neon database and R2 bucket before treating the release as verified.
+4. Complete project CRUD, saved cover/gallery and contact inbox verification
+   against a dedicated development Neon branch. Remote Preview session and R2
+   upload/read/delete checks passed; Preview has no DATABASE_URL. Production
+   still needs ADMIN_SESSION_SECRET and deployment of the committed limiter.
 
 ## Content and design
 
@@ -77,8 +81,9 @@ error; its repair and local clean-install evidence are recorded in VERIFICATION.
   Offscreen content remains readable until intersection starts its reveal;
   keyboard focus cancels effects. Initially visible content receives an entry
   animation after hydration. Card feedback works with reduced motion; lift and
-  image zoom remain motion-gated. Actual motion acceptance is still pending
-  because the test browser reports reduced motion enabled.
+  image zoom remain motion-gated. After the owner enabled Windows animation
+  effects, an independent ordinary-browser pass observed real Home/About entry
+  and scroll reveals and pointer-hover lift with reduced motion disabled.
 - Language switching performs a document navigation, updating page, header,
   footer, metadata and document language together. Client-router query changes
   previously retained a stale root layout and switch target. The translation icon
@@ -106,5 +111,9 @@ navigation targets, bilingual services/footer rendering, scroll reveal lifecycle
 combined project filters and file-uploader responses that must remain locked.
 These are source/component tests. Independent desktop browser checks now run on
 the rebuilt Worker; see VERIFICATION.md for their actual coverage and limitations.
+Independent normal-motion checks passed Home/About entry and scroll reveals and
+real pointer hover. Lead-orchestrator checks at a verified 390×844 viewport passed
+all eight public/admin page layouts, menu dismissal/focus and Contact draft
+language switching. This is responsive viewport evidence, not physical touch QA.
 Database integration tests mock Neon; they do not certify production credentials,
 permissions or existing table contents.
