@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FragmentLink } from "@/components/FragmentLink";
 import { ArrowUp, ArrowUpRight, Mail } from "lucide-react";
 import { siteConfig } from "@/lib/site";
 import type { Translation, Lang } from "@/lib/i18n";
@@ -123,13 +124,13 @@ export function Footer({ lang, t }: Props) {
         <p>
           © {year} {siteConfig.name}
         </p>
-        <a
-          href="#"
+        <FragmentLink
+          href="#top"
           className="inline-flex items-center gap-2 transition-colors hover:text-[color:var(--color-fg)]"
         >
           {lang === "sl" ? "Na vrh" : "Back to top"}
           <ArrowUp aria-hidden="true" size={13} />
-        </a>
+        </FragmentLink>
       </div>
     </footer>
   );

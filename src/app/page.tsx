@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { FragmentLink } from "@/components/FragmentLink";
 import {
   ArrowDown,
   ArrowRight,
@@ -154,10 +155,10 @@ export default async function HomePage() {
               </Link>
             </div>
           </Reveal>
-          <a href="#selected-work" className="hero-scroll">
+          <FragmentLink href="#selected-work" className="hero-scroll">
             <ArrowDown size={14} />
             {t.scroll}
-          </a>
+          </FragmentLink>
         </div>
         <Reveal delay={0.16} y={16} className="home-hero-visual">
           <WorkshopScene lang={lang} />

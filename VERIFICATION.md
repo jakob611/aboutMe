@@ -2,7 +2,8 @@
 
 Preview: http://localhost:8787. Branch: `codex/admin-dashboard`, PR #1.
 Release is pending. The supplied Cloudflare log identified a dependency-install
-failure; the compatibility repair still needs a successful Cloudflare rerun.
+failure; its repair passed the next remote dependency install and application
+build. That build then failed while configuring the non-production Preview.
 
 ## Implemented
 
@@ -20,6 +21,12 @@ failure; the compatibility repair still needs a successful Cloudflare rerun.
 - Returning to a tab or Back does not reload a Contact draft or overwrite another
   tab's saved preference. Intentional navigation with a conflicting cookie loads
   a fresh document so page, header and footer retain a consistent language.
+- Same-page skip/scroll/top links use Next's routing-aware Link rather than
+  creating native fragment history entries outside the router. The skip link
+  explicitly focuses the main element because Next's fragment scrolling leaves
+  focus untouched. A shared fragment wrapper scrolls repeated identical targets,
+  which Next otherwise treats as a no-op; CSS controls reduced-motion behavior.
+  Native href and focusable-main fallbacks remain without JS.
 
 ## Automated checks on the integrated source
 
@@ -56,21 +63,41 @@ No source-only check is counted as browser acceptance.
   explicit unavailable states. Home's Android sketchbook selection changed its
   art, heading, description and project link to `category=android`.
 - [x] The final public-page sequence returned no browser console warnings/errors.
+- [x] A separate independent test of the final rebuilt fragment fix passed:
+  first Tab reached the skip link, Enter focused `MAIN#main-content`, a Home
+  service link opened `/services#android`, and Back/Forward restored matching
+  Home/Services content. The service target was 95.58px below the viewport top,
+  beneath the sticky header's 81px bottom edge.
+- [x] First and repeated hero-scroll activation positioned the selected-work
+  target at 96.20px. First/repeated footer clicks and footer keyboard Enter
+  returned to scrollY 0; About navigation followed by Back restored Home at
+  `/#top`. No mobile or normal-motion claim comes from these desktop checks.
 
 This was a signed-out state in the available browser, not an isolated fresh
 private profile: that context-control API is unavailable. Forged/tampered/expired
 cookie operations are covered by automated tests, not browser cookie injection.
-Hash navigation, keyboard-focus behavior, populated project filters, details and
-galleries, actual downloads and successful contact submission were not exercised
-in this final browser pass. The data-dependent interactions require local Neon
-configuration; automated filter/file tests are supporting evidence only.
+The first final pass omitted hash/focus checks. A follow-up keyboard browser check
+confirmed skip-to-main and a visible two-pixel CTA focus outline, then exposed a
+history regression: skip to `/#main-content`, follow a service anchor, and Back
+could change URL/title to Home while leaving Services rendered. Ordinary
+Home → About → Back worked. Installed Next 16.4.3 source ignores null-state
+popstate entries, which native fragment anchors can create outside its patched
+History API. The shared fragment repair above passed the independent rebuilt
+browser regression, including repeated same-URL activation that plain Link
+otherwise treats as a no-op.
+
+Populated project filters, details and galleries, actual downloads and successful
+contact submission were not exercised. These data-dependent interactions require
+local Neon configuration; automated filter/file tests are supporting evidence only.
 
 Representative desktop evidence is saved locally under `artifacts/browser-final/`,
 including `contact-en-draft-final.jpg`, `contact-sl-draft-final.jpg`,
 `home-android-sketchbook.jpg`, `admin-dashboard-config.jpg` and
 `admin-signed-out.jpg`. The full local tester report is
-`artifacts/browser-final/independent-browser-report.md`; these local evidence
-files are excluded from Git.
+`artifacts/browser-final/independent-browser-report.md`. Fragment/focus evidence
+is in `fragment-final-report.md`, with `hero-repeat.jpg`,
+`footer-keyboard-top.jpg` and `history-home-fragment.jpg` in the same directory.
+These local evidence files are excluded from Git.
 
 Baseline actual browser: desktop Home, Services and Contact rendered; deliberate
 SL → EN Contact switch cleared the unsent name/message before this repair.
@@ -105,6 +132,15 @@ install failure is addressed; it does not verify a new Cloudflare deployment.
 - [x] Both clean installs retained the original lockfile unchanged. These were
   Windows/Node 24.10.0 checks, not a Linux/Node 24.22.1 Cloudflare deployment.
 
+The owner then supplied the next Cloudflare log for build
+`9b8f980e-834b-4737-84a3-1912269cafe4`: dependency installation and the Next/OpenNext
+application build succeeded. The later `npx wrangler preview` step failed because
+the non-production Preview needs its own R2/rate-limit configuration and safe
+resources. Preview is the current non-production command, not a typo to replace
+with a production deployment. Existing production bindings and secrets remain
+unchanged; authenticated account setup is still required before a successful
+Preview rerun.
+
 ## Outstanding release requirements
 
 - [ ] Visible entry/scroll/hover motion under `no-preference` in a real browser.
@@ -112,13 +148,14 @@ install failure is addressed; it does not verify a new Cloudflare deployment.
   be inspected, but successful motion acceptance cannot be inferred from it.
 - [ ] Mobile/touch checks: the browser viewport setter reported success while
   `innerWidth` and screenshots stayed 1280×720. These are not mobile evidence.
-- [ ] Browser keyboard-focus and hash-navigation checks, plus an isolated fresh
-  private-session test. Existing unit checks do not replace this acceptance.
+- [ ] An isolated fresh private-session browser test. Signed-out testing of the
+  available shared browser context does not verify a fresh private profile.
 - [ ] Live project CRUD, cover/gallery upload and contact inbox. The local preview
   has no DATABASE_URL, so unavailable local data is not evidence about production.
-- [ ] Successful Cloudflare build/check rerun with the dependency override repair.
-  The actual supplied log diagnosed an npm 10.9.2 override/lock validation failure,
-  not a missing runtime ADMIN_SESSION_SECRET. Cloudflare CLI remains signed out.
+- [ ] Successful Cloudflare non-production Preview deployment/check after safe
+  Preview resources/secrets are configured. The dependency override repair has
+  passed the next remote install and app build; it did not configure Previews.
+  Cloudflare CLI remains signed out.
 - [ ] Production cookies, cache behavior, credentials and Neon/R2 end-to-end
   operations. Unit coverage and local packaging do not verify production.
 

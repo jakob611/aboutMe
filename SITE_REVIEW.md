@@ -19,8 +19,10 @@ error; its repair and local clean-install evidence are recorded in VERIFICATION.
   Miniflare override did not apply to the installed prerelease, making lockfile
   validation reject undici 7.30.1 against the original 7.29.1 requirement. A
   version-qualified prerelease override preserves 7.30.1 and passes isolated full
-  clean installs with npm 10.9.2 and npm 11.21.1. A successful Cloudflare rerun is
-  still required. No runtime signing-secret change was needed for this failure.
+  clean installs with npm 10.9.2 and npm 11.21.1. The next Cloudflare install and
+  application build succeeded, then its Preview deployment failed for missing
+  separate Preview configuration/resources. That account setup and a successful
+  Preview rerun remain required. No signing-secret change fixed the install step.
 - Production Neon health and public project-list requests passed in the earlier
   deployment check. Live admin writes and contact-message access remain unverified.
 

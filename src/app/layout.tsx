@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { FragmentLink } from "@/components/FragmentLink";
 import { siteConfig } from "@/lib/site";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
@@ -109,10 +110,10 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className="mesh-bg min-h-screen relative grain">
-        <a href="#main-content" className="skip-link">
+      <body id="top" className="mesh-bg min-h-screen relative grain">
+        <FragmentLink href="#main-content" className="skip-link" focusTarget>
           {lang === "sl" ? "Preskoči na vsebino" : "Skip to content"}
-        </a>
+        </FragmentLink>
         <Navbar key={lang} name={siteConfig.name} lang={lang} t={t} />
         <main
           id="main-content"

@@ -76,6 +76,7 @@ Under **Settings → Builds** use:
 | Root directory | / |
 | Build command | npm run build:cloudflare |
 | Deploy command | npm run deploy |
+| Preview command (non-production branches) | npx wrangler preview |
 
 The committed package-lock.json selects reproducible npm dependencies. Do not set
 `.next` as a Pages output directory. This setup deploys a Worker.
@@ -97,6 +98,71 @@ setting, choose **Create new token** if available, then save. Cloudflare creates
 a token with the build/deployment permissions. Alternatively select an existing
 valid token for this account that can deploy Workers and access R2. A token problem is a Cloudflare setting, not a Neon
 password issue. Do not commit a Cloudflare token to GitHub.
+
+### Non-production Preview setup
+
+The latest branch log passed dependency installation and the application build,
+then failed in the Preview step. `npx wrangler preview` is Cloudflare's current
+default for non-production branches. Version uploads use the Worker's configured
+resources, so changing to `versions upload` or a production deploy would not
+provide the missing Preview isolation. See
+[Cloudflare's build commands](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
+
+This differs from this repository's `npm run preview`, which starts the local
+OpenNext/Wrangler emulator. See
+[OpenNext's development workflow](https://opennext.js.org/cloudflare/howtos/dev-deploy).
+
+Select an existing dedicated non-production R2 bucket and a rate-limit namespace
+ID unused by production. The following is an **inert documentation example**,
+not the active `wrangler.jsonc` and not a complete deployable configuration.
+Replace both placeholders only with confirmed account values:
+
+```jsonc
+{
+  "previews": {
+    "r2_buckets": [
+      {
+        "binding": "UPLOADS",
+        "bucket_name": "<EXISTING_NONPRODUCTION_BUCKET>"
+      }
+    ],
+    "ratelimits": [
+      {
+        "name": "ADMIN_LOGIN_LIMITER",
+        "namespace_id": "<UNUSED_PREVIEW_NAMESPACE_ID>",
+        "simple": { "limit": 5, "period": 60 }
+      }
+    ]
+  }
+}
+```
+
+In the Worker's Settings, select **Previews Base** in Variables and secrets.
+Set `DATABASE_URL` to a development Neon branch, a dedicated preview
+`UPLOAD_PASSWORD`, and an independent random `ADMIN_SESSION_SECRET` of at least
+32 characters. Add the public site settings needed by the preview as well.
+Production variables/secrets are not inherited. Base secret changes apply to new
+Previews; existing ones need their own update. Follow
+[Preview configuration](https://developers.cloudflare.com/workers/previews/configuration/)
+and keep secret values out of source files.
+
+Do not copy production `WORKER_SELF_REFERENCE` into `previews.services`.
+Cloudflare Preview service bindings currently target a production Worker, not
+its matching Preview. The current [OpenNext config](open-next.config.ts) enables
+no ISR cache or revalidation queue: the installed adapter defaults those
+overrides to `dummy`. Optional generated Durable Object queue code still contains
+a self-reference, but that revalidation implementation is not enabled here.
+This Preview recipe therefore omits service bindings while preserving the
+production binding. Verify that behavior in the
+actual Preview once its resources are configured. If an ISR/revalidation queue
+is enabled later, reevaluate isolation rather than sending those calls to
+production; the platform's `ctx.exports` option still needs adapter compatibility
+evaluation before use here. See
+[Preview resources and service-binding limitations](https://developers.cloudflare.com/workers/previews/resources/).
+
+Authenticated Cloudflare access and the actual non-production resource choices
+are still required. The active production bindings, secrets and Wrangler config
+have been preserved; a successful Preview deployment has not been verified.
 
 ## 6. Deploy, verify, then connect the domain
 
