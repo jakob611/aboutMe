@@ -200,16 +200,6 @@ main[tabindex="-1"]:focus {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  transition:
-    transform 220ms ease,
-    border-color 220ms ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .card:hover {
-    border-color: var(--color-border-strong);
-    transform: translateY(-3px);
-  }
 }
 
 .input,
@@ -517,11 +507,6 @@ main[tabindex="-1"]:focus {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
-  transition: border-color 180ms ease;
-}
-
-.service-preview:hover {
-  border-color: var(--color-border-strong);
 }
 
 .service-preview h3 {
@@ -534,6 +519,57 @@ main[tabindex="-1"]:focus {
   color: var(--color-fg-muted);
   font-size: 0.875rem;
   line-height: 1.8;
+}
+
+/* A little depth on cards, without bringing back the neon treatment. */
+.card,
+.project-card,
+.interactive-card,
+.service-preview {
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease,
+    box-shadow 320ms ease,
+    background 220ms ease;
+}
+
+.project-card-arrow,
+.service-preview > svg {
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.service-preview > svg {
+  margin-top: auto;
+}
+
+.project-card:focus-visible,
+.interactive-card:focus-visible,
+.interactive-card:focus-within,
+.service-preview:focus-visible {
+  border-color: var(--color-accent-2);
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .card:hover,
+  .project-card:hover,
+  .interactive-card:hover,
+  .service-preview:hover {
+    transform: translate3d(0, -6px, 0);
+    border-color: rgba(165, 201, 186, 0.38);
+    box-shadow:
+      0 22px 44px -28px rgba(0, 0, 0, 0.72),
+      0 0 0 1px rgba(165, 201, 186, 0.04);
+  }
+
+  .project-card:hover img {
+    transform: scale(1.055);
+  }
+
+  .project-card:hover .project-card-arrow,
+  .project-card:focus-visible .project-card-arrow,
+  .service-preview:hover > svg {
+    transform: translate(2px, -2px);
+  }
 }
 
 .home-about-grid {

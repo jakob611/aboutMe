@@ -51,7 +51,10 @@ pages show an honest unavailable state when the database cannot be reached.
 - Edit `src/lib/site.ts` for real profile links, tools and optional support links.
   The site deliberately omits invented statistics and unconfigured profiles.
 - Manage real projects and view contact messages at `/admin`, using UPLOAD_PASSWORD.
-  Add service records through Neon's Tables UI or SQL Editor.
+  Edit the core Android, web and AI/automation offerings in
+  `src/lib/service-offerings.ts`; these are available without a database.
+  Add optional service details and additional offerings through Neon's Tables UI
+  or SQL Editor. Configured prices are kept; no fallback prices are invented.
 - `npm run db:seed` optionally adds **fictional example content**. It loads `.env`,
   skips existing slugs and never deletes your projects, services or comments.
 - Put gallery photos in `public/gallery/` and list `/gallery/filename.jpg` URLs in
@@ -68,7 +71,15 @@ pages show an honest unavailable state when the database cannot be reached.
 - Project categories have shareable URLs (for example `/projects?category=android`).
   Text/tag search and the image viewer run locally in the browser.
 - Motion respects reduced-motion preferences; reveal effects keep server-rendered
-  content visible before JavaScript loads. The social card source is `public/og.svg`
+  content visible before JavaScript loads. Below-the-fold sections reveal on scroll;
+  keyboard focus makes pending content visible immediately. Hover lifts and image
+  zoom are limited to mouse pointers with motion enabled.
+- Language selection uses a full document navigation so the page, header, footer
+  and document language agree. Selection priority is URL, saved preference,
+  Cloudflare country (Slovenia → Slovenian, other countries → English), then
+  weighted browser language when country data is unavailable. Manual choices win
+  over automatic detection. No third-party IP lookup is made.
+- The social card source is `public/og.svg`
   and its exported PNG is `public/og.png`.
 
 ## Database changes

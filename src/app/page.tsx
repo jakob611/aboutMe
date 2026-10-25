@@ -12,9 +12,10 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { WorkshopScene } from "@/components/WorkshopScene";
 import { getLang } from "@/lib/lang";
 import { siteConfig } from "@/lib/site";
+import { serviceOfferings } from "@/lib/service-offerings";
 import { getDb } from "@/db";
-import { projects, services } from "@/db/schema";
-import { eq, desc, asc } from "drizzle-orm";
+import { projects } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import type { Metadata } from "next";
 
 const copy = {
@@ -40,11 +41,8 @@ const copy = {
     servicesLabel: "02 / Working together",
     servicesTitle: "Got something in mind?",
     servicesIntro:
-      "A website, an app, or something that doesn't quite fit a category. Start with what you want to make.",
+      "Android apps, websites, and AI tools that take repetitive work off your hands. Here's where I can help.",
     serviceLink: "Explore services",
-    discuss: "Tell me about your idea",
-    serviceEmpty:
-      "No fixed packages here. Tell me what you're trying to do, who it's for, and what already exists. We can work out the next step from there.",
     aboutLabel: "03 / Behind the projects",
     aboutTitle: "Different materials. Same curiosity.",
     aboutText:
@@ -72,11 +70,8 @@ const copy = {
     servicesLabel: "02 / Sodelovanje",
     servicesTitle: "Kaj želiš ustvariti?",
     servicesIntro:
-      "Spletno stran, aplikacijo ali nekaj, kar ne spada čisto v nobeno kategorijo. Začniva pri tvoji ideji.",
+      "Android aplikacije, spletne strani in AI orodja, ki ti olajšajo ponavljajoče se delo. Pri tem ti lahko pomagam.",
     serviceLink: "Več o storitvah",
-    discuss: "Povej mi svojo idejo",
-    serviceEmpty:
-      "Brez vnaprej določenih paketov. Povej mi, kaj želiš narediti, komu je namenjeno in kaj že obstaja. Od tam lahko poiščeva naslednji korak.",
     aboutLabel: "03 / Za projekti",
     aboutTitle: "Različni materiali. Ista radovednost.",
     aboutText:
@@ -112,23 +107,10 @@ async function loadProjects() {
 export default async function HomePage() {
   const lang = await getLang();
   const t = copy[lang];
-  const [projectResult, serviceResult] = await Promise.allSettled([
-    loadProjects(),
-    (async () =>
-      getDb()
-        .select()
-        .from(services)
-        .orderBy(asc(services.orderIndex))
-        .limit(3))(),
-  ]);
+  const [projectResult] = await Promise.allSettled([loadProjects()]);
   const selectedProjects =
     projectResult.status === "fulfilled" ? projectResult.value : [];
-  const serviceRows =
-    serviceResult.status === "fulfilled" ? serviceResult.value : [];
-  if (
-    projectResult.status === "rejected" ||
-    serviceResult.status === "rejected"
-  )
+  if (projectResult.status === "rejected")
     console.error(
       "Home collection could not be loaded; check the database runtime configuration.",
     );
@@ -256,37 +238,21 @@ export default async function HomePage() {
             <ArrowUpRight size={17} />
           </Link>
         </div>
-        {serviceRows.length ? (
-          <div className="grid gap-4 md:grid-cols-3">
-            {serviceRows.map((service, i) => (
-              <Reveal key={service.id} delay={i * 0.06}>
-                <Link
-                  href="/services"
-                  className="service-preview surface-panel"
-                >
-                  <span className="section-label">0{i + 1}</span>
-                  <h3>{lang === "sl" ? service.titleSl : service.titleEn}</h3>
-                  <p>
-                    {lang === "sl"
-                      ? service.descriptionSl
-                      : service.descriptionEn}
-                  </p>
-                  <ArrowUpRight size={21} aria-hidden="true" />
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        ) : (
-          <Reveal>
-            <div className="home-inquiry surface-panel">
-              <p>{t.serviceEmpty}</p>
-              <Link href="/contact" className="btn-primary">
-                {t.discuss}
-                <ArrowUpRight size={17} />
+        <div className="grid gap-4 md:grid-cols-3">
+          {serviceOfferings[lang].map((service, i) => (
+            <Reveal key={service.id} delay={i * 0.06}>
+              <Link
+                href={`/services#${service.id}`}
+                className="service-preview surface-panel interactive-card"
+              >
+                <span className="section-label">0{i + 1}</span>
+                <h3>{service.title}</h3>
+                <p>{service.summary}</p>
+                <ArrowUpRight size={21} aria-hidden="true" />
               </Link>
-            </div>
-          </Reveal>
-        )}
+            </Reveal>
+          ))}
+        </div>
       </section>
 
       <section className="section-rule home-about mx-auto max-w-7xl px-5 sm:px-8">

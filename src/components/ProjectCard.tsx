@@ -37,7 +37,7 @@ export function ProjectCard({ project, lang, featured }: Props) {
     <Link
       href={`/projects/${project.slug}`}
       className={cn(
-        "group block h-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.015] transition-colors hover:border-white/25",
+        "project-card group block h-full overflow-hidden rounded-2xl border border-white/10 bg-white/[0.015]",
         featured && "md:col-span-2",
       )}
     >
@@ -49,7 +49,7 @@ export function ProjectCard({ project, lang, featured }: Props) {
             width={960}
             height={600}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.035]"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out"
           />
         ) : (
           <div
@@ -69,7 +69,7 @@ export function ProjectCard({ project, lang, featured }: Props) {
             </span>
             <div className="relative flex items-end justify-between gap-6">
               <span
-                className="max-w-[80%] break-words text-3xl font-medium tracking-tight sm:text-4xl"
+                className="line-clamp-2 min-w-0 max-w-[80%] text-2xl font-medium tracking-tight [overflow-wrap:anywhere] sm:text-3xl"
                 style={{ color: accent }}
               >
                 {title}
@@ -82,7 +82,7 @@ export function ProjectCard({ project, lang, featured }: Props) {
           </div>
         )}
         <span
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-sm transition-colors group-hover:bg-white group-hover:text-black"
+          className="project-card-arrow absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-white backdrop-blur-sm group-hover:bg-white group-hover:text-black"
           aria-hidden="true"
         >
           <ArrowUpRight size={17} />
@@ -96,15 +96,20 @@ export function ProjectCard({ project, lang, featured }: Props) {
           />
           {category}
         </div>
-        <h3 className="text-xl font-medium tracking-tight text-[color:var(--color-fg)]">
+        <h3 className="min-w-0 text-xl font-medium tracking-tight text-[color:var(--color-fg)] [overflow-wrap:anywhere]">
           {title}
         </h3>
-        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[color:var(--color-fg-muted)] [overflow-wrap:anywhere]">
           {summary}
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/[0.07] pt-4 text-[11px] text-[color:var(--color-fg-muted)]">
           {(project.tags ?? []).slice(0, 3).map((tag) => (
-            <span key={tag}>{tag}</span>
+            <span
+              key={tag}
+              className="min-w-0 max-w-full [overflow-wrap:anywhere]"
+            >
+              {tag}
+            </span>
           ))}
           <span className="ml-auto inline-flex items-center gap-1.5 text-[color:var(--color-fg)]">
             {lang === "sl" ? "O projektu" : "Project notes"}

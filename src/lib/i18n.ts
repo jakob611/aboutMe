@@ -72,7 +72,7 @@ export const translations = {
     services: {
       title: "Services",
       subtitle:
-        "Tell me what you're trying to make. We can work out the right starting point together.",
+        "Android apps, websites, and AI-assisted workflows. Here's what I can help you build or improve.",
       startingAt: "from",
       getQuote: "Request a quote",
       whyTitle: "A straightforward way to start",
@@ -223,7 +223,7 @@ export const translations = {
     services: {
       title: "Storitve",
       subtitle:
-        "Povej mi, kaj želiš ustvariti. Skupaj lahko poiščeva pravo izhodišče.",
+        "Android aplikacije, spletne strani in delovni postopki s pomočjo umetne inteligence. Tukaj lahko pomagam pri izdelavi ali izboljšavah.",
       startingAt: "od",
       getQuote: "Povpraševanje",
       whyTitle: "Preprost začetek sodelovanja",

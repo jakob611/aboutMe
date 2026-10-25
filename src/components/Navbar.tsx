@@ -7,6 +7,7 @@ import { ArrowUpRight, Menu, X } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import type { Translation, Lang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { synchronizeDocumentLanguage } from "@/lib/language-lifecycle";
 
 type Props = { lang: Lang; t: Translation; name: string };
 
@@ -33,6 +34,15 @@ export function Navbar({ lang, t, name }: Props) {
     .slice(0, 2)
     .map((word) => word[0])
     .join("");
+
+  useEffect(
+    () =>
+      synchronizeDocumentLanguage(lang, {
+        document,
+        browser: window,
+      }),
+    [lang],
+  );
 
   useEffect(() => {
     if (!open) return;

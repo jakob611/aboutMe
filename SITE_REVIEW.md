@@ -1,4 +1,4 @@
-# Portfolio review — 24 October 2026
+# Portfolio review — 25 October 2026
 
 The portfolio now has a personal workshop direction: clearer typography, restrained
 graphite/ivory/sage colors, original interactive sketches and practical bilingual
@@ -60,9 +60,22 @@ prevented a new visual inspection of the live site or Cloudflare logs.
 - Refined About, Services, Contact, Files and Support while preserving their routes.
   Service inquiries prefill the contact subject. Project text/tag search, counted
   filters, shareable category URLs and an accessible native gallery were added.
+- Restored substantive Android, web, and AI/automation offerings on Services and
+  the home preview. Core descriptions no longer depend on Neon being present.
+  Configured custom titles, descriptions and prices remain available in native
+  expandable details; distinct database offerings remain separate.
 - Reveal animation is progressive enhancement: server-rendered content stays
   visible without JavaScript, and motion respects reduced-motion preferences.
-  A language-cookie precedence bug and request-header forwarding were corrected.
+  Offscreen content gets a prepared scroll reveal; keyboard focus cancels pending
+  effects. Card lift, image zoom and hover feedback have been restored. Initially
+  visible content stays visible during hydration.
+- Language switching performs a document navigation, updating page, header,
+  footer, metadata and document language together. Client-router query changes
+  previously retained a stale root layout and switch target. The translation icon
+  is restored. Manual choices override country/browser detection, browser language
+  quality weights are respected, and unrelated cookies (including admin sessions)
+  are retained. Restored documents and other-tab cookie changes are reconciled
+  before stale layout/prefetch state can mix languages on later navigation.
 - Added a real `/og.png` share preview, its editable SVG source, and an SVG icon.
 - Missing local database configuration now gives clear public unavailable states
   instead of crashing the main collection pages. This does not verify live data.
@@ -73,10 +86,12 @@ decoration or invented marketing claims.
 
 ## Checks
 
-29 automated tests pass, including shared password throttling, private-comment
+50 automated tests pass, covering shared password throttling, private-comment
 fields, and failure to mint sessions without a signing secret. TypeScript and
 ESLint pass without errors. The Cloudflare Worker builds and starts locally with
-the updated dependencies. New regressions cover language switching, combined
-project filters and file-uploader responses that must remain locked. Database
-integration tests mock Neon; they do not
+the updated dependencies. New regressions cover language selection and repeated
+navigation targets, bilingual services/footer rendering, scroll reveal lifecycle,
+combined project filters and file-uploader responses that must remain locked.
+These are source/component tests; browser click/visual checks remain blocked by
+the saved localhost permission. Database integration tests mock Neon; they do not
 certify production credentials, permissions or existing table contents.
