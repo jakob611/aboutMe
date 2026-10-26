@@ -8,9 +8,11 @@ import {
   Share2,
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { KoFiWidget } from "@/components/KoFiWidget";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
+import { koFiProfile } from "@/lib/kofi-profile";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,6 +28,7 @@ export default async function DonatePage() {
   const t = translations[lang];
   const sl = lang === "sl";
   const hasPaymentLink = Boolean(siteConfig.buyMeACoffee || siteConfig.koFi);
+  const profile = koFiProfile(siteConfig.koFi);
   const ways = [
     {
       icon: MessageSquare,
@@ -208,6 +211,7 @@ export default async function DonatePage() {
           </p>
         </Reveal>
       </div>
+      {profile && <KoFiWidget lang={lang} profile={profile} />}
     </section>
   );
 }

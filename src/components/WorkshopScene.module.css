@@ -27,6 +27,21 @@
   transform: translateY(0);
 }
 
+/* Normalized path lengths give each selected outline a complete, single draw. */
+.drawOutline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.layer[data-state="active"] .drawOutline {
+  animation: outlineEntry 1100ms cubic-bezier(0.4, 0, 0.2, 1) 120ms both;
+}
+
+@keyframes outlineEntry {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
 .book .switcher {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -34,6 +49,18 @@
 
 .switcher button {
   min-height: 40px;
+}
+
+.switcher button[data-workshop-subject="web"] { --subject-accent: #bfd3c7; }
+.switcher button[data-workshop-subject="android"] { --subject-accent: #d0c5df; }
+.switcher button[data-workshop-subject="lego"] { --subject-accent: #ddc9a6; }
+.switcher button[data-workshop-subject="3d-printing"] { --subject-accent: #bfcfd0; }
+
+.book .switcher button[aria-pressed="true"] {
+  color: #151b18;
+  background: var(--subject-accent);
+  border-color: var(--subject-accent);
+  font-weight: 600;
 }
 
 .switcher svg {
@@ -81,6 +108,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .drawOutline {
+    animation: none !important;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
   .motionHint {
     display: none !important;
   }

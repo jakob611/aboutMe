@@ -162,8 +162,11 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
             stroke="currentColor"
             opacity=".07"
           />
-          <g className={styles.layer} data-state={layerState("web")}>
+          <g className={styles.layer} data-scene="web" data-state={layerState("web")}>
             <path
+              className={styles.drawOutline}
+              data-workshop-outline=""
+              pathLength="1"
               d="m99 76 329-8-12 210-329 8Z"
               fill="#0b0e0e"
               stroke="#61736e"
@@ -193,11 +196,17 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
             />
             <path d="m116 205 65-2-1 19-65 2Z" fill="#9cc8b9" />
             <path
+              className={styles.drawOutline}
+              data-workshop-outline=""
+              pathLength="1"
               d="m277 133 113-3-6 93-113 3Z"
               fill={`url(#${id}-pane)`}
               stroke="#576b61"
             />
             <path
+              className={styles.drawOutline}
+              data-workshop-outline=""
+              pathLength="1"
               d="m281 202 23-21 20 8 25-37 29 27"
               stroke="#a8c9b5"
               strokeWidth="2"
@@ -220,9 +229,12 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
             <circle cx="50" cy="184" r="4" fill="#c1aa80" />
             <circle cx="467" cy="168" r="4" fill="#c1aa80" />
           </g>
-          <g className={styles.layer} data-state={layerState("android")}>
+          <g className={styles.layer} data-scene="android" data-state={layerState("android")}>
             <g transform="translate(186 34) rotate(8 76 140)">
               <rect
+                className={styles.drawOutline}
+                data-workshop-outline=""
+                pathLength="1"
                 width="153"
                 height="282"
                 rx="25"
@@ -247,6 +259,9 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
               <circle cx="33" cy="51" r="11" stroke="#a7bcad" />
               <path d="M29 51h8m-4-4v8" stroke="#a7bcad" />
               <path
+                className={styles.drawOutline}
+                data-workshop-outline=""
+                pathLength="1"
                 d="M22 88h86m-86 13h59"
                 stroke="#e6e3d8"
                 strokeWidth="5"
@@ -261,6 +276,9 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
                 fill="#34483d"
               />
               <path
+                className={styles.drawOutline}
+                data-workshop-outline=""
+                pathLength="1"
                 d="M32 181v-12m15 12v-24m15 24v-18m15 18v-39m15 39v-29m15 29v-45m15 45v-34"
                 stroke="#b6cda9"
                 strokeWidth="6"
@@ -289,7 +307,7 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
             <circle cx="103" cy="116" r="4" fill="#a89dc0" />
             <circle cx="410" cy="181" r="4" fill="#a89dc0" />
           </g>
-          <g className={styles.layer} data-state={layerState("lego")} strokeLinejoin="round">
+          <g className={styles.layer} data-scene="lego" data-state={layerState("lego")} strokeLinejoin="round">
             <ellipse
               cx="262"
               cy="282"
@@ -299,6 +317,9 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
               opacity=".5"
             />
             <path
+              className={styles.drawOutline}
+              data-workshop-outline=""
+              pathLength="1"
               d="m114 212 125-67 154 64-125 70Z"
               fill="#a99571"
               stroke="#d4c29d"
@@ -314,6 +335,9 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
               stroke="#9c9273"
             />
             <path
+              className={styles.drawOutline}
+              data-workshop-outline=""
+              pathLength="1"
               d="m149 157 93-50 111 46-93 52Z"
               fill="#85a891"
               stroke="#b8ccad"
@@ -329,6 +353,9 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
               stroke="#8aa787"
             />
             <path
+              className={styles.drawOutline}
+              data-workshop-outline=""
+              pathLength="1"
               d="m208 98 60-33 75 31-60 34Z"
               fill="#b1a8c8"
               stroke="#d7cde7"
@@ -364,9 +391,9 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
             <circle cx="80" cy="219" r="4" fill="#a4bba8" />
             <circle cx="435" cy="160" r="4" fill="#a4bba8" />
           </g>
-          <g className={styles.layer} data-state={layerState("3d-printing")} strokeLinejoin="round" strokeLinecap="round">
+          <g className={styles.layer} data-scene="3d-printing" data-state={layerState("3d-printing")} strokeLinejoin="round" strokeLinecap="round">
             <ellipse cx="266" cy="305" rx="147" ry="15" fill="#070c09" opacity=".5" />
-            <path d="M138 273V61h239v212M157 268V79h201v189" stroke="#758d7d" strokeWidth="7" />
+            <path className={styles.drawOutline} data-workshop-outline="" pathLength="1" d="M138 273V61h239v212M157 268V79h201v189" stroke="#758d7d" strokeWidth="7" />
             <path d="M138 61h239" stroke="#b5c8b4" strokeWidth="3" />
             <path d="M148 119h220" stroke="#51695b" strokeWidth="9" />
             <path d="M168 94v161m177-161v161" stroke="#a3b6a2" strokeWidth="2" />
@@ -374,14 +401,14 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
             <circle cx="240" cy="120" r="7" stroke="#829e8c" />
             <path d="M250 142h13l-4 12h-5Z" fill="#d4b88a" stroke="#e3cba7" />
             <path d="M256 154v27" stroke="#d4b88a" strokeWidth="1.5" strokeDasharray="3 4" />
-            <path d="m139 264 181-18 63 35-181 21Z" fill="#384b40" stroke="#a0b59d" />
+            <path className={styles.drawOutline} data-workshop-outline="" pathLength="1" d="m139 264 181-18 63 35-181 21Z" fill="#384b40" stroke="#a0b59d" />
             <path d="m139 264 63 38v10l-63-38Zm63 38 181-21v10l-181 21Z" fill="#1e3025" stroke="#718c76" />
             <path d="m219 252 41-22 38 16-41 24Z" fill="#c2ae8a" stroke="#dfccaa" />
             <path d="m219 252 38 18v-62l-38-17Z" fill="#756b50" stroke="#b7a27d" />
             <path d="m257 270 41-24v-62l-41 24Z" fill="#9b8a68" stroke="#d0ba93" />
             <path d="m219 191 41-22 38 15-41 24Z" fill="#cbb894" stroke="#e2d1af" />
             <path d="m220 202 37 17 40-23m-77 18 37 17 40-23m-77 18 37 17 40-23m-77 18 37 17 40-23" stroke="#e2c89a" opacity=".45" />
-            <path d="M248 104V74c0-27 45-37 73-19" stroke="#a3b7a3" strokeWidth="2" />
+            <path className={styles.drawOutline} data-workshop-outline="" pathLength="1" d="M248 104V74c0-27 45-37 73-19" stroke="#a3b7a3" strokeWidth="2" />
             <circle cx="388" cy="78" r="24" fill="#293d30" stroke="#8aa38e" />
             <circle cx="388" cy="78" r="8" fill="#131e16" stroke="#8aa38e" />
             <path d="M325 55c23 17 24 31 39 29" stroke="#a3b7a3" strokeWidth="2" />

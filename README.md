@@ -79,9 +79,11 @@ pages show an honest unavailable state when the database cannot be reached.
   links remain available. See [ADMIN.md](ADMIN.md) for key setup and current limits.
 - Google Drive integration is optional: configure `GOOGLE_DRIVE_API_KEY` and
   `GOOGLE_DRIVE_FOLDER_ID` for a public folder.
-- Optional `BUY_ME_A_COFFEE_URL` and `KO_FI_URL` enable real support links. When
-  absent, the visible Donations section explains that online donations are not
-  set up yet; feedback, sharing and source exploration remain available.
+- Support links to the owner's Ko-fi page, `https://ko-fi.com/jakobtominc`.
+  Its floating Support button opens the official Ko-fi panel on this page only;
+  the panel loads after a click and is removed on close or navigation. A normal
+  Ko-fi link remains available when embedded content is blocked. Optional
+  `BUY_ME_A_COFFEE_URL` adds another link; `KO_FI_URL` overrides the profile link.
 - The home-page sketchbook has original web, Android, LEGO and 3D printing SVG
   scenes. It advances every four seconds. Choosing a subject pauses rotation;
   clicking anywhere except a subject control resumes it, without a Play button.

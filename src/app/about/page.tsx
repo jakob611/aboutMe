@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, Blocks, Box, Code2, Download, Smartphone } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { BrandLogo } from "@/components/BrandLogo";
 import { galleryImages } from "@/lib/gallery";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
@@ -131,12 +132,7 @@ export default async function AboutPage() {
                     jakobtominc.com
                   </p>
                 </div>
-                <span
-                  aria-hidden="true"
-                  className="font-mono text-sm text-[color:var(--color-fg-muted)]"
-                >
-                  JT /
-                </span>
+                <BrandLogo size={44} />
               </div>
             </aside>
           </Reveal>

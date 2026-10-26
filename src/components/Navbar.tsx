@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { BrandLogo } from "@/components/BrandLogo";
 import type { Translation, Lang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { synchronizeDocumentLanguage } from "@/lib/language-lifecycle";
@@ -28,13 +29,6 @@ export function Navbar({ lang, t, name }: Props) {
     href === "/"
       ? pathname === "/"
       : pathname === href || pathname.startsWith(href + "/");
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0])
-    .join("");
-
   useEffect(
     () =>
       synchronizeDocumentLanguage(lang, {
@@ -81,12 +75,7 @@ export function Navbar({ lang, t, name }: Props) {
           className="group flex shrink-0 items-center gap-3"
           aria-label={`${name} — ${t.nav.home}`}
         >
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 text-xs font-semibold tracking-[-0.08em] text-[color:var(--color-fg)] transition-colors group-hover:border-[color:var(--color-accent-2)]"
-          >
-            {initials}
-          </span>
+          <BrandLogo />
           <span className="hidden text-sm font-medium tracking-tight sm:inline">
             {name}
           </span>

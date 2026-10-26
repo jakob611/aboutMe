@@ -21,7 +21,7 @@ export const siteConfig = {
 
   // Donation / support page
   buyMeACoffee: process.env.BUY_ME_A_COFFEE_URL || "",
-  koFi: process.env.KO_FI_URL || "",
+  koFi: process.env.KO_FI_URL || "https://ko-fi.com/jakobtominc",
 
   // Highlighted open-source projects shown on the /donate page
   openSource: [

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FragmentLink } from "@/components/FragmentLink";
+import { BrandLogo } from "@/components/BrandLogo";
 import { ArrowUp, ArrowUpRight, Mail } from "lucide-react";
 import { siteConfig } from "@/lib/site";
 import type { Translation, Lang } from "@/lib/i18n";
@@ -35,14 +36,17 @@ export function Footer({ lang, t }: Props) {
         <div className="md:col-span-6">
           <Link
             href="/"
-            className="inline-block text-2xl font-medium tracking-[-0.04em]"
+            className="inline-flex items-center gap-3 text-2xl font-medium tracking-[-0.04em]"
           >
-            {siteConfig.name}
-            <span
-              aria-hidden="true"
-              className="text-[color:var(--color-accent-2)]"
-            >
-              .
+            <BrandLogo size={44} />
+            <span>
+              {siteConfig.name}
+              <span
+                aria-hidden="true"
+                className="text-[color:var(--color-accent-2)]"
+              >
+                .
+              </span>
             </span>
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
