@@ -14,6 +14,7 @@ import { WorkshopScene } from "@/components/WorkshopScene";
 import { getLang } from "@/lib/lang";
 import { siteConfig } from "@/lib/site";
 import { serviceOfferings } from "@/lib/service-offerings";
+import { loadWorkshopProjectLinks } from "@/lib/workshop-projects";
 import { getDb } from "@/db";
 import { projects } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -108,7 +109,9 @@ async function loadProjects() {
 export default async function HomePage() {
   const lang = await getLang();
   const t = copy[lang];
-  const [projectResult] = await Promise.allSettled([loadProjects()]);
+  const [projectResult, workshopResult] = await Promise.allSettled([
+    loadProjects(), loadWorkshopProjectLinks(lang),
+  ]);
   const selectedProjects =
     projectResult.status === "fulfilled" ? projectResult.value : [];
   if (projectResult.status === "rejected")
@@ -161,7 +164,7 @@ export default async function HomePage() {
           </FragmentLink>
         </div>
         <Reveal delay={0.16} y={16} className="home-hero-visual">
-          <WorkshopScene lang={lang} />
+          <WorkshopScene lang={lang} projectLinks={workshopResult.status === "fulfilled" ? workshopResult.value : {}} />
         </Reveal>
       </section>
 

@@ -117,6 +117,17 @@ export function Navbar({ lang, t, name }: Props) {
         </ul>
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher lang={lang} label={t.common.switchLang} />
+          <Link
+            href="/contact"
+            onClick={() => setOpen(false)}
+            className="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-md border border-white/15 px-3 py-2 text-xs font-medium transition-colors hover:border-white/35 sm:px-3.5"
+          >
+            <span className="sm:hidden">{t.nav.contact}</span>
+            <span className="hidden sm:inline">
+              {lang === "sl" ? "Začniva pogovor" : "Let’s talk"}
+            </span>
+            <ArrowUpRight aria-hidden="true" size={14} />
+          </Link>
           <button
             ref={toggleRef}
             type="button"

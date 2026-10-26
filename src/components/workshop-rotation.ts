@@ -17,9 +17,7 @@ export function createWorkshopRotation(
   environment: Environment,
 ) {
   const { preference, page } = environment;
-  let paused = preference.matches;
-  let hovered = false;
-  let focused = element.contains(element.ownerDocument.activeElement);
+  let paused = false;
   const rect = element.getBoundingClientRect();
   let inView = rect.bottom > 0 && rect.top < environment.viewportHeight;
   let destroyed = false;
@@ -31,38 +29,31 @@ export function createWorkshopRotation(
   };
   const schedule = () => {
     clear();
-    if (destroyed || paused || hovered || focused || page.hidden || !inView) return;
+    if (destroyed || paused || preference.matches || page.hidden || !inView) return;
     timer = environment.setTimer(() => {
       timer = undefined;
       if (destroyed) return;
       advance();
       schedule();
-    }, 6000);
+    }, 4000);
   };
   const setPaused = (value: boolean) => {
     if (destroyed) return;
     paused = value;
-    onPausedChange(paused);
+    onPausedChange(paused || preference.matches);
     schedule();
   };
-  const enter = (event: PointerEvent) => {
-    if (event.pointerType !== "mouse") return;
-    hovered = true;
-    schedule();
-  };
-  const leave = () => { hovered = false; schedule(); };
-  const focusIn = () => { focused = true; schedule(); };
-  const focusOut = (event: FocusEvent) => {
-    focused = !!event.relatedTarget && element.contains(event.relatedTarget as Node);
-    schedule();
+  const clickAway = (event: Event) => {
+    const target = event.target as Element | null;
+    const subject = target?.closest?.("[data-workshop-subject]");
+    if (subject && element.contains(subject)) return;
+    if (paused) setPaused(false);
   };
   const preferenceChanged = () => {
-    if (preference.matches) setPaused(true);
+    onPausedChange(paused || preference.matches);
+    schedule();
   };
-  element.addEventListener("pointerenter", enter);
-  element.addEventListener("pointerleave", leave);
-  element.addEventListener("focusin", focusIn);
-  element.addEventListener("focusout", focusOut);
+  page.addEventListener("click", clickAway);
   preference.addEventListener("change", preferenceChanged);
   page.addEventListener("visibilitychange", schedule);
   try {
@@ -75,7 +66,7 @@ export function createWorkshopRotation(
     // If observation fails, leave the sketch static until the user chooses it.
     inView = false;
   }
-  onPausedChange(paused);
+  onPausedChange(paused || preference.matches);
   schedule();
   return {
     setPaused,
@@ -83,10 +74,7 @@ export function createWorkshopRotation(
       destroyed = true;
       clear();
       observer?.disconnect();
-      element.removeEventListener("pointerenter", enter);
-      element.removeEventListener("pointerleave", leave);
-      element.removeEventListener("focusin", focusIn);
-      element.removeEventListener("focusout", focusOut);
+      page.removeEventListener("click", clickAway);
       preference.removeEventListener("change", preferenceChanged);
       page.removeEventListener("visibilitychange", schedule);
     },

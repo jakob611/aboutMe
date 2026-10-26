@@ -2,12 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createWorkshopRotation } from "../src/components/workshop-rotation";
 
-function fixture({ reduced = false, top = 100, focused = false } = {}) {
+function fixture({ reduced = false, top = 100 } = {}) {
   const target = new EventTarget();
-  const child = {};
+  const subject = { closest: () => subject };
+  const nestedIcon = { closest: () => subject };
   const element = Object.assign(target, {
-    contains: (node: unknown) => node === child,
-    ownerDocument: { activeElement: focused ? child : null },
+    contains: (node: unknown) => node === subject,
     getBoundingClientRect: () => ({ top, bottom: top + 400 }),
   }) as unknown as HTMLElement;
   const preference = Object.assign(new EventTarget(), { matches: reduced });
@@ -33,7 +33,11 @@ function fixture({ reduced = false, top = 100, focused = false } = {}) {
       return { observe() {}, disconnect() { disconnected = true; } };
     },
   });
-  const dispatch = (type: string, values: object = {}) => target.dispatchEvent(Object.assign(new Event(type), values));
+  const click = (clicked: unknown = {}) => {
+    const event = new Event("click");
+    Object.defineProperty(event, "target", { value: clicked });
+    page.dispatchEvent(event);
+  };
   return {
     controller,
     timers,
@@ -50,30 +54,31 @@ function fixture({ reduced = false, top = 100, focused = false } = {}) {
       }
       now = end;
     },
-    enter: (pointerType = "mouse") => dispatch("pointerenter", { pointerType }),
-    leave: () => dispatch("pointerleave"),
-    focus: () => dispatch("focusin"),
-    blur: (internal = false) => dispatch("focusout", { relatedTarget: internal ? child : null }),
+    clickElsewhere: () => click(),
+    clickSubject: () => click(subject),
+    clickSubjectIcon: () => click(nestedIcon),
+    hover: () => target.dispatchEvent(new Event("pointerenter")),
+    focus: () => target.dispatchEvent(new Event("focusin")),
     intersect(visible: boolean) { notify([{ isIntersecting: visible }]); },
     hide(hidden: boolean) { page.hidden = hidden; page.dispatchEvent(new Event("visibilitychange")); },
     reduce(matches: boolean) { preference.matches = matches; preference.dispatchEvent(new Event("change")); },
   };
 }
 
-test("rotation uses one timer and advances only after a full six-second reading window", () => {
+test("rotation advances on four-second boundaries with a single cancellable timer", () => {
   const f = fixture();
   assert.equal(f.timers.size, 1);
-  f.tick(5999);
+  f.tick(3999);
   assert.equal(f.count(), 0);
   f.tick(1);
   assert.equal(f.count(), 1);
-  assert.equal(f.timers.size, 1);
-  f.tick(18000);
+  f.tick(12000);
   assert.equal(f.count(), 4);
+  assert.equal(f.timers.size, 1);
   f.controller.destroy();
   assert.equal(f.timers.size, 0);
   assert.equal(f.disconnected(), true);
-  f.leave();
+  f.clickElsewhere();
   f.hide(false);
   f.reduce(false);
   f.intersect(true);
@@ -82,73 +87,83 @@ test("rotation uses one timer and advances only after a full six-second reading 
   assert.equal(f.timers.size, 0);
 });
 
-test("hover, keyboard focus, hidden pages and offscreen scenes each suspend rotation", () => {
+test("manual subject pause survives subject/icon clicks and resumes on a nonfocusable click elsewhere", () => {
   const f = fixture();
-  f.tick(4000);
-  f.enter();
-  assert.equal(f.timers.size, 0);
-  f.tick(20000);
-  f.leave();
-  f.tick(5999);
+  f.controller.setPaused(true);
+  f.clickSubject();
+  f.clickSubjectIcon();
+  f.tick(12000);
+  assert.equal(f.count(), 0);
+  assert.equal(f.paused(), true);
+  f.clickElsewhere();
+  assert.equal(f.paused(), false);
+  f.tick(3999);
   assert.equal(f.count(), 0);
   f.tick(1);
   assert.equal(f.count(), 1);
+  f.controller.destroy();
+});
+
+test("pointer hover and retained focus cannot defeat click-away resume", () => {
+  const f = fixture();
+  f.controller.setPaused(true);
+  f.hover();
   f.focus();
-  f.blur(true);
-  assert.equal(f.timers.size, 0);
-  f.blur();
-  assert.equal(f.timers.size, 1);
-  f.hide(true);
-  f.intersect(false);
-  f.hide(false);
+  f.clickElsewhere();
+  f.tick(4000);
+  assert.equal(f.count(), 1);
+  f.controller.destroy();
+});
+
+test("hidden and offscreen scenes suspend rotation and restart with a fresh window", () => {
+  const f = fixture({ top: 1000 });
   assert.equal(f.timers.size, 0);
   f.intersect(true);
-  assert.equal(f.timers.size, 1);
-  f.tick(6000);
+  f.tick(3000);
+  f.hide(true);
+  f.tick(20000);
+  assert.equal(f.count(), 0);
+  f.hide(false);
+  f.tick(3999);
+  assert.equal(f.count(), 0);
+  f.tick(1);
+  assert.equal(f.count(), 1);
+  f.intersect(false);
+  f.tick(20000);
+  assert.equal(f.count(), 1);
+  f.intersect(true);
+  f.tick(4000);
   assert.equal(f.count(), 2);
   f.controller.destroy();
 });
 
-test("manual pause persists across visibility and motion changes until explicitly played", () => {
-  const f = fixture();
-  f.controller.setPaused(true);
-  f.enter(); f.leave(); f.focus(); f.blur();
-  f.hide(true); f.hide(false); f.intersect(false); f.intersect(true);
-  f.reduce(false);
-  f.tick(30000);
-  assert.equal(f.count(), 0);
+test("click-away respects reduced motion, and switching the preference off resumes automatically", () => {
+  const f = fixture({ reduced: true });
   assert.equal(f.paused(), true);
-  f.controller.setPaused(false);
-  assert.equal(f.paused(), false);
-  f.tick(6000);
-  assert.equal(f.count(), 1);
-  f.controller.destroy();
-});
-
-test("reduced motion starts paused; explicit Play works after focus leaves and preference changes stop it", () => {
-  const f = fixture({ reduced: true, focused: true });
-  assert.equal(f.paused(), true);
-  assert.equal(f.timers.size, 0);
-  f.controller.setPaused(false);
-  assert.equal(f.timers.size, 0);
+  f.clickElsewhere();
   f.tick(12000);
   assert.equal(f.count(), 0);
-  f.blur();
-  f.tick(6000);
+  assert.equal(f.timers.size, 0);
+  f.reduce(false);
+  assert.equal(f.paused(), false);
+  f.tick(4000);
   assert.equal(f.count(), 1);
   f.reduce(true);
-  assert.equal(f.paused(), true);
-  f.reduce(false);
-  assert.equal(f.timers.size, 0);
+  f.tick(12000);
+  assert.equal(f.count(), 1);
   f.controller.destroy();
 });
 
-test("offscreen initial scenes do not rotate, and touch input does not become a stuck hover", () => {
-  const f = fixture({ top: 1000 });
-  assert.equal(f.timers.size, 0);
-  f.intersect(true);
-  f.enter("touch");
-  f.tick(6000);
+test("manual pause survives visibility and motion changes until a click elsewhere", () => {
+  const f = fixture();
+  f.controller.setPaused(true);
+  f.hide(true); f.hide(false); f.intersect(false); f.intersect(true);
+  f.reduce(true); f.reduce(false);
+  f.tick(12000);
+  assert.equal(f.count(), 0);
+  assert.equal(f.paused(), true);
+  f.clickElsewhere();
+  f.tick(4000);
   assert.equal(f.count(), 1);
   f.controller.destroy();
 });

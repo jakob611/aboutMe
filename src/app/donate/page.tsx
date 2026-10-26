@@ -107,20 +107,24 @@ export default async function DonatePage() {
           ))}
         </div>
 
-        {hasPaymentLink && (
-          <Reveal>
-            <div className="section-rule mt-16 sm:mt-20 pt-8 flex flex-col sm:flex-row justify-between sm:items-center gap-6">
-              <div>
-                <p className="section-label mb-3">
-                  {sl ? "Če želiš prispevati" : "If you'd like to contribute"}
-                </p>
-                <h2 className="text-2xl tracking-tight mb-3">
-                  {t.donate.coffee}
-                </h2>
-                <p className="text-sm text-[color:var(--color-fg-muted)] max-w-lg">
-                  {t.donate.coffeeHint}
-                </p>
-              </div>
+        <Reveal>
+          <section
+            id="donations"
+            aria-labelledby="donations-title"
+            className="section-rule mt-16 sm:mt-20 pt-8 flex flex-col sm:flex-row justify-between sm:items-center gap-6"
+          >
+            <div>
+              <p className="section-label mb-3">
+                {sl ? "Če želiš prispevati" : "If you'd like to contribute"}
+              </p>
+              <h2 id="donations-title" className="text-2xl tracking-tight mb-3">
+                {sl ? "Donacije" : "Donations"}
+              </h2>
+              <p className="text-sm text-[color:var(--color-fg-muted)] max-w-lg">
+                {t.donate.coffeeHint}
+              </p>
+            </div>
+            {hasPaymentLink ? (
               <div className="flex flex-wrap gap-3">
                 {siteConfig.buyMeACoffee && (
                   <a
@@ -146,9 +150,15 @@ export default async function DonatePage() {
                   </a>
                 )}
               </div>
-            </div>
-          </Reveal>
-        )}
+            ) : (
+              <p className="max-w-sm text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
+                {sl
+                  ? "Spletne donacije še niso na voljo. Moje delo lahko podpreš tudi na zgoraj opisane načine."
+                  : "Online donations are not set up yet. You can still support my work in the ways above."}
+              </p>
+            )}
+          </section>
+        </Reveal>
 
         {siteConfig.openSource.length > 0 && (
           <div className="section-rule mt-16 sm:mt-20 pt-8">

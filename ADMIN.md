@@ -124,6 +124,12 @@ No owner CV has been supplied or published as part of this implementation.
 
 ## Optional contact email delivery
 
+On 26 October 2026 the owner's supplied public Web3Forms key was configured in
+ignored local `.env.local` and the existing `codex/admin-dashboard` Preview's
+Build variables. It is masked in Cloudflare's configuration API; it is still an
+intentionally public form key in the browser bundle. Production Build variables
+were not changed. No real email has been sent or receipt verified.
+
 Create a form for your verified recipient address in
 [Web3Forms](https://app.web3forms.com/) and copy its public access key into
 `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY`. Set it in ignored `.env.local` for a local
@@ -168,7 +174,10 @@ R2 dashboard; retained objects continue to consume storage.
    gallery photo, then Save. Check its public project page.
 3. Edit and save it. Remove a gallery photo and cancel: the public image should
    remain. Remove and save: it should disappear from the project.
-4. Submit the contact form; open **Messages → Refresh** to see it.
+4. After authorizing a disposable enquiry, verify the configured delivery path:
+   with Web3Forms, check provider acceptance and actual recipient receipt; with
+   no form key and a configured Neon database, open **Messages → Refresh** to
+   see the enquiry. Web3Forms sends directly and does not also write the inbox.
 5. Delete the temporary project, sign out, and verify `/api/admin/messages`
    returns 401.
 

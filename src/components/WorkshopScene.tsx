@@ -2,25 +2,24 @@
 
 import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Braces, Blocks, Smartphone, Printer, Pause, Play } from "lucide-react";
+import { ArrowUpRight, Braces, Blocks, Smartphone, Printer } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
 import { createWorkshopRotation } from "./workshop-rotation";
 import styles from "./WorkshopScene.module.css";
 
 const subjects = ["web", "android", "lego", "3d-printing"] as const;
 type Subject = (typeof subjects)[number];
+export type WorkshopProjectLinks = Partial<Record<Subject, { href: string; title: string }>>;
 const icons = { web: Braces, android: Smartphone, lego: Blocks, "3d-printing": Printer };
 const copy = {
   en: {
     label: "The sketchbook",
     hint: "Pick something to explore",
     link: "Explore the projects",
-    pause: "Pause",
-    play: "Play",
-    pauseLabel: "Pause automatic sketchbook rotation",
-    playLabel: "Start automatic sketchbook rotation",
-    automatic: "Automatic · pauses while exploring",
-    manual: "Paused · choose a subject or press Play",
+    project: "View project",
+    automatic: "Automatic · choose a subject to pause",
+    manual: "Paused · click elsewhere to continue",
+    reduced: "Automatic rotation is off with reduced motion",
     web: [
       "Web",
       "A clear idea. A useful interface.",
@@ -46,12 +45,10 @@ const copy = {
     label: "Skicirka",
     hint: "Izberi, kaj te zanima",
     link: "Razišči projekte",
-    pause: "Premor",
-    play: "Zaženi",
-    pauseLabel: "Začasno ustavi samodejno menjavo skic",
-    playLabel: "Zaženi samodejno menjavo skic",
-    automatic: "Samodejno · med raziskovanjem miruje",
-    manual: "Premor · izberi področje ali pritisni Zaženi",
+    project: "Poglej projekt",
+    automatic: "Samodejno · izberi področje za premor",
+    manual: "Premor · za nadaljevanje klikni drugje",
+    reduced: "Samodejna menjava je izklopljena ob zmanjšanem gibanju",
     web: [
       "Splet",
       "Jasna ideja. Uporaben vmesnik.",
@@ -75,13 +72,16 @@ const copy = {
   },
 };
 
-export function WorkshopScene({ lang }: { lang: Lang }) {
+export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; projectLinks?: WorkshopProjectLinks }) {
   const [{ active, previous }, setScene] = useState<{ active: Subject; previous: Subject | null }>({ active: "web", previous: null });
   const [paused, setPaused] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const rotation = useRef<ReturnType<typeof createWorkshopRotation> | null>(null);
   const id = useId().replace(/:/g, "");
   const t = copy[lang];
+  const project = projectLinks[active];
+  const href = project?.href ?? "/projects?category=" + active;
+  const linkLabel = project ? `${t.project}: ${project.title}` : `${t.link}: ${t[active][0]}`;
   useEffect(() => {
     if (!root.current) return;
     const controller = createWorkshopRotation(root.current, () => {
@@ -128,7 +128,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
           0{subjects.indexOf(active) + 1} / 04
         </span>
       </div>
-      <div className="sketchbook-art" data-subject={active}>
+      <Link href={href} aria-label={linkLabel} className={`sketchbook-art ${styles.artLink}`} data-subject={active}>
         <svg
           viewBox="0 0 520 350"
           fill="none"
@@ -395,7 +395,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
             opacity=".5"
           />
         </svg>
-      </div>
+      </Link>
       <div className={`sketchbook-switch ${styles.switcher}`} role="group" aria-label={t.hint}>
         {subjects.map((subject) => {
           const Icon = icons[subject];
@@ -403,6 +403,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
             <button
               key={subject}
               type="button"
+              data-workshop-subject={subject}
               aria-pressed={subject === active}
               onClick={() => selectSubject(subject)}
             >
@@ -413,11 +414,8 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
         })}
       </div>
       <div className={styles.rotationControls}>
-        <span>{paused ? t.manual : t.automatic}</span>
-        <button type="button" onClick={() => rotation.current?.setPaused(!paused)} aria-label={paused ? t.playLabel : t.pauseLabel}>
-          {paused ? <Play size={12} aria-hidden="true" /> : <Pause size={12} aria-hidden="true" />}
-          {paused ? t.play : t.pause}
-        </button>
+        <span className={styles.motionHint}>{paused ? t.manual : t.automatic}</span>
+        <span className={styles.reducedHint}>{t.reduced}</span>
       </div>
       <div className={`sketchbook-caption ${styles.captions}`}>
         {subjects.map((subject) => (
@@ -427,8 +425,8 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
           </div>
         ))}
       </div>
-      <Link href={"/projects?category=" + active} className="sketchbook-link">
-        {t.link}
+      <Link href={href} className="sketchbook-link" aria-label={linkLabel}>
+        {project ? t.project : t.link}
         <ArrowUpRight size={16} />
       </Link>
     </div>

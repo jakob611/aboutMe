@@ -80,11 +80,16 @@ pages show an honest unavailable state when the database cannot be reached.
 - Google Drive integration is optional: configure `GOOGLE_DRIVE_API_KEY` and
   `GOOGLE_DRIVE_FOLDER_ID` for a public folder.
 - Optional `BUY_ME_A_COFFEE_URL` and `KO_FI_URL` enable real support links. When
-  absent, the support page offers feedback, sharing and source exploration.
+  absent, the visible Donations section explains that online donations are not
+  set up yet; feedback, sharing and source exploration remain available.
 - The home-page sketchbook has original web, Android, LEGO and 3D printing SVG
-  scenes. It advances every six seconds, with Play/Pause and manual selection;
-  hover, focus, hidden pages and offscreen state suspend it. Reduced motion starts
-  paused. Project cover/gallery images always come from the project records.
+  scenes. It advances every four seconds. Choosing a subject pauses rotation;
+  clicking anywhere except a subject control resumes it, without a Play button.
+  Hidden/offscreen pages and reduced motion still suspend automatic rotation.
+  The artwork opens the newest real project in its category when available,
+  otherwise the category collection. Project cover/gallery images always come
+  from the project records. One Contact button sits beside the language control;
+  Support remains in the main navigation.
 - Project categories have shareable URLs (for example `/projects?category=3d-printing`).
   Text/tag search and the image viewer run locally in the browser.
 - Motion respects reduced-motion preferences; reveal effects keep server-rendered

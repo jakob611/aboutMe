@@ -7,6 +7,55 @@ Release remains pending development-database verification, actual throttling
 acceptance and production setup.
 The isolated remote Preview is deployed; authentication and R2 checks passed.
 
+## Requested refinements — 26 October 2026
+
+This pass supersedes the historical six-second/Play-button behavior recorded
+below. The sketchbook now advances every four seconds, pauses after a subject
+selection, and resumes on a click anywhere outside the subject controls. There
+is no Play/Pause button. Hover and retained focus do not prevent click-away
+resume; hidden/offscreen pages and reduced motion still suspend automatic
+rotation. Artwork and its caption link to the newest real project per category,
+independent of the three featured cards, with a category collection fallback
+when no matching project is available.
+
+One Contact CTA is restored to the right of the language control. Support stays
+in the main navigation and always contains a Donations section; no payment
+account is configured, so it honestly explains that online donations are not
+available yet. The owner will supply the payment profile later.
+
+- [x] 84 automated tests pass, including four-second boundaries, subject/icon
+  pause, click-away resume, interruption cleanup, newest-per-category SQL ordering
+  and encoded real project destinations.
+- [x] TypeScript passes; lint has zero errors and the same 10 advisories.
+- [x] The supplied Web3Forms public key is configured only in ignored local
+  `.env.local` and the existing branch Preview's Build variables. Cloudflare
+  readback confirms the masked key exists; production variables are unchanged.
+- [x] Final Next 16.4.3/OpenNext 1.20.13 Worker build and Wrangler deploy dry-run
+  pass with 30 assets. The rebuilt local preview is running on port 8787.
+- [x] Actual browser acceptance operated by the lead orchestrator independently
+  of the implementation owners. Three observed automatic intervals were 3.927,
+  4.030 and 4.015 seconds. Subject selection held its scene for 14.5 seconds;
+  clicking the caption resumed rotation even while the pointer remained hovered.
+  No Play/Pause control remains. Clicking Android artwork reached its category
+  fallback, and the single top-right Let's talk CTA opened Contact. Send is
+  enabled after key setup; no message was submitted.
+- [x] At 390px, client and scroll widths both measured 382px. The header retains
+  language → Contact → menu order and one Contact CTA. The pre-existing 320px
+  body minimum still gives a 312px client/320px scroll width at a 320px viewport;
+  the header fits, but this is not claimed as a full 320px overflow pass.
+- [x] Actual English/Slovenian Donations sections remain visible without a
+  payment URL and retain the other support sections. The owner deferred supplying
+  the donation profile. Browser evidence is saved in the ignored local
+  `artifacts/refinements-2026-10-26/root-browser-report.md`,
+  `rotation-evidence.json` and accompanying screenshots. The child tester's IAB
+  was unavailable; source/design critique is independent of the lead UI pass.
+- [ ] Actual Web3Forms provider acceptance and recipient receipt. No real email
+  is sent by this verification pass.
+
+The historical no-key/disabled-form observations below predate this setup.
+Existing database, throttling, private-profile, touch and production release
+requirements remain open.
+
 ## New feature integration — 25–26 October 2026
 
 The source now includes four rotating sketchbook scenes with pause controls,
