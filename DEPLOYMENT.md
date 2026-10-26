@@ -1,5 +1,7 @@
 # Deploy aboutMe to Cloudflare Workers
 
+For the admin dashboard and local preview, see [ADMIN.md](ADMIN.md).
+
 The existing Cloudflare Worker is named **aboutme**. Keep that name: it matches
 `wrangler.jsonc`. GitHub's repository name `aboutMe` does not need to change.
 
@@ -32,8 +34,9 @@ the fictional sample projects as your own work.
 
 ## 3. Create storage for uploads
 
-In Cloudflare, open **R2 Object Storage → Create bucket**. Create a private bucket
-named exactly **aboutme-uploads**. Do not enable public bucket access: the site's
+The existing private production bucket is **aboutme-uploads**; preserve it. For a
+new account only, create that bucket under **R2 Object Storage → Create bucket**.
+Do not enable public bucket access: the site's
 API handles downloads. R2 may ask you to enable the service / enter billing details;
 review what Cloudflare shows before doing so.
 
@@ -44,12 +47,16 @@ The build itself does not access R2, but deployment requires this bucket to exis
 ## 4. Add RUNTIME variables and secrets
 
 Open **Workers & Pages → aboutme → Settings → Runtime variables and secrets**,
-with **Production** selected. This section was empty in the screenshot. Add:
+with **Production** selected. Current account inspection confirms DATABASE_URL
+and UPLOAD_PASSWORD already exist; preserve their values. ADMIN_SESSION_SECRET
+is absent and must be added before releasing the dashboard. Required settings:
 
 | Type | Name | Value |
 | --- | --- | --- |
 | Secret | DATABASE_URL | The new complete Neon connection string |
-| Secret | UPLOAD_PASSWORD | A long, random password you choose for uploads |
+| Secret | UPLOAD_PASSWORD | Keep your existing password; it now signs in to `/admin` as well as managing `/files` |
+| Secret | ADMIN_PASSWORD | Optional fallback if UPLOAD_PASSWORD is absent; not required |
+| Secret | ADMIN_SESSION_SECRET | An independent random signing secret, at least 32 characters |
 | Variable | SITE_OWNER | Jakob Tominc |
 | Variable | SITE_TAGLINE | Your chosen short description |
 | Variable | CONTACT_EMAIL | Your contact email address |
@@ -72,6 +79,7 @@ Under **Settings → Builds** use:
 | Root directory | / |
 | Build command | npm run build:cloudflare |
 | Deploy command | npm run deploy |
+| Preview command (non-production branches) | npx wrangler preview |
 
 The committed package-lock.json selects reproducible npm dependencies. Do not set
 `.next` as a Pages output directory. This setup deploys a Worker.
@@ -93,6 +101,74 @@ setting, choose **Create new token** if available, then save. Cloudflare creates
 a token with the build/deployment permissions. Alternatively select an existing
 valid token for this account that can deploy Workers and access R2. A token problem is a Cloudflare setting, not a Neon
 password issue. Do not commit a Cloudflare token to GitHub.
+
+### Non-production Preview setup
+
+The branch Preview is configured separately from production. `npx wrangler
+preview` is Cloudflare's current default for non-production branches. Keep the
+Preview build command at `npm run build:cloudflare` in both **Previews Base** and
+the existing branch Preview settings: `npm run build` creates Next output only,
+so the later Preview command cannot find `.open-next/worker.js`. See
+[Cloudflare's build commands](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
+
+This differs from this repository's `npm run preview`, which starts the local
+OpenNext/Wrangler emulator. See
+[OpenNext's development workflow](https://opennext.js.org/cloudflare/howtos/dev-deploy).
+
+The active `wrangler.jsonc` now uses the confirmed private non-production bucket
+`aboutme-uploads-preview` and separate rate-limit namespace `710612`:
+
+```jsonc
+{
+  "previews": {
+    "r2_buckets": [
+      {
+        "binding": "UPLOADS",
+        "bucket_name": "aboutme-uploads-preview"
+      }
+    ],
+    "ratelimits": [
+      {
+        "name": "ADMIN_LOGIN_LIMITER",
+        "namespace_id": "710612",
+        "simple": { "limit": 5, "period": 60 }
+      }
+    ]
+  }
+}
+```
+
+In the Worker's Settings, select **Previews Base** in Variables and secrets.
+Dedicated Preview `UPLOAD_PASSWORD` and `ADMIN_SESSION_SECRET` bindings are
+configured. Their local copies remain only in ignored `.dev.vars.preview`.
+`DATABASE_URL` is intentionally absent until a development Neon branch is
+available; do not copy the production connection string. Add public site settings
+needed by the preview as well.
+Production variables/secrets are not inherited. Base secret changes apply to new
+Previews; existing ones need their own update. Follow
+[Preview configuration](https://developers.cloudflare.com/workers/previews/configuration/)
+and keep secret values out of source files.
+
+Do not copy production `WORKER_SELF_REFERENCE` into `previews.services`.
+Cloudflare Preview service bindings currently target a production Worker, not
+its matching Preview. The current [OpenNext config](open-next.config.ts) enables
+no ISR cache or revalidation queue: the installed adapter defaults those
+overrides to `dummy`. Optional generated Durable Object queue code still contains
+a self-reference, but that revalidation implementation is not enabled here.
+The active Preview configuration therefore omits service bindings while
+preserving the production binding. The deployed Preview rendered public pages,
+authenticated, and served a disposable uploaded PNG successfully. If an ISR/revalidation queue
+is enabled later, reevaluate isolation rather than sending those calls to
+production; the platform's `ctx.exports` option still needs adapter compatibility
+evaluation before use here. See
+[Preview resources and service-binding limitations](https://developers.cloudflare.com/workers/previews/resources/).
+
+The branch Preview is available at
+[codex-admin-dashboard-aboutme.tomincjakob.workers.dev](https://codex-admin-dashboard-aboutme.tomincjakob.workers.dev).
+Independent browser and HTTP checks passed authentication, logout, invalid-session
+rejection and an isolated R2 upload/read/delete. See [VERIFICATION.md](VERIFICATION.md)
+for deployment/build evidence and remaining limits. Project CRUD and the contact
+inbox still need the development database. No production deployment was performed.
 
 ## 6. Deploy, verify, then connect the domain
 

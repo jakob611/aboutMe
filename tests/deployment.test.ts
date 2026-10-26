@@ -33,7 +33,9 @@ test("deployment and file storage", async (t) => {
 
   process.env.UPLOAD_PASSWORD = "test-only-password";
   const objects = new Map<string, ArrayBuffer>();
-  globals[contextKey] = { env: { UPLOADS: {
+  globals[contextKey] = { env: {
+    ADMIN_LOGIN_LIMITER: { async limit() { return { success: true }; } },
+    UPLOADS: {
     async put(key: string, value: ArrayBuffer) { objects.set(key, value); },
     async get(key: string) {
       const value = objects.get(key);

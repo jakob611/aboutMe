@@ -1,0 +1,130 @@
+.book {
+  container-type: inline-size;
+}
+
+.artLink:focus-visible {
+  outline: 2px solid var(--color-accent-2);
+  outline-offset: 4px;
+}
+
+.layer,
+.caption {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(28px);
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1), opacity 450ms ease, visibility 650ms;
+}
+
+.layer[data-state="previous"],
+.caption[data-state="previous"] {
+  transform: translateY(-28px);
+}
+
+.layer[data-state="active"],
+.caption[data-state="active"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Normalized path lengths give each selected outline a complete, single draw. */
+.drawOutline {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.layer[data-state="active"] .drawOutline {
+  animation: outlineEntry 1100ms cubic-bezier(0.4, 0, 0.2, 1) 120ms both;
+}
+
+@keyframes outlineEntry {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+
+.book .switcher {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.switcher button {
+  min-height: 40px;
+}
+
+.switcher button[data-workshop-subject="web"] { --subject-accent: #bfd3c7; }
+.switcher button[data-workshop-subject="android"] { --subject-accent: #d0c5df; }
+.switcher button[data-workshop-subject="lego"] { --subject-accent: #ddc9a6; }
+.switcher button[data-workshop-subject="3d-printing"] { --subject-accent: #bfcfd0; }
+
+.book .switcher button[aria-pressed="true"] {
+  color: #151b18;
+  background: var(--subject-accent);
+  border-color: var(--subject-accent);
+  font-weight: 600;
+}
+
+.switcher svg {
+  flex-shrink: 0;
+}
+
+.rotationControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  color: var(--color-fg-muted);
+  font-size: 0.625rem;
+  line-height: 1.5;
+}
+
+.rotationControls > span {
+  display: flex;
+  align-items: center;
+  min-height: 3em;
+}
+
+.reducedHint {
+  display: none !important;
+}
+
+/* Every caption participates in sizing, so changing subjects never moves the page. */
+.book .captions {
+  display: grid;
+  overflow: hidden;
+  padding-top: 1rem;
+}
+
+.caption {
+  grid-area: 1 / 1;
+  min-width: 0;
+  padding-bottom: 0.25rem;
+}
+
+@container (max-width: 380px) {
+  .book .switcher {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawOutline {
+    animation: none !important;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
+  .motionHint {
+    display: none !important;
+  }
+
+  .reducedHint {
+    display: flex !important;
+  }
+
+  .layer,
+  .caption {
+    transform: none !important;
+    transition: none !important;
+  }
+}

@@ -16,17 +16,17 @@ export const translations = {
       donate: "Support",
     },
     home: {
-      heroTitle: "Hi, I build things for the web & beyond.",
+      heroTitle: "Code, screens, and a few bricks.",
       heroSubtitle:
-        "Full-stack developer, Android tinkerer, and LEGO builder. I design fast, beautiful digital products and help others do the same.",
+        "I'm Jakob. This is where I collect my Android and web projects, LEGO builds, and the ideas in between.",
       heroCta: "See my work",
-      heroCta2: "Hire me",
-      featuredTitle: "Featured projects",
-      featuredSubtitle: "A selection of recent apps, builds and experiments.",
+      heroCta2: "Have a project in mind?",
+      featuredTitle: "From the workbench",
+      featuredSubtitle: "A closer look at the things I've been making.",
       viewAll: "View all projects",
-      servicesTitle: "What I can do for you",
+      servicesTitle: "Something we could build together",
       servicesSubtitle:
-        "From idea to production — clean code, modern stack, delivered on time.",
+        "A website, an Android idea, or an existing project that needs some attention. Let's start with what you need.",
       statsDev: "Apps shipped",
       statsYears: "Years coding",
       statsClients: "Happy clients",
@@ -44,7 +44,8 @@ export const translations = {
       visit: "Visit",
       code: "Source",
       backToProjects: "← All projects",
-      noProjects: "No projects yet — check back soon.",
+      noProjects:
+        "I'm putting the project notes together. You can explore my code on GitHub in the meantime.",
       commentsTitle: "Comments",
       commentName: "Your name",
       commentEmail: "Email (optional)",
@@ -57,30 +58,30 @@ export const translations = {
     about: {
       title: "About me",
       subtitle:
-        "A little about the person behind the code, the bricks and the ideas.",
+        "I'm Jakob. I like making things that I can put to use, take apart, and improve.",
       paragraph1:
-        "I'm a developer who loves turning ideas into real, useful products. My day job is building web and mobile apps; my evenings are often spent snapping LEGO bricks together or sketching the next side project.",
+        "This website brings together the things I'm working on: Android apps, websites, and LEGO builds. Some are software, some are physical, and each gives me something different to figure out.",
       paragraph2:
-        "I care about performance, accessibility and delightful details. I believe a great product is 10% code and 90% empathy for the person using it.",
+        "I like the part where an idea starts becoming something you can actually try. A first screen, a working feature, a shape made from a handful of bricks. Then comes the useful question: what would make it better?",
       paragraph3:
-        "When I'm not at the keyboard, you'll find me hiking, brewing coffee, or contributing to open-source projects.",
-      skillsTitle: "Tools & skills",
-      galleryTitle: "A few snapshots",
-      galleryHint: "Drop your own photos into /public/gallery and they will appear here.",
+        "The projects section is where I share that work. If something there connects with an idea of your own, send me a message. A short description of what you have in mind is a good place to start.",
+      skillsTitle: "Tools in the workshop",
+      galleryTitle: "Away from the screen",
+      galleryHint: "A few details from the physical side of making things.",
     },
     services: {
       title: "Services",
       subtitle:
-        "Need a website, an app or a custom piece of software? Here's how I can help.",
+        "Android and web development, ongoing maintenance and support, AI automation, and 3D printing. Start with a new idea or improve what you already have.",
       startingAt: "from",
       getQuote: "Request a quote",
-      whyTitle: "Why work with me",
-      why1Title: "Fast delivery",
-      why1: "Modern stack, proven workflow, shipped in weeks — not months.",
-      why2Title: "Pixel-perfect",
-      why2: "Design and engineering happen together. No hand-off gaps.",
-      why3Title: "Built to last",
-      why3: "Clean code, tests, docs. You own everything.",
+      whyTitle: "A straightforward way to start",
+      why1Title: "Talk through the idea",
+      why1: "What should it do, who is it for, and what already exists? A short outline is enough to begin.",
+      why2Title: "Agree on a useful first step",
+      why2: "Decide what belongs in the first version and what can wait. Scope, timing and cost should be clear before work starts.",
+      why3Title: "Build, try, and improve",
+      why3: "Try a working version, agree on the handover, and plan any ongoing maintenance or support you need.",
     },
     files: {
       title: "Files",
@@ -106,40 +107,39 @@ export const translations = {
       driveTitle: "From my Google Drive",
       driveSubtitle:
         "Curated files synced from a specific Google Drive folder.",
-      driveNotConfigured:
-        "Google Drive sync is not configured yet. Add GOOGLE_DRIVE_API_KEY and GOOGLE_DRIVE_FOLDER_ID in .env.",
+      driveNotConfigured: "There are no shared Drive files here yet.",
       driveOpen: "Open in Drive",
     },
     contact: {
-      title: "Get in touch",
+      title: "Let's talk about it.",
       subtitle:
-        "Have a project in mind, or just want to say hi? Drop a message.",
+        "A project idea, a question about something I've made, or just a hello. It all starts here.",
       name: "Name",
       email: "Email",
       subject: "Subject",
       message: "Message",
       send: "Send message",
       sending: "Sending…",
-      success: "Thanks! I'll get back to you soon.",
+      success: "Message sent. Thanks for getting in touch.",
       error: "Something went wrong. Please try again.",
     },
     donate: {
       title: "Support my work",
       subtitle:
-        "If any of my projects or open-source work helped you, consider buying me a coffee.",
+        "Trying a project, sharing an idea, or pointing out a bug all help move things along.",
       coffee: "Buy me a coffee",
       coffeeHint:
-        "Connect your Buy Me a Coffee / Ko-fi link in /src/lib/site.ts",
-      thanks: "Every bit helps and means a lot — thank you!",
+        "Only give if you'd like to. Useful feedback is always welcome too.",
+      thanks: "Thanks for taking an interest in what I'm making.",
       ossTitle: "Open source",
       ossSubtitle:
-        "A place to highlight open-source projects you can star, contribute to, or sponsor.",
+        "A look at the code behind the projects. Questions, suggestions and contributions are welcome.",
       star: "Star on GitHub",
     },
     footer: {
-      tagline: "Built with care. Hosted on Cloudflare.",
+      tagline: "Android, web and LEGO. One project at a time.",
       rights: "All rights reserved.",
-      builtWith: "Built with Next.js, Tailwind and ❤️",
+      builtWith: "Made by Jakob Tominc",
     },
     common: {
       readMore: "Read more",
@@ -167,17 +167,17 @@ export const translations = {
       donate: "Podpora",
     },
     home: {
-      heroTitle: "Živjo, gradim stvari za splet in širše.",
+      heroTitle: "Koda, zasloni in nekaj kock.",
       heroSubtitle:
-        "Full-stack razvijalec, Android eksperimentator in LEGO graditelj. Oblikujem hitre, lepe digitalne izdelke in pri tem pomagam tudi drugim.",
+        "Sem Jakob. Tukaj zbiram svoje Android in spletne projekte, LEGO stvaritve ter ideje, ki nastajajo vmes.",
       heroCta: "Poglej moje delo",
-      heroCta2: "Najemite me",
-      featuredTitle: "Izpostavljeni projekti",
-      featuredSubtitle: "Izbor nedavnih aplikacij, gradenj in eksperimentov.",
+      heroCta2: "Imaš idejo za projekt?",
+      featuredTitle: "Z delovne mize",
+      featuredSubtitle: "Podrobnejši pogled na stvari, ki jih ustvarjam.",
       viewAll: "Vsi projekti",
-      servicesTitle: "Kaj lahko naredim zate",
+      servicesTitle: "Kaj lahko ustvariva skupaj",
       servicesSubtitle:
-        "Od ideje do produkcije — čista koda, moderen sklad, pravočasno.",
+        "Spletna stran, ideja za Android aplikacijo ali obstoječi projekt, ki potrebuje nekaj pozornosti. Začniva pri tem, kar potrebuješ.",
       statsDev: "Aplikacij",
       statsYears: "Let kodiranja",
       statsClients: "Zadovoljnih strank",
@@ -195,7 +195,8 @@ export const translations = {
       visit: "Obišči",
       code: "Koda",
       backToProjects: "← Vsi projekti",
-      noProjects: "Še ni projektov — kmalu.",
+      noProjects:
+        "Zapiske o projektih še pripravljam. Medtem lahko mojo kodo raziščeš na GitHubu.",
       commentsTitle: "Komentarji",
       commentName: "Tvoje ime",
       commentEmail: "E-mail (neobvezno)",
@@ -208,30 +209,30 @@ export const translations = {
     about: {
       title: "O meni",
       subtitle:
-        "Nekaj besed o osebi za kodo, kockami in idejami.",
+        "Sem Jakob. Rad ustvarjam stvari, ki jih lahko uporabim, razstavim in izboljšam.",
       paragraph1:
-        "Sem razvijalec, ki rad spreminja ideje v uporabne izdelke. Podnevi gradim spletne in mobilne aplikacije, zvečer pa pogosto sestavljam LEGO kocke ali rišem naslednji stranski projekt.",
+        "Na tej strani zbiram stvari, s katerimi se ukvarjam: Android aplikacije, spletne strani in LEGO stvaritve. Nekatere živijo na zaslonu, druge na mizi. Pri vsaki se najde nekaj novega za razvozlati.",
       paragraph2:
-        "Pomembne so mi zmogljivost, dostopnost in prijetne malenkosti. Verjamem, da je dober izdelek 10 % kode in 90 % empatije do uporabnika.",
+        "Všeč mi je trenutek, ko ideja postane nekaj, kar lahko preizkusiš. Prvi zaslon, delujoča funkcija ali oblika iz nekaj kock. Potem pride uporabno vprašanje: kako bi bilo lahko še boljše?",
       paragraph3:
-        "Ko nisem za tipkovnico, me najdeš v hribih, pri kuhanju kave ali med prispevanjem k odprtokodnim projektom.",
-      skillsTitle: "Orodja in veščine",
-      galleryTitle: "Nekaj utrinkov",
-      galleryHint: "Svoje fotografije dodaj v /public/gallery in prikazale se bodo tukaj.",
+        "V razdelku s projekti delim to delo. Če se kaj od tega poveže s tvojo idejo, mi piši. Za začetek zadošča kratek opis tega, kar imaš v mislih.",
+      skillsTitle: "Orodja na delovni mizi",
+      galleryTitle: "Stran od zaslona",
+      galleryHint: "Nekaj podrobnosti s fizične strani ustvarjanja.",
     },
     services: {
       title: "Storitve",
       subtitle:
-        "Potrebuješ spletno stran, aplikacijo ali program po meri? Tukaj lahko pomagam.",
+        "Android in spletni razvoj, stalno vzdrževanje in podpora, AI avtomatizacija ter 3D tisk. Začniva pri novi ideji ali izboljšajva obstoječo rešitev.",
       startingAt: "od",
       getQuote: "Povpraševanje",
-      whyTitle: "Zakaj sodelovati z mano",
-      why1Title: "Hitra izvedba",
-      why1: "Moderen sklad, preverjen proces, izdelek v tednih — ne mesecih.",
-      why2Title: "Do pikice natančno",
-      why2: "Oblikovanje in razvoj gresta z roko v roki. Brez vrzeli.",
-      why3Title: "Narejeno za dlje časa",
-      why3: "Čista koda, testi, dokumentacija. Vse je tvoje.",
+      whyTitle: "Preprost začetek sodelovanja",
+      why1Title: "Pogovor o ideji",
+      why1: "Kaj naj naredi, komu je namenjeno in kaj že obstaja? Za začetek zadošča kratek opis.",
+      why2Title: "Dogovor o prvem koraku",
+      why2: "Določiva, kaj sodi v prvo različico in kaj lahko počaka. Obseg, čas in cena morajo biti jasni pred začetkom dela.",
+      why3Title: "Izdelava, preizkus in izboljšave",
+      why3: "Preizkusi delujočo različico, nato se dogovoriva o predaji in morebitnem nadaljnjem vzdrževanju ali podpori.",
     },
     files: {
       title: "Datoteke",
@@ -243,8 +244,7 @@ export const translations = {
       size: "Velikost",
       added: "Dodano",
       uploadTitle: "Nalaganje (zaščiteno)",
-      uploadHint:
-        "Za nalaganje je potrebno geslo. Prenosi so odprti za vse.",
+      uploadHint: "Za nalaganje je potrebno geslo. Prenosi so odprti za vse.",
       password: "Geslo",
       unlock: "Odkleni nalagalnik",
       unlocked: "Nalagalnik odklenjen",
@@ -256,41 +256,40 @@ export const translations = {
       uploadSuccess: "Datoteka naložena!",
       uploadError: "Nalaganje ni uspelo.",
       driveTitle: "Iz mojega Google Drive",
-      driveSubtitle:
-        "Izbrane datoteke iz sinhronizirane mape na Google Drive.",
-      driveNotConfigured:
-        "Sinhronizacija z Google Drive še ni nastavljena. Dodaj GOOGLE_DRIVE_API_KEY in GOOGLE_DRIVE_FOLDER_ID v .env.",
+      driveSubtitle: "Izbrane datoteke iz sinhronizirane mape na Google Drive.",
+      driveNotConfigured: "Tukaj še ni deljenih datotek iz Google Drive.",
       driveOpen: "Odpri v Drive",
     },
     contact: {
-      title: "Stopi v stik",
-      subtitle: "Imaš idejo ali samo želiš pozdraviti? Pusti sporočilo.",
+      title: "Pogovoriva se.",
+      subtitle:
+        "Ideja za projekt, vprašanje o mojem delu ali samo pozdrav. Tukaj je prostor za vse to.",
       name: "Ime",
       email: "E-mail",
       subject: "Zadeva",
       message: "Sporočilo",
       send: "Pošlji sporočilo",
       sending: "Pošiljam…",
-      success: "Hvala! Kmalu se oglasim.",
+      success: "Sporočilo je poslano. Hvala, da si se oglasil.",
       error: "Nekaj je šlo narobe. Poskusi znova.",
     },
     donate: {
       title: "Podpri moje delo",
       subtitle:
-        "Če ti je kateri od projektov ali odprtokodnih prispevkov pomagal, me časti s kavo.",
+        "Preizkus projekta, nova ideja ali opozorilo na napako pomagajo pri naslednjem koraku.",
       coffee: "Časti me s kavo",
       coffeeHint:
-        "Svojo Buy Me a Coffee / Ko-fi povezavo nastavi v /src/lib/site.ts",
-      thanks: "Vsak prispevek pomaga in veliko pomeni — hvala!",
+        "Prispevaj le, če želiš. Vedno je dobrodošla tudi uporabna povratna informacija.",
+      thanks: "Hvala za zanimanje za stvari, ki jih ustvarjam.",
       ossTitle: "Odprta koda",
       ossSubtitle:
-        "Prostor za izpostavitev odprtokodnih projektov, ki jim lahko daš zvezdico ali prispevaš.",
+        "Pogled v kodo za projekti. Vprašanja, predlogi in prispevki so dobrodošli.",
       star: "Zvezdica na GitHubu",
     },
     footer: {
-      tagline: "Zgrajeno s skrbnostjo. Gostuje na Cloudflare.",
+      tagline: "Android, splet in LEGO. Projekt za projektom.",
       rights: "Vse pravice pridržane.",
-      builtWith: "Zgrajeno z Next.js, Tailwind in ❤️",
+      builtWith: "Ustvaril Jakob Tominc",
     },
     common: {
       readMore: "Preberi več",
@@ -310,15 +309,128 @@ export const translations = {
 
 export type Translation = {
   brand: string;
-  nav: { home: string; projects: string; about: string; services: string; files: string; contact: string; donate: string };
-  home: { heroTitle: string; heroSubtitle: string; heroCta: string; heroCta2: string; featuredTitle: string; featuredSubtitle: string; viewAll: string; servicesTitle: string; servicesSubtitle: string; statsDev: string; statsYears: string; statsClients: string; statsCoffee: string };
-  projects: { title: string; subtitle: string; filterAll: string; filterAndroid: string; filterLego: string; filterWeb: string; filterOther: string; visit: string; code: string; backToProjects: string; noProjects: string; commentsTitle: string; commentName: string; commentEmail: string; commentBody: string; commentSubmit: string; commentPosting: string; commentSuccess: string; commentError: string };
-  about: { title: string; subtitle: string; paragraph1: string; paragraph2: string; paragraph3: string; skillsTitle: string; galleryTitle: string; galleryHint: string };
-  services: { title: string; subtitle: string; startingAt: string; getQuote: string; whyTitle: string; why1Title: string; why1: string; why2Title: string; why2: string; why3Title: string; why3: string };
-  files: { title: string; subtitle: string; downloadsTitle: string; noFiles: string; download: string; size: string; added: string; uploadTitle: string; uploadHint: string; password: string; unlock: string; unlocked: string; wrongPassword: string; selectFile: string; description: string; upload: string; uploading: string; uploadSuccess: string; uploadError: string; driveTitle: string; driveSubtitle: string; driveNotConfigured: string; driveOpen: string };
-  contact: { title: string; subtitle: string; name: string; email: string; subject: string; message: string; send: string; sending: string; success: string; error: string };
-  donate: { title: string; subtitle: string; coffee: string; coffeeHint: string; thanks: string; ossTitle: string; ossSubtitle: string; star: string };
+  nav: {
+    home: string;
+    projects: string;
+    about: string;
+    services: string;
+    files: string;
+    contact: string;
+    donate: string;
+  };
+  home: {
+    heroTitle: string;
+    heroSubtitle: string;
+    heroCta: string;
+    heroCta2: string;
+    featuredTitle: string;
+    featuredSubtitle: string;
+    viewAll: string;
+    servicesTitle: string;
+    servicesSubtitle: string;
+    statsDev: string;
+    statsYears: string;
+    statsClients: string;
+    statsCoffee: string;
+  };
+  projects: {
+    title: string;
+    subtitle: string;
+    filterAll: string;
+    filterAndroid: string;
+    filterLego: string;
+    filterWeb: string;
+    filterOther: string;
+    visit: string;
+    code: string;
+    backToProjects: string;
+    noProjects: string;
+    commentsTitle: string;
+    commentName: string;
+    commentEmail: string;
+    commentBody: string;
+    commentSubmit: string;
+    commentPosting: string;
+    commentSuccess: string;
+    commentError: string;
+  };
+  about: {
+    title: string;
+    subtitle: string;
+    paragraph1: string;
+    paragraph2: string;
+    paragraph3: string;
+    skillsTitle: string;
+    galleryTitle: string;
+    galleryHint: string;
+  };
+  services: {
+    title: string;
+    subtitle: string;
+    startingAt: string;
+    getQuote: string;
+    whyTitle: string;
+    why1Title: string;
+    why1: string;
+    why2Title: string;
+    why2: string;
+    why3Title: string;
+    why3: string;
+  };
+  files: {
+    title: string;
+    subtitle: string;
+    downloadsTitle: string;
+    noFiles: string;
+    download: string;
+    size: string;
+    added: string;
+    uploadTitle: string;
+    uploadHint: string;
+    password: string;
+    unlock: string;
+    unlocked: string;
+    wrongPassword: string;
+    selectFile: string;
+    description: string;
+    upload: string;
+    uploading: string;
+    uploadSuccess: string;
+    uploadError: string;
+    driveTitle: string;
+    driveSubtitle: string;
+    driveNotConfigured: string;
+    driveOpen: string;
+  };
+  contact: {
+    title: string;
+    subtitle: string;
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    send: string;
+    sending: string;
+    success: string;
+    error: string;
+  };
+  donate: {
+    title: string;
+    subtitle: string;
+    coffee: string;
+    coffeeHint: string;
+    thanks: string;
+    ossTitle: string;
+    ossSubtitle: string;
+    star: string;
+  };
   footer: { tagline: string; rights: string; builtWith: string };
-  common: { readMore: string; learnMore: string; loading: string; switchLang: string; backHome: string };
+  common: {
+    readMore: string;
+    learnMore: string;
+    loading: string;
+    switchLang: string;
+    backHome: string;
+  };
   categories: { android: string; lego: string; web: string; other: string };
 };

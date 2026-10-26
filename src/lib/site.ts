@@ -3,35 +3,35 @@
  * Tweak these to personalise the whole site without digging into pages.
  */
 export const siteConfig = {
-  name: process.env.SITE_OWNER ?? "Your Name",
-  tagline: process.env.SITE_TAGLINE ?? "Developer · Creator · Builder",
-  email: process.env.CONTACT_EMAIL ?? "hello@example.com",
-  url: (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(
+  name: process.env.SITE_OWNER || "Jakob Tominc",
+  tagline: process.env.SITE_TAGLINE || "Android, web, LEGO & 3D printing projects",
+  email: process.env.CONTACT_EMAIL || "",
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://jakobtominc.com").replace(
     /\/$/,
-    ""
+    "",
   ),
 
   // Social / donation links. Fill them in as you set them up.
   socials: {
-    github: "https://github.com/",
-    linkedin: "https://linkedin.com/",
-    twitter: "https://twitter.com/",
-    instagram: "https://instagram.com/",
+    github: "https://github.com/jakob611",
+    linkedin: "",
+    twitter: "",
+    instagram: "",
   },
 
   // Donation / support page
-  buyMeACoffee: "https://www.buymeacoffee.com/",
-  koFi: "", // e.g. https://ko-fi.com/you
+  buyMeACoffee: process.env.BUY_ME_A_COFFEE_URL || "",
+  koFi: process.env.KO_FI_URL || "https://ko-fi.com/jakobtominc",
 
   // Highlighted open-source projects shown on the /donate page
   openSource: [
     {
-      name: "your-open-source-repo",
+      name: "aboutMe",
       descriptionEn:
-        "A small utility you released to help other developers ship faster.",
+        "The source behind this website: projects, files and a place to get in touch.",
       descriptionSl:
-        "Majhno orodje, ki si ga objavil, da drugi razvijalci hitreje gradijo.",
-      url: "https://github.com/",
+        "Izvorna koda te spletne strani: projekti, datoteke in prostor za stik.",
+      url: "https://github.com/jakob611/aboutMe",
     },
   ],
 
@@ -40,24 +40,13 @@ export const siteConfig = {
     "Next.js",
     "React",
     "TypeScript",
-    "Node.js",
     "PostgreSQL",
     "Drizzle ORM",
     "Tailwind CSS",
     "Android / Kotlin",
     "Firebase",
-    "Docker",
     "Cloudflare",
-    "UI / UX",
   ],
-
-  // Stats shown on the home page hero strip
-  stats: {
-    apps: 12,
-    years: 8,
-    clients: 24,
-    coffee: 1430,
-  },
 } as const;
 
 export type SiteConfig = typeof siteConfig;

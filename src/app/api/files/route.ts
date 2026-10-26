@@ -3,8 +3,17 @@ import { getUploads } from "@/lib/storage";
 import { getDb } from "@/db";
 import { files } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { allowAdminLogin, passwordsMatch } from "@/lib/admin-auth";
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+
+async function checkPasswordRateLimit(req: Request) {
+  if (await allowAdminLogin(req)) return null;
+  return NextResponse.json(
+    { error: "Too many password attempts. Try again in a minute." },
+    { status: 429, headers: { "Retry-After": "60", "Cache-Control": "private, no-store" } }
+  );
+}
 
 // GET /api/files — public list of files for download
 export async function GET() {
@@ -26,10 +35,14 @@ export async function GET() {
 // POST /api/files — password-protected upload
 export async function POST(req: NextRequest) {
   try {
+    const limited = await checkPasswordRateLimit(req);
+    if (limited) return limited;
     const form = await req.formData();
-    const password = (form.get("password") as string) ?? "";
-    const file = form.get("file") as File | null;
-    const description = (form.get("description") as string) ?? "";
+    const passwordField = form.get("password");
+    const password = typeof passwordField === "string" ? passwordField : "";
+    const file = form.get("file");
+    const descriptionField = form.get("description");
+    const description = typeof descriptionField === "string" ? descriptionField : "";
 
     const expected = process.env.UPLOAD_PASSWORD ?? "";
     if (!expected) {
@@ -38,13 +51,13 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-    if (password !== expected) {
+    if (!(await passwordsMatch(password, expected))) {
       return NextResponse.json(
         { error: "Wrong password" },
         { status: 401 }
       );
     }
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
     if (file.size > MAX_SIZE) {
@@ -92,11 +105,13 @@ export async function POST(req: NextRequest) {
 // DELETE /api/files?id=... — password is sent in the Authorization header.
 export async function DELETE(req: NextRequest) {
   try {
+    const limited = await checkPasswordRateLimit(req);
+    if (limited) return limited;
     const url = new URL(req.url);
     const id = url.searchParams.get("id");
     const password = req.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
     const expected = process.env.UPLOAD_PASSWORD ?? "";
-    if (!expected || password !== expected) {
+    if (!(await passwordsMatch(password, expected))) {
       return NextResponse.json({ error: "Wrong password" }, { status: 401 });
     }
     if (!id) {

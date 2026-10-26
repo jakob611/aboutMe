@@ -1,56 +1,39 @@
 "use client";
 
-import { Suspense, useTransition } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Languages } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
+import { languageNavigation } from "@/lib/language-preference";
+import { LANGUAGE_CHANGE_EVENT } from "@/lib/contact-draft";
 
-type Props = {
-  lang: Lang;
-  label: string;
-};
+type Props = { lang: Lang; label: string };
 
-export function LanguageSwitcher(props: Props) {
-  return (
-    <Suspense
-      fallback={
-        <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm border border-white/10">
-          <Languages size={15} className="opacity-80" />
-          <span className="font-medium">{props.label}</span>
-        </span>
-      }
-    >
-      <LanguageSwitcherInner {...props} />
-    </Suspense>
-  );
-}
-
-function LanguageSwitcherInner({ lang, label }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [pending, startTransition] = useTransition();
-
+export function LanguageSwitcher({ lang, label }: Props) {
+  const next: Lang = lang === "en" ? "sl" : "en";
   const toggle = () => {
-    const next: Lang = lang === "en" ? "sl" : "en";
-    const params = new URLSearchParams(searchParams?.toString());
-    params.set("lang", next);
-    startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-      router.refresh();
-    });
+    const target = languageNavigation(window.location.href, next);
+    window.dispatchEvent(new Event(LANGUAGE_CHANGE_EVENT));
+    document.cookie = target.cookie;
+    // A client-router query change retains the root layout, including its old
+    // translated header/footer and lang prop. Reload the document on a deliberate
+    // language change so layout, page content, metadata and <html lang> agree.
+    // No local pending/disabled state: browser Back may restore this document.
+    window.location.assign(target.href);
   };
 
   return (
     <button
+      type="button"
       onClick={toggle}
-      disabled={pending}
-      aria-label={label}
+      aria-label={
+        lang === "sl"
+          ? `Preklopi jezik: ${label}`
+          : `Switch language to ${label}`
+      }
       title={label}
-      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm border border-white/10 hover:bg-white/5 transition-colors disabled:opacity-60"
+      className="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-fg)] disabled:opacity-50"
     >
-      <Languages size={15} className="opacity-80" />
-      <span className="font-medium">{label}</span>
+      <Languages aria-hidden="true" size={14} />
+      <span>{next.toUpperCase()}</span>
     </button>
   );
 }

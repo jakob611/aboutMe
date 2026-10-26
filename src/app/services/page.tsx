@@ -1,195 +1,325 @@
 import Link from "next/link";
-import { Code2, Cpu, Palette, Rocket, Shield, Sparkles, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Code2,
+  Palette,
+  Smartphone,
+  Workflow,
+  Box,
+} from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { getLang } from "@/lib/lang";
-import { translations } from "@/lib/i18n";
+import { translations, type Lang } from "@/lib/i18n";
+import {
+  coreServiceIdFromSlug,
+  serviceOfferings,
+  servicePageCopy,
+  type ServiceOffering,
+} from "@/lib/service-offerings";
 import { getDb } from "@/db";
 import { services } from "@/db/schema";
 import { asc } from "drizzle-orm";
 import type { Metadata } from "next";
+import { serviceInquiryHref } from "@/lib/inquiry-topics";
+
+type ServiceRow = typeof services.$inferSelect;
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
-  const t = translations[lang];
-  return { title: t.services.title, description: t.services.subtitle };
+  return {
+    title: translations[lang].services.title,
+    description: translations[lang].services.subtitle,
+  };
 }
 
 export default async function ServicesPage() {
   const lang = await getLang();
   const t = translations[lang];
-
-  const servicesList = await getDb()
-    .select()
-    .from(services)
-    .orderBy(asc(services.orderIndex));
-
-  const iconMap: Record<string, React.ReactNode> = {
-    web: <Code2 size={26} />,
-    app: <Cpu size={26} />,
-    design: <Palette size={26} />,
-    sparkles: <Sparkles size={26} />,
-    zap: <Zap size={26} />,
-  };
+  const copy = servicePageCopy[lang];
+  let servicesList: ServiceRow[] = [];
+  try {
+    servicesList = await getDb()
+      .select()
+      .from(services)
+      .orderBy(asc(services.orderIndex));
+  } catch {
+    console.error(
+      "Optional service details could not be loaded; core services remain available.",
+    );
+  }
+  const additionalServices = servicesList.filter(
+    (service) => !coreServiceIdFromSlug(service.slug),
+  );
+  const steps = [
+    { title: t.services.why1Title, detail: t.services.why1 },
+    { title: t.services.why2Title, detail: t.services.why2 },
+    { title: t.services.why3Title, detail: t.services.why3 },
+  ];
 
   return (
-    <section className="pt-16 sm:pt-24 pb-20">
+    <section className="pt-12 sm:pt-20 pb-24">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <Reveal>
-          <div className="max-w-3xl">
-            <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
-              {t.services.title}
-            </h1>
-            <p className="mt-4 text-lg text-[color:var(--color-fg-muted)]">
-              {t.services.subtitle}
-            </p>
-          </div>
+          <p className="section-label mb-6">
+            {lang === "sl" ? "Sodelovanje" : "Working together"}
+            <span className="text-[color:var(--color-accent-2)]">/ 03</span>
+          </p>
+          <h1 className="display-title max-w-4xl">
+            {t.services.title}
+            <span className="text-[color:var(--color-accent-2)]">.</span>
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg sm:text-xl leading-relaxed text-[color:var(--color-fg-muted)]">
+            {t.services.subtitle}
+          </p>
         </Reveal>
 
-        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {servicesList.length === 0
-            ? // Placeholder services when DB is empty
-              [
-                {
-                  slug: "web",
-                  icon: "web",
-                  titleEn: "Websites & Web Apps",
-                  titleSl: "Spletne strani in aplikacije",
-                  descriptionEn:
-                    "Fast, accessible, SEO-friendly sites built with Next.js, Tailwind and modern tooling.",
-                  descriptionSl:
-                    "Hitre, dostopne in SEO-prijazne strani z Next.js, Tailwind in modernim orodjem.",
-                  priceFrom: "€800",
-                },
-                {
-                  slug: "app",
-                  icon: "app",
-                  titleEn: "Mobile Apps",
-                  titleSl: "Mobilne aplikacije",
-                  descriptionEn:
-                    "Native and cross-platform Android apps — from prototype to Play Store.",
-                  descriptionSl:
-                    "Native in cross-platform Android aplikacije — od prototipa do Play Store.",
-                  priceFrom: "€1500",
-                },
-                {
-                  slug: "design",
-                  icon: "design",
-                  titleEn: "UI / UX Design",
-                  titleSl: "UI / UX oblikovanje",
-                  descriptionEn:
-                    "Beautiful interfaces, thoughtful flows, and design systems that scale.",
-                  descriptionSl:
-                    "Lepi vmesniki, premišljeni tokovi in dizajn sistemi, ki rastejo s tabo.",
-                  priceFrom: "€500",
-                },
-              ].map((s, i) => (
-                <Reveal key={s.slug} delay={i * 0.05}>
-                  <ServiceCard lang={lang} service={s} icon={iconMap[s.icon] ?? <Code2 size={26} />} />
-                </Reveal>
-              ))
-            : servicesList.map((s, i) => (
-                <Reveal key={s.id} delay={i * 0.05}>
-                  <ServiceCard
-                    lang={lang}
-                    service={s}
-                    icon={iconMap[s.icon] ?? <Code2 size={26} />}
-                  />
-                </Reveal>
-              ))}
-        </div>
-
-        {/* Why work with me */}
-        <div className="mt-20">
+        <section
+          aria-labelledby="core-services-title"
+          className="mt-14 sm:mt-20"
+        >
           <Reveal>
-            <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10">
-              {t.services.whyTitle}
+            <h2 id="core-services-title" className="section-label mb-6">
+              {copy.coreLabel}
             </h2>
           </Reveal>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Zap size={24} className="text-[#f472b6]" />,
-                title: t.services.why1Title,
-                desc: t.services.why1,
-              },
-              {
-                icon: <Sparkles size={24} className="text-[#22d3ee]" />,
-                title: t.services.why2Title,
-                desc: t.services.why2,
-              },
-              {
-                icon: <Shield size={24} className="text-emerald-400" />,
-                title: t.services.why3Title,
-                desc: t.services.why3,
-              },
-            ].map((w, i) => (
-              <Reveal key={i} delay={i * 0.05}>
-                <div className="card p-6 h-full">
-                  <div className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-                    {w.icon}
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">{w.title}</h3>
-                  <p className="text-sm text-[color:var(--color-fg-muted)] leading-relaxed">
-                    {w.desc}
-                  </p>
-                </div>
+          <div className="grid gap-5 md:grid-cols-2">
+            {serviceOfferings[lang].map((offering, index) => (
+              <Reveal key={offering.id} delay={index * 0.05}>
+                <CoreServiceCard
+                  lang={lang}
+                  offering={offering}
+                  index={index + 1}
+                  details={servicesList.filter(
+                    (service) =>
+                      coreServiceIdFromSlug(service.slug) === offering.id,
+                  )}
+                />
               </Reveal>
             ))}
           </div>
-
           <Reveal>
-            <div className="mt-12 text-center">
-              <Link href="/contact" className="btn-primary">
-                {t.services.getQuote} <Rocket size={15} />
-              </Link>
+            <p className="max-w-3xl mt-7 text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
+              {copy.scope}
+            </p>
+          </Reveal>
+        </section>
+
+        {additionalServices.length > 0 && (
+          <section
+            className="section-rule mt-16 sm:mt-20 pt-8"
+            aria-labelledby="additional-services-title"
+          >
+            <Reveal>
+              <h2
+                id="additional-services-title"
+                className="text-3xl tracking-tight"
+              >
+                {copy.additionalTitle}
+              </h2>
+              <p className="mt-3 text-[color:var(--color-fg-muted)]">
+                {copy.additionalIntro}
+              </p>
+            </Reveal>
+            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {additionalServices.map((service, index) => (
+                <Reveal key={service.id} delay={index * 0.04}>
+                  <AdditionalServiceCard lang={lang} service={service} />
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section
+          aria-labelledby="working-together-title"
+          className="section-rule mt-20 sm:mt-24 pt-8"
+        >
+          <Reveal>
+            <div className="flex flex-wrap items-end justify-between gap-5 mb-10">
+              <h2
+                id="working-together-title"
+                className="text-3xl sm:text-4xl tracking-tight max-w-xl"
+              >
+                {t.services.whyTitle}
+              </h2>
+              <span className="section-label">{copy.workingLabel}</span>
             </div>
           </Reveal>
-        </div>
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            {steps.map((step, index) => (
+              <Reveal key={step.title} delay={index * 0.05}>
+                <span className="font-mono text-sm text-[color:var(--color-accent-2)]">
+                  0{index + 1}
+                </span>
+                <h3 className="text-xl tracking-tight mt-4 mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-[color:var(--color-fg-muted)] leading-[1.8]">
+                  {step.detail}
+                </p>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        <Reveal>
+          <div className="section-rule mt-14 sm:mt-16 pt-8 flex flex-wrap justify-between gap-6 items-center">
+            <p className="max-w-2xl text-[color:var(--color-fg-muted)] leading-relaxed">
+              {copy.closing}
+            </p>
+            <Link href="/contact" className="btn-primary">
+              {t.services.getQuote}
+              <ArrowRight size={17} />
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
 }
 
-function ServiceCard({
+function CoreServiceCard({
+  lang,
+  offering,
+  index,
+  details,
+}: {
+  lang: Lang;
+  offering: ServiceOffering;
+  index: number;
+  details: ServiceRow[];
+}) {
+  const Icon = { android: Smartphone, web: Code2, automation: Workflow, printing: Box }[
+    offering.id
+  ];
+  const copy = servicePageCopy[lang];
+  return (
+    <article
+      id={offering.id}
+      aria-labelledby={offering.id + "-title"}
+      className="interactive-card surface-panel rounded-2xl p-6 sm:p-7 h-full flex flex-col"
+    >
+      <div className="flex items-center justify-between mb-7">
+        <Icon
+          size={25}
+          strokeWidth={1.5}
+          className="text-[color:var(--color-accent-2)]"
+          aria-hidden="true"
+        />
+        <span className="font-mono text-xs text-[color:var(--color-fg-muted)]">
+          0{index}
+        </span>
+      </div>
+      <h3
+        id={offering.id + "-title"}
+        className="text-2xl tracking-tight leading-tight mb-4"
+      >
+        {offering.title}
+      </h3>
+      <p className="text-[.9375rem] leading-[1.8] text-[color:var(--color-fg-muted)]">
+        {offering.description}
+      </p>
+      <div className="mt-7">
+        <p className="section-label mb-4">{copy.includes}</p>
+        <ul className="space-y-3 text-sm leading-relaxed">
+          {offering.includes.map((item) => (
+            <li key={item} className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-[.6em] h-1 w-1 rounded-full bg-[color:var(--color-accent-2)] shrink-0"
+              />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="mt-7 border-t border-white/10 pt-5">
+        <p className="text-xs text-[color:var(--color-fg-muted)] mb-2">
+          {copy.example}
+        </p>
+        <p className="text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
+          {offering.example}
+        </p>
+      </div>
+      {details.length > 0 && (
+        <details className="mt-5 border-t border-white/10 pt-4 text-sm">
+          <summary className="cursor-pointer text-[color:var(--color-fg)] py-1">
+            {details.some((detail) => detail.priceFrom)
+              ? copy.detailsPricing
+              : copy.details}
+          </summary>
+          <div className="mt-4 space-y-5">
+            {details.map((detail) => (
+              <div key={detail.id}>
+                <h4 className="font-medium mb-2">
+                  {lang === "sl" ? detail.titleSl : detail.titleEn}
+                </h4>
+                <p className="text-[color:var(--color-fg-muted)] leading-relaxed">
+                  {lang === "sl" ? detail.descriptionSl : detail.descriptionEn}
+                </p>
+                {detail.priceFrom && (
+                  <p className="mt-3">
+                    {translations[lang].services.startingAt} {detail.priceFrom}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+      <div className="mt-auto pt-7 flex flex-col items-start gap-3">
+        <Link
+          href={serviceInquiryHref(offering.id)}
+          className="link-arrow text-sm"
+        >
+          {offering.inquiry}
+          <ArrowUpRight size={16} />
+        </Link>
+        {offering.id !== "printing" && <Link href={serviceInquiryHref(offering.id, true)} className="link-arrow text-sm">
+          {copy.supportInquiry}
+          <ArrowUpRight size={16} />
+        </Link>}
+      </div>
+    </article>
+  );
+}
+
+function AdditionalServiceCard({
   lang,
   service,
-  icon,
 }: {
-  lang: "en" | "sl";
-  service: {
-    titleEn: string;
-    titleSl: string;
-    descriptionEn: string;
-    descriptionSl: string;
-    priceFrom?: string | null;
-  };
-  icon: React.ReactNode;
+  lang: Lang;
+  service: ServiceRow;
 }) {
-  const t = translations[lang].services;
   const title = lang === "sl" ? service.titleSl : service.titleEn;
-  const desc = lang === "sl" ? service.descriptionSl : service.descriptionEn;
+  const Icon = service.icon === "design" ? Palette : Code2;
   return (
-    <div className="card p-6 h-full flex flex-col">
-      <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#7c5cff]/30 to-[#22d3ee]/30 flex items-center justify-center mb-5 text-white">
-        {icon}
-      </div>
-      <h3 className="font-semibold text-xl mb-3 tracking-tight">{title}</h3>
-      <p className="text-sm text-[color:var(--color-fg-muted)] leading-relaxed flex-1">
-        {desc}
+    <article className="interactive-card surface-panel rounded-2xl p-7 h-full flex flex-col">
+      <Icon
+        size={24}
+        strokeWidth={1.5}
+        className="text-[color:var(--color-accent-2)] mb-6"
+        aria-hidden="true"
+      />
+      <h3 className="text-2xl tracking-tight mb-4">{title}</h3>
+      <p className="text-sm leading-[1.8] text-[color:var(--color-fg-muted)] flex-1">
+        {lang === "sl" ? service.descriptionSl : service.descriptionEn}
       </p>
-      {service.priceFrom && (
-        <div className="mt-5 pt-5 border-t border-white/10 flex items-center justify-between">
-          <div>
-            <div className="text-xs text-[color:var(--color-fg-muted)] uppercase tracking-wider">
-              {t.startingAt}
-            </div>
-            <div className="text-xl font-bold">{service.priceFrom}</div>
-          </div>
-          <Link href="/contact" className="btn-ghost text-sm">
-            {t.getQuote}
-          </Link>
-        </div>
-      )}
-    </div>
+      <div className="mt-7 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+        {service.priceFrom && (
+          <p className="text-sm">
+            {translations[lang].services.startingAt} {service.priceFrom}
+          </p>
+        )}
+        <Link
+          href={`/contact?subject=${encodeURIComponent(title)}`}
+          className="link-arrow text-sm"
+        >
+          {translations[lang].services.getQuote}
+          <ArrowUpRight size={16} />
+        </Link>
+      </div>
+    </article>
   );
 }

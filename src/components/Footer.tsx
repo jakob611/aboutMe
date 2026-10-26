@@ -1,111 +1,140 @@
 import Link from "next/link";
-import { Code2, Briefcase, MessageCircle, Camera, Mail, Heart } from "lucide-react";
+import { FragmentLink } from "@/components/FragmentLink";
+import { BrandLogo } from "@/components/BrandLogo";
+import { ArrowUp, ArrowUpRight, Mail } from "lucide-react";
 import { siteConfig } from "@/lib/site";
 import type { Translation, Lang } from "@/lib/i18n";
 
 type Props = { lang: Lang; t: Translation };
 
+function isProfile(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.pathname !== "/";
+  } catch {
+    return false;
+  }
+}
+
 export function Footer({ lang, t }: Props) {
   const year = new Date().getFullYear();
+  const email =
+    /^\S+@\S+\.\S+$/.test(siteConfig.email) &&
+    !/@example\.(com|org|net)$/.test(siteConfig.email)
+      ? siteConfig.email
+      : "";
+  const profiles = [
+    { label: "GitHub", url: siteConfig.socials.github },
+    { label: "LinkedIn", url: siteConfig.socials.linkedin },
+    { label: "Instagram", url: siteConfig.socials.instagram },
+    { label: "X", url: siteConfig.socials.twitter },
+  ].filter((profile) => isProfile(profile.url));
+
   return (
-    <footer className="relative z-10 mt-24 border-t border-white/5 bg-[color-mix(in_oklab,var(--color-bg)_80%,transparent)]">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8 py-14 grid md:grid-cols-4 gap-10">
-        <div className="md:col-span-2">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#7c5cff] to-[#22d3ee] text-white text-sm font-bold">
-              {siteConfig.name.charAt(0).toUpperCase()}
-            </span>
-            <span className="font-semibold tracking-tight">
+    <footer className="relative z-10 mt-20 border-t border-white/10">
+      <div className="mx-auto grid max-w-7xl gap-12 px-5 py-14 sm:px-8 md:grid-cols-12 md:py-20">
+        <div className="md:col-span-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-3 text-2xl font-medium tracking-[-0.04em]"
+          >
+            <BrandLogo size={44} />
+            <span>
               {siteConfig.name}
+              <span
+                aria-hidden="true"
+                className="text-[color:var(--color-accent-2)]"
+              >
+                .
+              </span>
             </span>
-          </div>
-          <p className="text-[color:var(--color-fg-muted)] max-w-md">
-            {t.footer.tagline}
-          </p>
-          <p className="text-[color:var(--color-fg-muted)] mt-1 text-sm">
-            {siteConfig.tagline}
+          </Link>
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
+            {lang === "sl"
+              ? "Projekti, poskusi in ideje, ki dobivajo obliko. Na zaslonu in zunaj njega."
+              : "Projects, experiments, and ideas taking shape. On screen and away from it."}
           </p>
         </div>
-
-        <div>
-          <h4 className="text-sm font-semibold mb-3 uppercase tracking-wider text-[color:var(--color-fg-muted)]">
-            {t.nav.projects}
-          </h4>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/projects" className="hover:text-white">{t.projects.title}</Link></li>
-            <li><Link href="/services" className="hover:text-white">{t.services.title}</Link></li>
-            <li><Link href="/files" className="hover:text-white">{t.files.title}</Link></li>
-            <li><Link href="/donate" className="hover:text-white">{t.nav.donate}</Link></li>
+        <div className="md:col-span-3">
+          <h2 className="section-label mb-5">
+            {lang === "sl" ? "Razišči" : "Explore"}
+          </h2>
+          <ul className="space-y-3 text-sm text-[color:var(--color-fg-muted)]">
+            {[
+              { href: "/projects", label: t.nav.projects },
+              { href: "/about", label: t.nav.about },
+              { href: "/services", label: t.nav.services },
+              { href: "/files", label: t.nav.files },
+              { href: "/donate", label: t.nav.donate },
+            ].map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="transition-colors hover:text-[color:var(--color-fg)]"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
-
-        <div>
-          <h4 className="text-sm font-semibold mb-3 uppercase tracking-wider text-[color:var(--color-fg-muted)]">
-            {t.contact.title}
-          </h4>
-          <ul className="space-y-2 text-sm text-[color:var(--color-fg-muted)]">
+        <div className="md:col-span-3">
+          <h2 className="section-label mb-5">
+            {lang === "sl" ? "Ostaniva v stiku" : "Find me"}
+          </h2>
+          <ul className="space-y-3 text-sm text-[color:var(--color-fg-muted)]">
             <li>
-              <a
-                href={`mailto:${siteConfig.email}`}
-                className="inline-flex items-center gap-2 hover:text-white"
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 transition-colors hover:text-[color:var(--color-fg)]"
               >
-                <Mail size={14} /> {siteConfig.email}
-              </a>
+                {t.nav.contact}
+                <ArrowUpRight aria-hidden="true" size={13} />
+              </Link>
             </li>
-            <li>
-              <a
-                href={siteConfig.socials.github}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 hover:text-white"
-              >
-                <Code2 size={14} /> GitHub
-              </a>
-            </li>
-            <li>
-              <a
-                href={siteConfig.socials.linkedin}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 hover:text-white"
-              >
-                <Briefcase size={14} /> LinkedIn
-              </a>
-            </li>
-            <li>
-              <a
-                href={siteConfig.socials.twitter}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 hover:text-white"
-              >
-                <MessageCircle size={14} /> Twitter
-              </a>
-            </li>
-            <li>
-              <a
-                href={siteConfig.socials.instagram}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 hover:text-white"
-              >
-                <Camera size={14} /> Instagram
-              </a>
-            </li>
+            {email && (
+              <li>
+                <a
+                  href={`mailto:${email}`}
+                  className="inline-flex max-w-full items-center gap-2 break-all transition-colors hover:text-[color:var(--color-fg)]"
+                >
+                  <Mail aria-hidden="true" size={13} className="shrink-0" />
+                  {email}
+                </a>
+              </li>
+            )}
+            {profiles.map((profile) => (
+              <li key={profile.label}>
+                <a
+                  href={profile.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 transition-colors hover:text-[color:var(--color-fg)]"
+                >
+                  {profile.label}
+                  <ArrowUpRight aria-hidden="true" size={13} />
+                  <span className="sr-only">
+                    {lang === "sl"
+                      ? "Odpre se v novem zavihku"
+                      : "Opens in a new tab"}
+                  </span>
+                </a>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
-
-      <div className="border-t border-white/5">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-[color:var(--color-fg-muted)]">
-          <p>
-            © {year} {siteConfig.name}. {t.footer.rights}
-          </p>
-          <p className="inline-flex items-center gap-1.5">
-            {t.footer.builtWith.replace("❤️", "")}
-            <Heart size={14} className="text-[#f472b6]" fill="#f472b6" />
-          </p>
-        </div>
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 border-t border-white/[0.08] px-5 py-6 text-xs text-[color:var(--color-fg-muted)] sm:px-8">
+        <p>
+          © {year} {siteConfig.name}
+        </p>
+        <FragmentLink
+          href="#top"
+          className="inline-flex items-center gap-2 transition-colors hover:text-[color:var(--color-fg)]"
+        >
+          {lang === "sl" ? "Na vrh" : "Back to top"}
+          <ArrowUp aria-hidden="true" size={13} />
+        </FragmentLink>
       </div>
     </footer>
   );
