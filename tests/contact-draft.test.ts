@@ -40,6 +40,15 @@ test("a tab without a handoff never receives another tab's draft", () => {
   assert.equal(takeContactDraft(second, switched), null);
 });
 
+test("language handoff preserves category, topic and custom text without changing the enquiry", () => {
+  const tab = storage();
+  const custom = { ...draft, category: "web", topic: "other", customSubject: "My custom request" };
+  saveContactDraft(tab, current, custom, 1000);
+  assert.deepEqual(takeContactDraft(tab, switched, 1001), custom);
+  saveContactDraft(tab, current, { ...custom, topic: "android" }, 1000);
+  assert.equal(takeContactDraft(tab, switched, 1001), null);
+});
+
 test("storage denial and malformed or oversized handoffs fail safely", () => {
   const denied = {
     getItem() { throw new Error("denied"); },

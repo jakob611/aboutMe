@@ -11,13 +11,16 @@ import {
 import { Reveal } from "@/components/Reveal";
 import type { Translation, Lang } from "@/lib/i18n";
 import { LANGUAGE_CHANGE_EVENT, saveContactDraft, takeContactDraft } from "@/lib/contact-draft";
+import { emptyInquiry, findInquiryCategory, inquiryCategories, inquiryFromQuery, inquirySubject, needsCustomSubject, validInquiry, type InquirySelection } from "@/lib/inquiry-topics";
+import { submitContact, type ContactDelivery } from "@/lib/contact-delivery";
 
 type Props = {
   lang: Lang;
   t: Translation;
   contactEmail?: string;
   githubUrl?: string;
-  initialSubject?: string;
+  initialInquiry?: InquirySelection;
+  delivery: ContactDelivery;
 };
 
 export function ContactClient({
@@ -25,12 +28,16 @@ export function ContactClient({
   t,
   contactEmail = "",
   githubUrl = "",
-  initialSubject = "",
+  initialInquiry = emptyInquiry,
+  delivery,
 }: Props) {
   const c = t.contact;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [subject, setSubject] = useState(initialSubject);
+  const [inquiry, setInquiry] = useState(initialInquiry);
+  const [website, setWebsite] = useState("");
+  const subject = inquirySubject(inquiry, lang);
+  const selectedCategory = findInquiryCategory(inquiry.category);
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<
     null | "ok" | "err" | "limit" | "required"
@@ -48,7 +55,11 @@ export function ContactClient({
     startTransition(() => {
       setName(draft.name);
       setEmail(draft.email);
-      setSubject(draft.subject);
+      setInquiry(draft.category === undefined ? inquiryFromQuery({ subject: draft.subject }) : {
+        category: findInquiryCategory(draft.category)?.id ?? "",
+        topic: draft.topic ?? "",
+        customSubject: draft.customSubject ?? "",
+      });
       setMessage(draft.message);
     });
   }, []);
@@ -56,41 +67,38 @@ export function ContactClient({
   useEffect(() => {
     const preserveForLanguageChange = () => {
       try {
-        saveContactDraft(window.sessionStorage, window.location.href, { name, email, subject, message });
+        saveContactDraft(window.sessionStorage, window.location.href, { name, email, subject, message, ...inquiry });
       } catch {
         // Accessing sessionStorage itself may be blocked by browser policy.
       }
     };
     window.addEventListener(LANGUAGE_CHANGE_EVENT, preserveForLanguageChange);
     return () => window.removeEventListener(LANGUAGE_CHANGE_EVENT, preserveForLanguageChange);
-  }, [name, email, subject, message]);
+  }, [name, email, subject, message, inquiry]);
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) {
+    if (!name.trim() || !email.trim() || !message.trim() || !validInquiry(inquiry)) {
       setStatus("required");
       return;
     }
+    if (delivery.mode === "unavailable") return;
     setStatus(null);
     startTransition(async () => {
       try {
-        const res = await fetch("/api/contact", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            email: email.trim(),
-            subject: subject.trim(),
-            message: message.trim(),
-          }),
-        });
-        if (!res.ok) {
-          setStatus(res.status === 429 ? "limit" : "err");
+        const payload = {
+          name: name.trim(), email: email.trim(), subject, message: message.trim(),
+          category: inquiry.category, topic: inquiry.topic, customSubject: inquiry.customSubject.trim(), website,
+        };
+        const result = await submitContact(delivery, payload);
+        if (result !== "ok") {
+          setStatus(result === "limit" ? "limit" : "err");
           return;
         }
         setStatus("ok");
         setName("");
         setEmail("");
-        setSubject("");
+        setInquiry({ ...emptyInquiry });
+        setWebsite("");
         setMessage("");
       } catch {
         setStatus("err");
@@ -130,8 +138,8 @@ export function ContactClient({
   const feedback =
     status === "required"
       ? lang === "sl"
-        ? "Dodaj svoje ime, e-pošto in kratko sporočilo."
-        : "Add your name, email, and a short message."
+        ? "Dodaj ime, e-pošto, zadevo in kratko sporočilo."
+        : "Add your name, email, subject, and a short message."
       : status === "limit"
         ? lang === "sl"
           ? "Poslanih je bilo preveč sporočil. Poskusi znova malo pozneje."
@@ -193,24 +201,38 @@ export function ContactClient({
                 />
               </label>
             </div>
+            <div className="hidden" aria-hidden="true">
+              <label>Website<input name="website" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" /></label>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
             <label className="block">
               <span className="mb-2 block text-sm">
-                {c.subject}
-                <span className="ml-2 text-xs text-[color:var(--color-fg-muted)]">
-                  {lang === "sl" ? "neobvezno" : "optional"}
-                </span>
+                {c.subject} <span aria-hidden="true">*</span>
               </span>
-              <input
-                name="subject"
-                maxLength={200}
-                value={subject}
-                onChange={(event) => setSubject(event.target.value)}
-                className="input"
-                placeholder={
-                  lang === "sl" ? "Za kaj gre?" : "What’s this about?"
-                }
-              />
+              <select
+                required
+                name="category"
+                value={inquiry.category}
+                onChange={(event) => setInquiry({ category: findInquiryCategory(event.target.value)?.id ?? "", topic: "", customSubject: "" })}
+                className="input select"
+              >
+                <option value="">{lang === "sl" ? "Izberi področje" : "Choose a category"}</option>
+                {inquiryCategories.map((category) => <option key={category.id} value={category.id}>{category.label[lang]}</option>)}
+              </select>
             </label>
+            {selectedCategory && inquiry.category !== "other" && <label className="block">
+              <span className="mb-2 block text-sm">{lang === "sl" ? "Tema" : "Topic"} <span aria-hidden="true">*</span></span>
+              <select required name="topic" value={inquiry.topic} onChange={(event) => setInquiry({ ...inquiry, topic: event.target.value, customSubject: "" })} className="input select">
+                <option value="">{lang === "sl" ? "Izberi temo" : "Choose a topic"}</option>
+                {selectedCategory.topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.label[lang]}</option>)}
+                <option value="other">{lang === "sl" ? "Drugo" : "Other"}</option>
+              </select>
+            </label>}
+            </div>
+            {needsCustomSubject(inquiry) && <label className="block">
+              <span className="mb-2 block text-sm">{lang === "sl" ? "Tvoja zadeva" : "Your subject"} <span aria-hidden="true">*</span></span>
+              <input required name="customSubject" maxLength={160} value={inquiry.customSubject} onChange={(event) => setInquiry({ ...inquiry, customSubject: event.target.value })} className="input" placeholder={lang === "sl" ? "Za kaj gre?" : "What would you like to discuss?"} />
+            </label>}
             <label className="block">
               <span className="mb-2 block text-sm">
                 {c.message}
@@ -238,13 +260,11 @@ export function ContactClient({
             </label>
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
               <p className="max-w-xs text-xs leading-relaxed text-[color:var(--color-fg-muted)]">
-                {lang === "sl"
-                  ? "E-poštni naslov mi omogoča, da ti odgovorim."
-                  : "Your email gives me a way to reply."}
+                {delivery.mode === "unavailable" ? (lang === "sl" ? "Tvoj e-poštni naslov omogoča odgovor." : "Your email address gives me a way to reply.") : delivery.mode === "email" ? (lang === "sl" ? "Sporočilo bo prek Web3Forms poslano na mojo e-pošto. Tvoj naslov omogoča odgovor." : "Web3Forms will deliver your message to my email. Your address lets me reply.") : (lang === "sl" ? "Sporočilo bo shranjeno v moj zasebni predal na strani. Tvoj naslov omogoča odgovor." : "Your message will be saved to my private site inbox. Your address lets me reply.")}
               </p>
               <button
                 type="submit"
-                disabled={pending}
+                disabled={pending || delivery.mode === "unavailable"}
                 className="btn-primary disabled:cursor-wait disabled:opacity-60"
               >
                 {pending ? (
@@ -265,6 +285,9 @@ export function ContactClient({
               </button>
             </div>
           </fieldset>
+          {delivery.mode === "unavailable" && <p role="status" className="mt-5 text-sm leading-relaxed text-[color:var(--color-fg-muted)]">{contactEmail
+            ? lang === "sl" ? "Kontaktni obrazec trenutno ni na voljo. Pišeš mi lahko na spodnji e-poštni naslov." : "The contact form is currently unavailable. You can email me below."
+            : lang === "sl" ? "Kontaktni obrazec je še v pripravi. Obišči stran znova kmalu." : "The contact form is being set up. Please check back soon."}</p>}
           {status === "ok" && (
             <div
               role="status"
@@ -276,7 +299,7 @@ export function ContactClient({
                 size={17}
                 className="mt-0.5 shrink-0"
               />
-              {c.success}
+              {delivery.mode === "email" ? (lang === "sl" ? "Sporočilo je bilo oddano za dostavo na mojo e-pošto. Hvala za povpraševanje." : "Your message was accepted for delivery to my email. Thanks for getting in touch.") : (lang === "sl" ? "Sporočilo je shranjeno v moj zasebni predal na strani. Hvala za povpraševanje." : "Your message was saved to my private site inbox. Thanks for getting in touch.")}
             </div>
           )}
           {status !== null && status !== "ok" && (

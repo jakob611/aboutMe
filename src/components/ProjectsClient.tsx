@@ -6,9 +6,10 @@ import { ProjectCard, type Project } from "@/components/ProjectCard";
 import { Reveal } from "@/components/Reveal";
 import { translations, type Lang } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { PROJECT_CATEGORY_IDS, getProjectCategoryLabels, normalizeProjectCategory } from "@/lib/project-categories";
 
 type Props = { projects: Project[]; lang: Lang; initialCategory?: Category };
-const CATEGORIES = ["all", "android", "lego", "web", "other"] as const;
+const CATEGORIES = ["all", ...PROJECT_CATEGORY_IDS] as const;
 type Category = (typeof CATEGORIES)[number];
 const normalize = (text: string) =>
   text
@@ -26,15 +27,10 @@ export function ProjectsClient({
   const [query, setQuery] = useState("");
   const labels: Record<Category, string> = {
     all: t.filterAll,
-    android: t.filterAndroid,
-    lego: t.filterLego,
-    web: t.filterWeb,
-    other: t.filterOther,
+    ...getProjectCategoryLabels(lang),
   };
   const categoryOf = (project: Project) =>
-    CATEGORIES.includes(project.category as Category)
-      ? project.category
-      : "other";
+    normalizeProjectCategory(project.category);
   const term = normalize(query.trim());
   const filtered = projects.filter(
     (project) =>

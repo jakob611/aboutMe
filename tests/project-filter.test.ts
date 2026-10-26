@@ -37,6 +37,9 @@ test("public project API composes featured and category filters", async (t) => {
   await GET(new Request("https://example.com/api/projects?category=lego"));
   assert.match(query, /where "projects"\."category" = \$1/);
   assert.deepEqual(params, ["lego"]);
+  await GET(new Request("https://example.com/api/projects?category=3d-printing"));
+  assert.match(query, /where "projects"\."category" = \$1/);
+  assert.deepEqual(params, ["3d-printing"]);
   await GET(new Request("https://example.com/api/projects"));
   assert.doesNotMatch(query, / where /);
   assert.deepEqual(params, []);

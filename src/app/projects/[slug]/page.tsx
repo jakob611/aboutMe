@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
 import { publicCommentFields } from "@/lib/public-comments";
 import { ProjectGallery } from "@/components/ProjectGallery";
+import { projectCategoryLabel } from "@/lib/project-categories";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -57,9 +58,7 @@ export default async function ProjectPage({ params }: Props) {
   const summary = lang === "sl" ? project.summarySl : project.summaryEn;
   const description =
     lang === "sl" ? project.descriptionSl : project.descriptionEn;
-  const catLabel =
-    (t.categories as Record<string, string>)[project.category] ??
-    project.category;
+  const catLabel = projectCategoryLabel(project.category, lang);
 
   // Structured data for SEO
   const jsonLd = {

@@ -42,7 +42,7 @@ const copy = {
     servicesLabel: "02 / Working together",
     servicesTitle: "Got something in mind?",
     servicesIntro:
-      "Android apps, websites, and AI tools that take repetitive work off your hands. Here's where I can help.",
+      "Android and web development, ongoing support, AI automation, and 3D printing enquiries. Let's find a useful next step.",
     serviceLink: "Explore services",
     aboutLabel: "03 / Behind the projects",
     aboutTitle: "Different materials. Same curiosity.",
@@ -71,7 +71,7 @@ const copy = {
     servicesLabel: "02 / Sodelovanje",
     servicesTitle: "Kaj želiš ustvariti?",
     servicesIntro:
-      "Android aplikacije, spletne strani in AI orodja, ki ti olajšajo ponavljajoče se delo. Pri tem ti lahko pomagam.",
+      "Android in spletni razvoj, stalna podpora, AI avtomatizacija ter povpraševanja za 3D tisk. Skupaj poiščeva smiseln naslednji korak.",
     serviceLink: "Več o storitvah",
     aboutLabel: "03 / Za projekti",
     aboutTitle: "Različni materiali. Ista radovednost.",
@@ -239,7 +239,7 @@ export default async function HomePage() {
             <ArrowUpRight size={17} />
           </Link>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {serviceOfferings[lang].map((service, i) => (
             <Reveal key={service.id} delay={i * 0.06}>
               <Link

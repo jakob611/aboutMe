@@ -6,6 +6,7 @@ import {
   AlertCircle,
   CheckCircle2,
   FolderKanban,
+  FileText,
   ImagePlus,
   Inbox,
   Loader2,
@@ -17,6 +18,8 @@ import {
   X,
 } from "lucide-react";
 import { formatDate, slugify } from "@/lib/utils";
+import { AdminCV } from "@/components/AdminCV";
+import { PROJECT_CATEGORY_IDS, getProjectCategoryLabels, normalizeProjectCategory, type ProjectCategory } from "@/lib/project-categories";
 
 export type AdminProject = {
   id: number;
@@ -55,7 +58,7 @@ type FormState = {
   summarySl: string;
   descriptionEn: string;
   descriptionSl: string;
-  category: "android" | "lego" | "web" | "other";
+  category: ProjectCategory;
   tags: string;
   coverImage: string;
   gallery: string[];
@@ -92,9 +95,7 @@ function fromProject(p: AdminProject): FormState {
     summarySl: p.summarySl,
     descriptionEn: p.descriptionEn,
     descriptionSl: p.descriptionSl,
-    category: (["android", "lego", "web", "other"].includes(p.category)
-      ? p.category
-      : "other") as FormState["category"],
+    category: normalizeProjectCategory(p.category),
     tags: (p.tags ?? []).join(", "),
     coverImage: p.coverImage ?? "",
     gallery: p.gallery ?? [],
@@ -132,7 +133,7 @@ type Props = { projects: AdminProject[]; messages: AdminMessage[]; loadError?: s
 
 export function AdminDashboard({ projects, messages, loadError }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<"projects" | "messages">("projects");
+  const [tab, setTab] = useState<"projects" | "messages" | "cv">("projects");
   const [editingId, setEditingId] = useState<number | "new" | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -249,7 +250,7 @@ export function AdminDashboard({ projects, messages, loadError }: Props) {
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-[color:var(--color-fg-muted)] mt-1">
-              Projects, R2 images, and contact messages.
+              Projects, images, your CV, and contact messages.
             </p>
             <p className="text-sm text-[color:var(--color-fg-muted)] mt-2">
               Signed in on this browser for up to 7 days. Sign out when you finish on a shared computer.
@@ -275,9 +276,16 @@ export function AdminDashboard({ projects, messages, loadError }: Props) {
           >
             <Inbox size={14} /> {messageLabel}
           </button>
+          <button
+            type="button"
+            onClick={() => setTab("cv")}
+            className={tab === "cv" ? "btn-primary text-sm" : "btn-ghost text-sm"}
+          >
+            <FileText size={14} /> CV
+          </button>
         </div>
 
-        {loadError && <p role="alert" className="mb-4 text-sm text-rose-300">{loadError}</p>}
+        {loadError && tab !== "cv" && <p role="alert" className="mb-4 text-sm text-rose-300">{loadError}</p>}
         {status && (
           <p className="mb-4 text-sm text-emerald-300 flex items-center gap-1.5">
             <CheckCircle2 size={14} /> {status}
@@ -410,10 +418,9 @@ export function AdminDashboard({ projects, messages, loadError }: Props) {
                           }))
                         }
                       >
-                        <option value="android">Android</option>
-                        <option value="lego">Lego</option>
-                        <option value="web">Web</option>
-                        <option value="other">Other</option>
+                        {PROJECT_CATEGORY_IDS.map(category => (
+                          <option key={category} value={category}>{getProjectCategoryLabels("en")[category]}</option>
+                        ))}
                       </select>
                     </Field>
                   </div>
@@ -591,7 +598,7 @@ export function AdminDashboard({ projects, messages, loadError }: Props) {
               </form>
             )}
           </div>
-        ) : (
+        ) : tab === "cv" ? <AdminCV /> : (
           <div>
             <div className="flex items-center justify-between mb-4"><h2 className="text-xl font-semibold">Contact messages</h2><button type="button" className="btn-ghost text-sm" onClick={() => router.refresh()}>Refresh</button></div>
             {messages.length === 0 ? (

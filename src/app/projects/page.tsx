@@ -8,6 +8,7 @@ import { desc } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { isProjectCategory } from "@/lib/project-categories";
 
 type Props = { searchParams: Promise<{ category?: string | string[] }> };
 
@@ -25,11 +26,7 @@ export default async function ProjectsPage({ searchParams }: Props) {
   const t = translations[lang];
 
   const category = (await searchParams).category;
-  const initialCategory =
-    typeof category === "string" &&
-    ["android", "lego", "web", "other"].includes(category)
-      ? (category as "android" | "lego" | "web" | "other")
-      : "all";
+  const initialCategory = isProjectCategory(category) ? category : "all";
   let allProjects: (typeof projects.$inferSelect)[] = [];
   let unavailable = false;
   try {

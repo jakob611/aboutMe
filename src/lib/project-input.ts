@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { slugify } from "@/lib/utils";
 import { mediaKeyFromUrl } from "@/lib/media";
+import { PROJECT_CATEGORY_IDS } from "@/lib/project-categories";
 
 const webUrl = (value: string) => {
   try { const url = new URL(value); return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password; }
@@ -18,7 +19,7 @@ export const projectInputSchema = z.object({
   titleEn: requiredText(200), titleSl: requiredText(200),
   summaryEn: requiredText(2000), summarySl: requiredText(2000),
   descriptionEn: requiredText(50000), descriptionSl: requiredText(50000),
-  category: z.enum(["android", "lego", "web", "other"]),
+  category: z.enum(PROJECT_CATEGORY_IDS),
   tags: z.array(z.string().trim().min(1).max(40)).max(20).optional(),
   coverImage: image.optional().nullable(),
   gallery: z.array(image.refine(Boolean)).max(30).optional(),

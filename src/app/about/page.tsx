@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { ArrowUpRight, Blocks, Code2, Smartphone } from "lucide-react";
+import { ArrowUpRight, Blocks, Box, Code2, Download, Smartphone } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { galleryImages } from "@/lib/gallery";
 import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
+import { getCVMetadata } from "@/lib/cv";
 import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
@@ -19,6 +22,9 @@ export default async function AboutPage() {
   const lang = await getLang();
   const t = translations[lang];
   const sl = lang === "sl";
+  let cvPublished = false;
+  try { cvPublished = (await getCVMetadata()).published; }
+  catch { /* About remains available when storage is unavailable. */ }
   const interests = [
     {
       title: "Android",
@@ -40,6 +46,13 @@ export default async function AboutPage() {
       detail: sl
         ? "Oblike, povezave in razmišljanje z rokami."
         : "Shapes, connections, and thinking with your hands.",
+    },
+    {
+      title: sl ? "3D-tisk" : "3D printing",
+      icon: Box,
+      detail: sl
+        ? "Raziskovanje poti od ideje do fizične oblike."
+        : "Exploring the path from an idea to a physical form.",
     },
   ];
 
@@ -133,11 +146,11 @@ export default async function AboutPage() {
           <Reveal>
             <h2 className="section-label mb-8">
               {sl
-                ? "Tri različna izhodišča"
-                : "Three different starting points"}
+                ? "Štiri različna izhodišča"
+                : "Four different starting points"}
             </h2>
           </Reveal>
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
             {interests.map(({ title, icon: Icon, detail }, i) => (
               <Reveal key={title} delay={i * 0.05}>
                 <div className="flex items-center justify-between mb-5">
@@ -203,6 +216,19 @@ export default async function AboutPage() {
                 </Reveal>
               ))}
             </div>
+          </div>
+        )}
+        {cvPublished && (
+          <div className="section-rule mt-16 sm:mt-20 pt-8">
+            <Reveal>
+              <div className="flex flex-wrap items-center justify-between gap-5">
+                <h2 className="section-label">{sl ? "Življenjepis" : "Curriculum vitae"}</h2>
+                <a href="/api/cv" download="Jakob-Tominc-CV.pdf" className="btn-ghost text-sm">
+                  <Download size={15} aria-hidden="true" />
+                  {sl ? "Prenesi CV" : "Download CV"}
+                </a>
+              </div>
+            </Reveal>
           </div>
         )}
       </div>

@@ -1,8 +1,8 @@
 # Local development and admin dashboard
 
 The dashboard is at `/admin`. It manages projects (English and Slovenian),
-cover/gallery uploads, and incoming contact messages. Services are not editable
-through this dashboard.
+cover/gallery uploads, a public CV PDF, and incoming contact messages. Services
+are not editable through this dashboard.
 
 A successful login remains valid in that browser for up to seven days or until
 **Sign out**. Reopening `/admin` during that period intentionally reuses the signed
@@ -61,9 +61,10 @@ existing sessions.
 
 Cloudflare production secrets are not downloaded into local development. Set
 UPLOAD_PASSWORD and ADMIN_SESSION_SECRET in your ignored local .dev.vars file
-as well. Add DATABASE_URL locally to use the database features; without it the
-dashboard shows a configuration error after login. Never place a real password
-in .env.example or wrangler.jsonc.
+as well. Add DATABASE_URL locally to use the database features. Without it,
+Projects and Messages show a configuration error after login; the CV tab still
+works using the R2 binding. Never place a real password in .env.example or
+wrangler.jsonc.
 Generate the signing secret locally with
 `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`.
 Do not put these values in NEXT_PUBLIC_ variables, source code or build settings.
@@ -101,6 +102,51 @@ assuming that adding this runtime secret will fix it.
 Keep SITE_OWNER, SITE_TAGLINE, CONTACT_EMAIL and NEXT_PUBLIC_SITE_URL consistent
 between build/runtime settings as described in DEPLOYMENT.md. Keep the actual
 owned domain; no DNS or domain changes are required for this feature.
+
+## Publish your CV
+
+Sign in to `/admin`, open **CV**, choose your finished PDF (up to 10 MiB), and
+select **Publish CV**. Until a PDF is published, About has no CV download button.
+Publication adds **Download CV** at the bottom of About. Uploading another PDF
+replaces the current document. The full document becomes public, so use the
+version you intend visitors to download.
+
+This feature stores one R2 object, `profile/cv.pdf`, without a Neon record or
+migration. The server checks the PDF MIME type, nonzero size, maximum size and
+PDF header. `/api/cv` returns it as `Jakob-Tominc-CV.pdf`, with attachment,
+no-store and nosniff headers; replacements are not given immutable cache headers.
+Admin status and publication use the existing signed session and same-origin
+mutation protection. To unpublish, remove only `profile/cv.pdf` from the correct
+environment's R2 bucket. Local preview storage is emulated; publishing locally
+does not publish to the branch Preview or production.
+
+No owner CV has been supplied or published as part of this implementation.
+
+## Optional contact email delivery
+
+Create a form for your verified recipient address in
+[Web3Forms](https://app.web3forms.com/) and copy its public access key into
+`NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY`. Set it in ignored `.env.local` for a local
+build, or the Cloudflare **Build variables** of the intended environment, then
+rebuild. A runtime `.dev.vars` value alone cannot change an existing browser
+bundle. This key is intentionally public; keep admin passwords and signing
+secrets out of all `NEXT_PUBLIC_` variables.
+
+Submissions go directly from the visitor's browser to Web3Forms. Its
+[free plan currently includes 250 submissions per month](https://web3forms.com/pricing).
+Its [documented server-side/proxy access requires a paid subscription and IP
+safelisting](https://docs.web3forms.com/getting-started/troubleshooting), so this
+site does not proxy the provider through a Worker. Some hosted subdomains may
+need provider approval. Confirm the owner's intended domain and recipient with
+one authorized real enquiry after configuration; no real email delivery is
+claimed by the automated tests or current preview checks.
+
+Without a public key, a configured Neon database receives enquiries in the
+existing private inbox. With neither configured, the form explains that sending
+is unavailable and disables its submit button; configured email/GitHub links
+remain available. A failed provider request retains the draft and does not fall
+back to Neon, avoiding duplicate delivery. Success requires the provider's
+explicit `success: true`, which acknowledges acceptance rather than inbox receipt.
 
 ## Image behavior
 

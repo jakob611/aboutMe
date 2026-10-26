@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
-import { translations } from "@/lib/i18n";
+import { projectCategoryLabel } from "@/lib/project-categories";
 import { cn } from "@/lib/utils";
 
 export type Project = {
@@ -22,16 +22,14 @@ const categoryAccents: Record<string, string> = {
   android: "#91b99e",
   lego: "#d4ac79",
   web: "#8ab9c2",
+  "3d-printing": "#c4b08c",
   other: "#aaa0c9",
 };
 
 export function ProjectCard({ project, lang, featured }: Props) {
   const title = lang === "sl" ? project.titleSl : project.titleEn;
   const summary = lang === "sl" ? project.summarySl : project.summaryEn;
-  const category =
-    (translations[lang].categories as Record<string, string>)[
-      project.category
-    ] ?? project.category;
+  const category = projectCategoryLabel(project.category, lang);
   const accent = categoryAccents[project.category] ?? categoryAccents.other;
   return (
     <Link

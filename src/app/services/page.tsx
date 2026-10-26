@@ -6,6 +6,7 @@ import {
   Palette,
   Smartphone,
   Workflow,
+  Box,
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { getLang } from "@/lib/lang";
@@ -20,6 +21,7 @@ import { getDb } from "@/db";
 import { services } from "@/db/schema";
 import { asc } from "drizzle-orm";
 import type { Metadata } from "next";
+import { serviceInquiryHref } from "@/lib/inquiry-topics";
 
 type ServiceRow = typeof services.$inferSelect;
 
@@ -81,7 +83,7 @@ export default async function ServicesPage() {
               {copy.coreLabel}
             </h2>
           </Reveal>
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2">
             {serviceOfferings[lang].map((offering, index) => (
               <Reveal key={offering.id} delay={index * 0.05}>
                 <CoreServiceCard
@@ -188,7 +190,7 @@ function CoreServiceCard({
   index: number;
   details: ServiceRow[];
 }) {
-  const Icon = { android: Smartphone, web: Code2, automation: Workflow }[
+  const Icon = { android: Smartphone, web: Code2, automation: Workflow, printing: Box }[
     offering.id
   ];
   const copy = servicePageCopy[lang];
@@ -266,14 +268,18 @@ function CoreServiceCard({
           </div>
         </details>
       )}
-      <div className="mt-auto pt-7">
+      <div className="mt-auto pt-7 flex flex-col items-start gap-3">
         <Link
-          href={`/contact?subject=${encodeURIComponent(offering.title)}`}
+          href={serviceInquiryHref(offering.id)}
           className="link-arrow text-sm"
         >
           {offering.inquiry}
           <ArrowUpRight size={16} />
         </Link>
+        {offering.id !== "printing" && <Link href={serviceInquiryHref(offering.id, true)} className="link-arrow text-sm">
+          {copy.supportInquiry}
+          <ArrowUpRight size={16} />
+        </Link>}
       </div>
     </article>
   );

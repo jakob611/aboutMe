@@ -7,6 +7,86 @@ Release remains pending development-database verification, actual throttling
 acceptance and production setup.
 The isolated remote Preview is deployed; authentication and R2 checks passed.
 
+## New feature integration — 25–26 October 2026
+
+The source now includes four rotating sketchbook scenes with pause controls,
+shared 3D printing project categories, one Support navigation link, four About
+interests, conditional CV publication/download, seven typed enquiry categories,
+and four commercial service offerings with support links. Existing configured
+service prices remain; no fallback prices were added.
+
+- [x] Integrated `npm test`: 82 passing tests, including CV authentication,
+  fixed-key replacement, PDF validation, safe download headers, category input,
+  typed enquiries, delivery failure handling and rotation interruption behavior.
+  Undeclared oversized CV request streams stop before multipart parsing; denied
+  sessions cannot consume the upload body or touch storage.
+- [x] `npm run typecheck` passes.
+- [x] `npm run lint` has no errors and the same 10 image/font advisories.
+- [x] `npm run dev:cloudflare` rebuilt the final source with Next 16.4.3 and
+  OpenNext 1.20.13; the local Worker is running on port 8787. Public CV HEAD
+  returns 404 with no-store before any local publication test.
+- [x] Independent desktop browser acceptance on the rebuilt local Worker; see
+  the scope and evidence below.
+- [x] Lead-orchestrator mobile viewport acceptance at 390×844 for the new
+  Services/Contact layouts, navigation, enquiries and language draft handoff.
+- [x] Final browser smoke after the contextual unavailable-message copy rebuild:
+  Contact shows the new message, keeps Send disabled and retains the draft on
+  SL → EN; About still has no CV link after local cleanup.
+- [ ] Owner CV publication in the intended deployed environment. No owner PDF
+  was supplied; no placeholder is published.
+- [ ] Actual email acceptance/receipt with the owner's Web3Forms public key.
+  No key is configured or real enquiry sent. Without key/Neon, sending is
+  deliberately disabled; unit provider mocks do not establish email delivery.
+
+Independent actual desktop testing at 1280×720 with reduced motion disabled
+confirmed all four sketchbook scenes and wrap at approximately six-second
+intervals, including intermediate vertical transitions. Manual selection/Pause,
+Play, real hover alone, keyboard focus alone and offscreen suspension passed.
+Header Support and footer Contact navigation worked. Website-maintenance and 3D
+service CTAs opened the correct category/topic; the remaining service hrefs were
+inspected in the live UI.
+
+Contact category/topic resets, required custom Other subjects and four alternating
+EN/SL switches passed with the unsent fields retained. Email was visibly present
+and masked in DOM evidence; no unmasked equality claim is made. Send stayed
+disabled with an honest unavailable message in the current no-key/no-Neon setup.
+About showed all four interests and initially no CV link.
+
+After public CV absence was verified, the tester selected a disposable 1,537-byte
+PDF through the actual file chooser and published it in the local CV tab without
+Neon. About then exposed Download CV; clicking it downloaded matching bytes. A
+supporting public GET confirmed the expected PDF attachment, no-store, nosniff
+and sandbox headers. Only the new
+`profile/cv.pdf` object was deleted from emulated local R2. Fresh public GET
+returned 404, About again had no CV link, and Admin reported no published CV;
+the tester signed out. No remote fixture or owner CV was published.
+
+Evidence is saved locally under `artifacts/features-2026-10-25/`, including
+`independent-desktop-report.md`, `sketchbook-cycle.json`, `hover-actual.json`,
+`keyboard-focus-pause.json`, `contact-draft-language.json`,
+`cv-browser-download.json` and `cv-cleanup.json`. These ignored files are not
+committed. Hidden-page and reduced-motion=true rotation behavior has automated
+coverage; this desktop pass does not claim actual-browser verification of those
+two conditions.
+
+At an actual 390×844 mobile viewport, the lead orchestrator checked Services and
+Contact with matching 382px client/scroll widths and no horizontal overflow.
+The header had one Support link and no Contact link; choosing Support in the
+menu opened `/donate` and closed the menu. Clicking the visible website-support
+CTA opened a valid web/maintenance enquiry. Choosing Other required a custom
+subject; typed name, email, category, topic, custom subject and message survived
+EN → SL. Email presence was checked visually. Evidence includes
+`mobile-contact-evidence.json`, `contact-mobile-sl.png` and `services-mobile.png`
+in the same local evidence directory. After the copy-only rebuild, the reverse
+SL → EN handoff retained all fields, the new unavailable message was visible,
+and About still had no CV link. Fields were cleared and the viewport restored.
+See `mobile-report.md` and `contact-mobile-en.png`. This is a viewport test, not
+a physical touchscreen test.
+
+CV publication uses R2 only and requires no database migration. Setup instructions
+are in [ADMIN.md](ADMIN.md). The historical acceptance below predates these
+feature additions; its remaining release gates still apply.
+
 ## Implemented
 
 - Entry reveals now include content in the initial viewport. Scroll reveals start
@@ -30,7 +110,7 @@ The isolated remote Preview is deployed; authentication and R2 checks passed.
   which Next otherwise treats as a no-op; CSS controls reduced-motion behavior.
   Native href and focusable-main fallbacks remain without JS.
 
-## Automated checks on the integrated source
+## Automated checks before the new feature additions
 
 - [x] `npm test`: 59 passing tests, including all private admin read/mutation
   operations with missing, forged, tampered and signed-expired sessions. Tests

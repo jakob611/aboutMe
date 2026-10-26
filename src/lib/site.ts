@@ -4,7 +4,7 @@
  */
 export const siteConfig = {
   name: process.env.SITE_OWNER || "Jakob Tominc",
-  tagline: process.env.SITE_TAGLINE || "Android, web & LEGO projects",
+  tagline: process.env.SITE_TAGLINE || "Android, web, LEGO & 3D printing projects",
   email: process.env.CONTACT_EMAIL || "",
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://jakobtominc.com").replace(
     /\/$/,

@@ -1,18 +1,26 @@
 "use client";
 
-import { useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Braces, Blocks, Smartphone } from "lucide-react";
+import { ArrowUpRight, Braces, Blocks, Smartphone, Printer, Pause, Play } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
+import { createWorkshopRotation } from "./workshop-rotation";
+import styles from "./WorkshopScene.module.css";
 
-const subjects = ["web", "android", "lego"] as const;
+const subjects = ["web", "android", "lego", "3d-printing"] as const;
 type Subject = (typeof subjects)[number];
-const icons = { web: Braces, android: Smartphone, lego: Blocks };
+const icons = { web: Braces, android: Smartphone, lego: Blocks, "3d-printing": Printer };
 const copy = {
   en: {
     label: "The sketchbook",
     hint: "Pick something to explore",
     link: "Explore the projects",
+    pause: "Pause",
+    play: "Play",
+    pauseLabel: "Pause automatic sketchbook rotation",
+    playLabel: "Start automatic sketchbook rotation",
+    automatic: "Automatic · pauses while exploring",
+    manual: "Paused · choose a subject or press Play",
     web: [
       "Web",
       "A clear idea. A useful interface.",
@@ -28,11 +36,22 @@ const copy = {
       "Thinking with my hands.",
       "Another way to build: one piece, one adjustment, one new possibility at a time.",
     ],
+    "3d-printing": [
+      "3D printing",
+      "From a shape to something tangible.",
+      "Exploring form, fit and the small adjustments between a model and a printed piece.",
+    ],
   },
   sl: {
     label: "Skicirka",
     hint: "Izberi, kaj te zanima",
     link: "Razišči projekte",
+    pause: "Premor",
+    play: "Zaženi",
+    pauseLabel: "Začasno ustavi samodejno menjavo skic",
+    playLabel: "Zaženi samodejno menjavo skic",
+    automatic: "Samodejno · med raziskovanjem miruje",
+    manual: "Premor · izberi področje ali pritisni Zaženi",
     web: [
       "Splet",
       "Jasna ideja. Uporaben vmesnik.",
@@ -48,12 +67,46 @@ const copy = {
       "Razmišljanje z rokami.",
       "Drugačen način ustvarjanja: kos za kosom, popravek za popravkom, do nove možnosti.",
     ],
+    "3d-printing": [
+      "3D-tisk",
+      "Od oblike do oprijemljivega izdelka.",
+      "Raziskujem obliko, prileganje in drobne popravke med modelom in natisnjenim kosom.",
+    ],
   },
 };
 
 export function WorkshopScene({ lang }: { lang: Lang }) {
-  const [active, setActive] = useState<Subject>("web");
+  const [{ active, previous }, setScene] = useState<{ active: Subject; previous: Subject | null }>({ active: "web", previous: null });
+  const [paused, setPaused] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const rotation = useRef<ReturnType<typeof createWorkshopRotation> | null>(null);
+  const id = useId().replace(/:/g, "");
   const t = copy[lang];
+  useEffect(() => {
+    if (!root.current) return;
+    const controller = createWorkshopRotation(root.current, () => {
+      setScene((scene) => ({
+        previous: scene.active,
+        active: subjects[(subjects.indexOf(scene.active) + 1) % subjects.length],
+      }));
+    }, setPaused, {
+      preference: window.matchMedia("(prefers-reduced-motion: reduce)"),
+      page: document,
+      viewportHeight: window.innerHeight,
+      setTimer: (callback, milliseconds) => setTimeout(callback, milliseconds),
+      clearTimer: (timer) => clearTimeout(timer),
+      createObserver: "IntersectionObserver" in window
+        ? (callback) => new IntersectionObserver(callback, { threshold: 0.15 })
+        : undefined,
+    });
+    rotation.current = controller;
+    return () => { controller.destroy(); rotation.current = null; };
+  }, []);
+  const selectSubject = (subject: Subject) => {
+    rotation.current?.setPaused(true);
+    setScene((scene) => scene.active === subject ? scene : { active: subject, previous: scene.active });
+  };
+  const layerState = (subject: Subject) => subject === active ? "active" : subject === previous ? "previous" : "idle";
   const followPointer = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "mouse") return;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -68,11 +121,11 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
   };
 
   return (
-    <div className="sketchbook" onPointerMove={followPointer}>
+    <div ref={root} className={`sketchbook ${styles.book}`} onPointerMove={followPointer}>
       <div className="sketchbook-topline">
         <span className="section-label">{t.label}</span>
         <span className="sketchbook-counter" aria-hidden="true">
-          0{subjects.indexOf(active) + 1} / 03
+          0{subjects.indexOf(active) + 1} / 04
         </span>
       </div>
       <div className="sketchbook-art" data-subject={active}>
@@ -84,7 +137,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
         >
           <defs>
             <pattern
-              id="sketch-dots"
+              id={`${id}-dots`}
               width="20"
               height="20"
               patternUnits="userSpaceOnUse"
@@ -92,7 +145,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
               <circle cx="1" cy="1" r=".8" fill="currentColor" opacity=".12" />
             </pattern>
             <linearGradient
-              id="sketch-pane"
+              id={`${id}-pane`}
               x1="100"
               y1="30"
               x2="420"
@@ -103,13 +156,13 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
               <stop offset="1" stopColor="#171c1c" />
             </linearGradient>
           </defs>
-          <path fill="url(#sketch-dots)" d="M0 0h520v350H0z" />
+          <path fill={`url(#${id}-dots)`} d="M0 0h520v350H0z" />
           <path
             d="M55 300h410M260 30v290"
             stroke="currentColor"
             opacity=".07"
           />
-          <g className="sketch-layer sketch-web">
+          <g className={styles.layer} data-state={layerState("web")}>
             <path
               d="m99 76 329-8-12 210-329 8Z"
               fill="#0b0e0e"
@@ -141,7 +194,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
             <path d="m116 205 65-2-1 19-65 2Z" fill="#9cc8b9" />
             <path
               d="m277 133 113-3-6 93-113 3Z"
-              fill="url(#sketch-pane)"
+              fill={`url(#${id}-pane)`}
               stroke="#576b61"
             />
             <path
@@ -167,7 +220,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
             <circle cx="50" cy="184" r="4" fill="#c1aa80" />
             <circle cx="467" cy="168" r="4" fill="#c1aa80" />
           </g>
-          <g className="sketch-layer sketch-android">
+          <g className={styles.layer} data-state={layerState("android")}>
             <g transform="translate(186 34) rotate(8 76 140)">
               <rect
                 width="153"
@@ -183,7 +236,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
                 width="135"
                 height="264"
                 rx="18"
-                fill="url(#sketch-pane)"
+                fill={`url(#${id}-pane)`}
               />
               <path
                 d="M54 16h45"
@@ -236,7 +289,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
             <circle cx="103" cy="116" r="4" fill="#a89dc0" />
             <circle cx="410" cy="181" r="4" fill="#a89dc0" />
           </g>
-          <g className="sketch-layer sketch-lego" strokeLinejoin="round">
+          <g className={styles.layer} data-state={layerState("lego")} strokeLinejoin="round">
             <ellipse
               cx="262"
               cy="282"
@@ -311,6 +364,31 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
             <circle cx="80" cy="219" r="4" fill="#a4bba8" />
             <circle cx="435" cy="160" r="4" fill="#a4bba8" />
           </g>
+          <g className={styles.layer} data-state={layerState("3d-printing")} strokeLinejoin="round" strokeLinecap="round">
+            <ellipse cx="266" cy="305" rx="147" ry="15" fill="#070c09" opacity=".5" />
+            <path d="M138 273V61h239v212M157 268V79h201v189" stroke="#758d7d" strokeWidth="7" />
+            <path d="M138 61h239" stroke="#b5c8b4" strokeWidth="3" />
+            <path d="M148 119h220" stroke="#51695b" strokeWidth="9" />
+            <path d="M168 94v161m177-161v161" stroke="#a3b6a2" strokeWidth="2" />
+            <rect x="225" y="104" width="57" height="38" rx="5" fill="#344b3e" stroke="#a1bca8" />
+            <circle cx="240" cy="120" r="7" stroke="#829e8c" />
+            <path d="M250 142h13l-4 12h-5Z" fill="#d4b88a" stroke="#e3cba7" />
+            <path d="M256 154v27" stroke="#d4b88a" strokeWidth="1.5" strokeDasharray="3 4" />
+            <path d="m139 264 181-18 63 35-181 21Z" fill="#384b40" stroke="#a0b59d" />
+            <path d="m139 264 63 38v10l-63-38Zm63 38 181-21v10l-181 21Z" fill="#1e3025" stroke="#718c76" />
+            <path d="m219 252 41-22 38 16-41 24Z" fill="#c2ae8a" stroke="#dfccaa" />
+            <path d="m219 252 38 18v-62l-38-17Z" fill="#756b50" stroke="#b7a27d" />
+            <path d="m257 270 41-24v-62l-41 24Z" fill="#9b8a68" stroke="#d0ba93" />
+            <path d="m219 191 41-22 38 15-41 24Z" fill="#cbb894" stroke="#e2d1af" />
+            <path d="m220 202 37 17 40-23m-77 18 37 17 40-23m-77 18 37 17 40-23m-77 18 37 17 40-23" stroke="#e2c89a" opacity=".45" />
+            <path d="M248 104V74c0-27 45-37 73-19" stroke="#a3b7a3" strokeWidth="2" />
+            <circle cx="388" cy="78" r="24" fill="#293d30" stroke="#8aa38e" />
+            <circle cx="388" cy="78" r="8" fill="#131e16" stroke="#8aa38e" />
+            <path d="M325 55c23 17 24 31 39 29" stroke="#a3b7a3" strokeWidth="2" />
+            <path d="M96 137H75v100h36m291-69h32v74h-26" stroke="#b6a079" strokeDasharray="3 6" />
+            <circle cx="75" cy="137" r="4" fill="#b6a079" />
+            <circle cx="434" cy="242" r="4" fill="#b6a079" />
+          </g>
           <path
             d="M24 25h15m-15 0v15m472-15h-15m15 0v15M24 325h15m-15 0v-15m472 15h-15m15 0v-15"
             stroke="#7a8d81"
@@ -318,7 +396,7 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
           />
         </svg>
       </div>
-      <div className="sketchbook-switch" role="group" aria-label={t.hint}>
+      <div className={`sketchbook-switch ${styles.switcher}`} role="group" aria-label={t.hint}>
         {subjects.map((subject) => {
           const Icon = icons[subject];
           return (
@@ -326,17 +404,28 @@ export function WorkshopScene({ lang }: { lang: Lang }) {
               key={subject}
               type="button"
               aria-pressed={subject === active}
-              onClick={() => setActive(subject)}
+              onClick={() => selectSubject(subject)}
             >
-              <Icon size={15} />
+              <Icon size={15} aria-hidden="true" />
               {t[subject][0]}
             </button>
           );
         })}
       </div>
-      <div className="sketchbook-caption" aria-live="polite" aria-atomic="true">
-        <h2>{t[active][1]}</h2>
-        <p>{t[active][2]}</p>
+      <div className={styles.rotationControls}>
+        <span>{paused ? t.manual : t.automatic}</span>
+        <button type="button" onClick={() => rotation.current?.setPaused(!paused)} aria-label={paused ? t.playLabel : t.pauseLabel}>
+          {paused ? <Play size={12} aria-hidden="true" /> : <Pause size={12} aria-hidden="true" />}
+          {paused ? t.play : t.pause}
+        </button>
+      </div>
+      <div className={`sketchbook-caption ${styles.captions}`}>
+        {subjects.map((subject) => (
+          <div key={subject} className={styles.caption} data-state={layerState(subject)} aria-hidden={subject !== active}>
+            <h2>{t[subject][1]}</h2>
+            <p>{t[subject][2]}</p>
+          </div>
+        ))}
       </div>
       <Link href={"/projects?category=" + active} className="sketchbook-link">
         {t.link}

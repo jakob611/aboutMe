@@ -22,7 +22,7 @@ export function Navbar({ lang, t, name }: Props) {
     { href: "/about", label: t.nav.about },
     { href: "/services", label: t.nav.services },
     { href: "/files", label: t.nav.files },
-    { href: "/contact", label: t.nav.contact },
+    { href: "/donate", label: t.nav.donate },
   ];
   const isCurrent = (href: string) =>
     href === "/"
@@ -117,13 +117,6 @@ export function Navbar({ lang, t, name }: Props) {
         </ul>
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher lang={lang} label={t.common.switchLang} />
-          <Link
-            href="/contact"
-            className="hidden items-center gap-1.5 rounded-md border border-white/15 px-3.5 py-2 text-xs font-medium transition-colors hover:border-white/35 sm:inline-flex"
-          >
-            {lang === "sl" ? "Začniva pogovor" : "Let’s talk"}{" "}
-            <ArrowUpRight aria-hidden="true" size={14} />
-          </Link>
           <button
             ref={toggleRef}
             type="button"
@@ -158,7 +151,7 @@ export function Navbar({ lang, t, name }: Props) {
           className="border-t border-white/[0.08] bg-[color:var(--color-bg)] lg:hidden"
         >
           <ul className="mx-auto grid max-w-7xl gap-1 px-5 py-4 sm:px-8">
-            {[...links, { href: "/donate", label: t.nav.donate }].map(
+            {links.map(
               (link) => (
                 <li key={link.href}>
                   <Link

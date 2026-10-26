@@ -72,7 +72,7 @@ export const translations = {
     services: {
       title: "Services",
       subtitle:
-        "Android apps, websites, and AI-assisted workflows. Here's what I can help you build or improve.",
+        "Android and web development, ongoing maintenance and support, AI automation, and 3D printing. Start with a new idea or improve what you already have.",
       startingAt: "from",
       getQuote: "Request a quote",
       whyTitle: "A straightforward way to start",
@@ -81,7 +81,7 @@ export const translations = {
       why2Title: "Agree on a useful first step",
       why2: "Decide what belongs in the first version and what can wait. Scope, timing and cost should be clear before work starts.",
       why3Title: "Build, try, and improve",
-      why3: "Use a working version to see what feels right and what needs another pass.",
+      why3: "Try a working version, agree on the handover, and plan any ongoing maintenance or support you need.",
     },
     files: {
       title: "Files",
@@ -223,7 +223,7 @@ export const translations = {
     services: {
       title: "Storitve",
       subtitle:
-        "Android aplikacije, spletne strani in delovni postopki s pomočjo umetne inteligence. Tukaj lahko pomagam pri izdelavi ali izboljšavah.",
+        "Android in spletni razvoj, stalno vzdrževanje in podpora, AI avtomatizacija ter 3D tisk. Začniva pri novi ideji ali izboljšajva obstoječo rešitev.",
       startingAt: "od",
       getQuote: "Povpraševanje",
       whyTitle: "Preprost začetek sodelovanja",
@@ -232,7 +232,7 @@ export const translations = {
       why2Title: "Dogovor o prvem koraku",
       why2: "Določiva, kaj sodi v prvo različico in kaj lahko počaka. Obseg, čas in cena morajo biti jasni pred začetkom dela.",
       why3Title: "Izdelava, preizkus in izboljšave",
-      why3: "Ob delujoči različici se najlažje vidi, kaj je dobro in kaj potrebuje še en krog popravkov.",
+      why3: "Preizkusi delujočo različico, nato se dogovoriva o predaji in morebitnem nadaljnjem vzdrževanju ali podpori.",
     },
     files: {
       title: "Datoteke",

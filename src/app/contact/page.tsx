@@ -4,8 +4,10 @@ import { getLang } from "@/lib/lang";
 import { translations } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
 import type { Metadata } from "next";
+import { inquiryFromQuery } from "@/lib/inquiry-topics";
+import { contactDelivery } from "@/lib/contact-delivery";
 
-type Props = { searchParams: Promise<{ subject?: string | string[] }> };
+type Props = { searchParams: Promise<{ subject?: string | string[]; category?: string | string[]; topic?: string | string[] }> };
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
@@ -17,10 +19,9 @@ export default async function ContactPage({ searchParams }: Props) {
   const lang = await getLang();
   const t = translations[lang];
   const params = await searchParams;
-  const subject =
-    typeof params.subject === "string"
-      ? params.subject.trim().slice(0, 200)
-      : "";
+  const inquiry = inquiryFromQuery(params);
+  // Web3Forms access keys are deliberately public. Email sends directly from the browser.
+  const delivery = contactDelivery(process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY, Boolean(process.env.DATABASE_URL));
   const contactEmail =
     /^\S+@\S+\.\S+$/.test(siteConfig.email) &&
     !/@example\.(com|org|net)$/.test(siteConfig.email)
@@ -46,12 +47,13 @@ export default async function ContactPage({ searchParams }: Props) {
           </p>
         </Reveal>
         <ContactClient
-          key={subject}
+          key={JSON.stringify(inquiry)}
           lang={lang}
           t={t}
           contactEmail={contactEmail}
           githubUrl={githubUrl}
-          initialSubject={subject}
+          initialInquiry={inquiry}
+          delivery={delivery}
         />
       </div>
     </section>

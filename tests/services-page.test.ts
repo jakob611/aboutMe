@@ -10,6 +10,7 @@ import {
   serviceOfferings,
 } from "../src/lib/service-offerings";
 import type { Lang } from "../src/lib/i18n";
+import { serviceInquiryHref } from "../src/lib/inquiry-topics";
 
 const require = createRequire(resolve("package.json"));
 const requestHeaders = require("next/headers") as typeof import("next/headers");
@@ -36,7 +37,7 @@ test("service catalog remains useful without Neon and preserves configured servi
   });
 
   await t.test(
-    "all three core offerings render in both languages without credentials",
+    "all four core offerings render in both languages without credentials",
     async () => {
       delete process.env.DATABASE_URL;
       let fetchCalls = 0;
@@ -47,14 +48,14 @@ test("service catalog remains useful without Neon and preserves configured servi
       for (const selected of ["en", "sl"] as const) {
         lang = selected;
         const html = renderToStaticMarkup(await ServicesPage());
-        for (const id of ["android", "web", "automation"]) {
+        for (const id of ["android", "web", "automation", "printing"]) {
           assert.equal(html.split(`id="${id}"`).length - 1, 1);
         }
         for (const offering of serviceOfferings[lang]) {
           assert.ok(html.includes(escapeHtml(offering.title)));
           assert.ok(
             html.includes(
-              `/contact?subject=${encodeURIComponent(offering.title)}`,
+              escapeHtml(serviceInquiryHref(offering.id)),
             ),
           );
         }
@@ -136,7 +137,7 @@ test("service catalog remains useful without Neon and preserves configured servi
       for (const selected of ["en", "sl"] as const) {
         lang = selected;
         const html = renderToStaticMarkup(await ServicesPage());
-        for (const id of ["android", "web", "automation"])
+        for (const id of ["android", "web", "automation", "printing"])
           assert.equal(html.split(`id="${id}"`).length - 1, 1);
         for (const row of rows) {
           assert.ok(
@@ -159,6 +160,7 @@ test("service catalog remains useful without Neon and preserves configured servi
       assert.equal(coreServiceIdFromSlug(" Mobile Apps "), "android");
       assert.equal(coreServiceIdFromSlug("AI & Automation"), "automation");
       assert.equal(coreServiceIdFromSlug("web-development"), "web");
+      assert.equal(coreServiceIdFromSlug("3D printing"), "printing");
       assert.equal(coreServiceIdFromSlug("code-review"), undefined);
       assert.equal(coreServiceIdFromSlug("prototype"), undefined);
     },

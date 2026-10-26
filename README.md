@@ -56,8 +56,10 @@ pages show an honest unavailable state when the database cannot be reached.
 
 - Edit `src/lib/site.ts` for real profile links, tools and optional support links.
   The site deliberately omits invented statistics and unconfigured profiles.
-- Manage real projects and view contact messages at `/admin`, using UPLOAD_PASSWORD.
-  Edit the core Android, web and AI/automation offerings in
+- Manage real projects, publish a CV PDF and view contact messages at `/admin`,
+  using UPLOAD_PASSWORD.
+  The CV tab uses R2 independently of Neon; [ADMIN.md](ADMIN.md) explains publication.
+  Edit the core Android, web, AI/automation and 3D printing offerings in
   `src/lib/service-offerings.ts`; these are available without a database.
   Add optional service details and additional offerings through Neon's Tables UI
   or SQL Editor. Configured prices are kept; no fallback prices are invented.
@@ -67,14 +69,23 @@ pages show an honest unavailable state when the database cannot be reached.
   `src/lib/gallery.ts`. Workers cannot list public assets from the filesystem.
 - File uploads/downloads use R2; PostgreSQL stores metadata only.
 - Set `UPLOAD_PASSWORD` to enable password-protected uploads/deletes.
-- Contact submissions are saved in `contact_messages`; they do not send email.
+- Contact offers seven enquiry categories with dependent topics and a custom Other
+  subject. Service links preselect the relevant enquiry, including ongoing support.
+  Existing `?subject=` links remain usable. Category, topic, custom subject and
+  message fields survive the existing language-switch draft handoff.
+- Optional `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` enables browser-direct email delivery.
+  With no key, configured Neon receives submissions in `contact_messages` without
+  sending email; with neither configured, sending is disabled and real contact
+  links remain available. See [ADMIN.md](ADMIN.md) for key setup and current limits.
 - Google Drive integration is optional: configure `GOOGLE_DRIVE_API_KEY` and
   `GOOGLE_DRIVE_FOLDER_ID` for a public folder.
 - Optional `BUY_ME_A_COFFEE_URL` and `KO_FI_URL` enable real support links. When
   absent, the support page offers feedback, sharing and source exploration.
-- The home-page sketchbook is an original SVG illustration, not a portfolio
-  screenshot. Project cover/gallery images always come from the project records.
-- Project categories have shareable URLs (for example `/projects?category=android`).
+- The home-page sketchbook has original web, Android, LEGO and 3D printing SVG
+  scenes. It advances every six seconds, with Play/Pause and manual selection;
+  hover, focus, hidden pages and offscreen state suspend it. Reduced motion starts
+  paused. Project cover/gallery images always come from the project records.
+- Project categories have shareable URLs (for example `/projects?category=3d-printing`).
   Text/tag search and the image viewer run locally in the browser.
 - Motion respects reduced-motion preferences; reveal effects keep server-rendered
   content visible before JavaScript loads. Visible content animates on entry and
