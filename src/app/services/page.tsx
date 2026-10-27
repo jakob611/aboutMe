@@ -1,3 +1,5 @@
+import { SiteSection } from "@/components/SiteContentProvider";
+import { getSiteContent } from "@/lib/site-content-server";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -10,11 +12,9 @@ import {
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { getLang } from "@/lib/lang";
-import { translations, type Lang } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 import {
   coreServiceIdFromSlug,
-  serviceOfferings,
-  servicePageCopy,
   type ServiceOffering,
 } from "@/lib/service-offerings";
 import { getDb } from "@/db";
@@ -27,16 +27,18 @@ type ServiceRow = typeof services.$inferSelect;
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
+  const content = await getSiteContent();
   return {
-    title: translations[lang].services.title,
-    description: translations[lang].services.subtitle,
+    title: content.translation(lang).services.title,
+    description: content.translation(lang).services.subtitle,
   };
 }
 
 export default async function ServicesPage() {
   const lang = await getLang();
-  const t = translations[lang];
-  const copy = servicePageCopy[lang];
+  const content = await getSiteContent();
+  const t = content.translation(lang);
+  const copy = content.servicePageCopy(lang);
   let servicesList: ServiceRow[] = [];
   try {
     servicesList = await getDb()
@@ -62,7 +64,7 @@ export default async function ServicesPage() {
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <Reveal>
           <p className="section-label mb-6">
-            {lang === "sl" ? "Sodelovanje" : "Working together"}
+            {content.text(lang, "copy.3.1")}
             <span className="text-[color:var(--color-accent-2)]">/ 03</span>
           </p>
           <h1 className="display-title max-w-4xl">
@@ -74,7 +76,7 @@ export default async function ServicesPage() {
           </p>
         </Reveal>
 
-        <section
+        <SiteSection name="services.offerings"><section
           aria-labelledby="core-services-title"
           className="mt-14 sm:mt-20"
         >
@@ -84,7 +86,7 @@ export default async function ServicesPage() {
             </h2>
           </Reveal>
           <div className="grid gap-5 md:grid-cols-2">
-            {serviceOfferings[lang].map((offering, index) => (
+            {content.serviceOfferings(lang).map((offering, index) => (
               <Reveal key={offering.id} delay={index * 0.05}>
                 <CoreServiceCard
                   lang={lang}
@@ -103,10 +105,10 @@ export default async function ServicesPage() {
               {copy.scope}
             </p>
           </Reveal>
-        </section>
+        </section></SiteSection>
 
         {additionalServices.length > 0 && (
-          <section
+          <SiteSection name="services.additional"><section
             className="section-rule mt-16 sm:mt-20 pt-8"
             aria-labelledby="additional-services-title"
           >
@@ -128,10 +130,10 @@ export default async function ServicesPage() {
                 </Reveal>
               ))}
             </div>
-          </section>
+          </section></SiteSection>
         )}
 
-        <section
+        <SiteSection name="services.process"><section
           aria-labelledby="working-together-title"
           className="section-rule mt-20 sm:mt-24 pt-8"
         >
@@ -161,7 +163,7 @@ export default async function ServicesPage() {
               </Reveal>
             ))}
           </div>
-        </section>
+        </section></SiteSection>
 
         <Reveal>
           <div className="section-rule mt-14 sm:mt-16 pt-8 flex flex-wrap justify-between gap-6 items-center">
@@ -179,7 +181,7 @@ export default async function ServicesPage() {
   );
 }
 
-function CoreServiceCard({
+async function CoreServiceCard({
   lang,
   offering,
   index,
@@ -190,10 +192,11 @@ function CoreServiceCard({
   index: number;
   details: ServiceRow[];
 }) {
+  const content = await getSiteContent();
   const Icon = { android: Smartphone, web: Code2, automation: Workflow, printing: Box }[
     offering.id
   ];
-  const copy = servicePageCopy[lang];
+  const copy = content.servicePageCopy(lang);
   return (
     <article
       id={offering.id}
@@ -258,9 +261,9 @@ function CoreServiceCard({
                 <p className="text-[color:var(--color-fg-muted)] leading-relaxed">
                   {lang === "sl" ? detail.descriptionSl : detail.descriptionEn}
                 </p>
-                {detail.priceFrom && (
+                {detail.priceFrom && !content.hasPriceOverride(lang, offering.id) && (
                   <p className="mt-3">
-                    {translations[lang].services.startingAt} {detail.priceFrom}
+                    {content.translation(lang).services.startingAt} {detail.priceFrom}
                   </p>
                 )}
               </div>
@@ -269,6 +272,7 @@ function CoreServiceCard({
         </details>
       )}
       <div className="mt-auto pt-7 flex flex-col items-start gap-3">
+        {content.price(lang, offering.id) && <p className="text-sm font-medium">{content.price(lang, offering.id)}</p>}
         <Link
           href={serviceInquiryHref(offering.id)}
           className="link-arrow text-sm"
@@ -285,13 +289,14 @@ function CoreServiceCard({
   );
 }
 
-function AdditionalServiceCard({
+async function AdditionalServiceCard({
   lang,
   service,
 }: {
   lang: Lang;
   service: ServiceRow;
 }) {
+  const content = await getSiteContent();
   const title = lang === "sl" ? service.titleSl : service.titleEn;
   const Icon = service.icon === "design" ? Palette : Code2;
   return (
@@ -309,14 +314,14 @@ function AdditionalServiceCard({
       <div className="mt-7 pt-5 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
         {service.priceFrom && (
           <p className="text-sm">
-            {translations[lang].services.startingAt} {service.priceFrom}
+            {content.translation(lang).services.startingAt} {service.priceFrom}
           </p>
         )}
         <Link
           href={`/contact?subject=${encodeURIComponent(title)}`}
           className="link-arrow text-sm"
         >
-          {translations[lang].services.getQuote}
+          {content.translation(lang).services.getQuote}
           <ArrowUpRight size={16} />
         </Link>
       </div>

@@ -1,3 +1,6 @@
+import { SiteContentProvider } from "@/components/SiteContentProvider";
+import { getSiteContent } from "@/lib/site-content-server";
+import { serializeSiteStructuredData } from "@/lib/site-content";
 export const dynamic = "force-dynamic";
 
 import type { Metadata, Viewport } from "next";
@@ -8,7 +11,6 @@ import { Footer } from "@/components/Footer";
 import { FragmentLink } from "@/components/FragmentLink";
 import { siteConfig } from "@/lib/site";
 import { getLang } from "@/lib/lang";
-import { translations } from "@/lib/i18n";
 
 export const viewport: Viewport = {
   themeColor: "#111513",
@@ -19,24 +21,25 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
-  const t = translations[lang];
-  const title = `${siteConfig.name} — ${t.brand}`;
-  const description = siteConfig.tagline;
+  const content = await getSiteContent();
+  const t = content.translation(lang);
+  const title = `${content.profile().name} — ${t.brand}`;
+  const description = content.profile().tagline;
   return {
     metadataBase: new URL(siteConfig.url),
-    title: { default: title, template: `%s · ${siteConfig.name}` },
+    title: { default: title, template: `%s · ${content.profile().name}` },
     description,
-    applicationName: siteConfig.name,
-    authors: [{ name: siteConfig.name, url: siteConfig.url }],
-    creator: siteConfig.name,
-    publisher: siteConfig.name,
+    applicationName: content.profile().name,
+    authors: [{ name: content.profile().name, url: siteConfig.url }],
+    creator: content.profile().name,
+    publisher: content.profile().name,
     alternates: {
       canonical: "./",
       languages: { en: "/?lang=en", sl: "/?lang=sl" },
     },
     openGraph: {
       type: "website",
-      siteName: siteConfig.name,
+      siteName: content.profile().name,
       title,
       description,
       url: siteConfig.url,
@@ -46,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: `${siteConfig.url}/og.png`,
           width: 1200,
           height: 630,
-          alt: siteConfig.name,
+          alt: content.profile().name,
         },
       ],
     },
@@ -78,15 +81,16 @@ export default async function RootLayout({
   children: ReactNode;
 }) {
   const lang = await getLang();
-  const t = translations[lang];
+  const content = await getSiteContent();
+  const t = content.translation(lang);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Person",
-    name: siteConfig.name,
+    name: content.profile().name,
     url: siteConfig.url,
-    jobTitle: siteConfig.tagline,
-    sameAs: Object.values(siteConfig.socials).filter(Boolean),
-    email: siteConfig.email || undefined,
+    jobTitle: content.profile().tagline,
+    sameAs: [content.profile().github, content.profile().linkedin, content.profile().instagram, content.profile().twitter].filter(Boolean),
+    email: content.profile().email || undefined,
   };
 
   return (
@@ -106,15 +110,16 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+            __html: serializeSiteStructuredData(jsonLd),
           }}
         />
       </head>
       <body id="top" className="mesh-bg min-h-screen relative grain">
         <FragmentLink href="#main-content" className="skip-link" focusTarget>
-          {lang === "sl" ? "Preskoči na vsebino" : "Skip to content"}
+          {content.text(lang, "layout.skip")}
         </FragmentLink>
-        <Navbar key={lang} name={siteConfig.name} lang={lang} t={t} />
+        <SiteContentProvider values={content.overrides}>
+        <Navbar key={lang} name={content.profile().name} lang={lang} t={t} />
         <main
           id="main-content"
           tabIndex={-1}
@@ -123,6 +128,7 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer lang={lang} t={t} />
+        </SiteContentProvider>
       </body>
     </html>
   );

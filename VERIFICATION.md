@@ -1,4 +1,59 @@
-# Repair acceptance — 25 October 2026
+# Editor, content management and contact verification — 27 October 2026
+
+Current branch: `codex/editor-content-management`. This section supersedes earlier
+notes about the separate Home work section, browser-direct Web3Forms delivery,
+non-editable services and missing donation configuration. Older sections below
+are historical evidence from previous releases.
+
+- [x] Full automated suite: 108/108 tests pass, including protected project CRUD
+  through mocked Neon/actual Drizzle mapping, ordered bilingual captions, legacy
+  gallery compatibility, closed-source public redaction, CMS conflict protection,
+  bounded draft recovery and server-side Turnstile rejection paths.
+- [x] TypeScript passes. ESLint has zero errors and 11 advisories: ten image
+  optimization recommendations and one custom-font recommendation.
+- [x] Server-render tests use Next's server-only marker alias in their test runtime
+  and React's streaming renderer for nested async service cards. The production
+  server/client boundary remains intact.
+- [x] New editor preparation, media uploads and R2 content editing are available
+  without a local database; project Save remains blocked during the database outage.
+  No schema migration, production project mutation or fictional project was used.
+- [x] Next 16.4.3/OpenNext 1.20.13 Worker build and Wrangler 4.152.0 deploy dry run
+  pass with 36 static assets. A fresh local preview serves `/` with HTTP 200 on
+  port 8787. Logs are in ignored `artifacts/editor-content-2026-10-27/`.
+- [x] Lead-operated actual local browser checks passed native file uploads and
+  gallery drag ordering, accessible move controls, right-click captions, cover
+  caption copy, bare-domain normalization, custom-slug preservation and project
+  draft recovery after refresh. Project Save stays blocked without a database.
+- [x] Actual CMS publication changed both a Home eyebrow and navigation label;
+  refreshed header and public Home showed both changes. Two-editor stale revision
+  save was rejected with its draft intact. Use default restored both fields,
+  and logout/relogin cleared project/CMS drafts. At 390px, CMS body/document
+  width measured 382px. Screenshot: ignored
+  `artifacts/editor-cms-2026-10-27/cms-mobile.png`.
+- [x] Local fixture cleanup used Wrangler's explicit `--local` on exactly the two
+  uploaded test images and newly created `site/content.v1.json`. The saved initial
+  snapshot proved content was originally absent. Both media URLs return 404;
+  authenticated content read returns revision null and zero overrides again.
+- [x] Independent final source/security review and browser/design critique found
+  no release blocker. Browser critique assessed the lead's recorded actual UI
+  evidence; a separate child-operated browser session was not available.
+- [ ] Actual Cloudflare token redemption, accepted private-inbox message and replay
+  rejection using the owner's explicitly authorized disposable enquiry.
+- [ ] Reviewed PR merge, production deployment and read-only production checks.
+
+The active contact form sends verified messages to **Admin → Messages** and does
+not send email. Runtime verification requires the secret and exact hostname
+allowlist; the public site key is embedded at build time. No separate development
+Neon database exists. Local R2 and tab-draft tests can verify the interaction,
+but real production project-save behavior still needs the owner to use intended
+content. Mocked tests cannot certify production database permissions.
+The file chooser and native gallery-to-gallery drag were exercised; an external
+operating-system file drop into the browser was not exercised.
+The real local Turnstile widget passively reached "Verification complete";
+Send remained disabled without a local database. This does not establish a stored
+production contact message or replay rejection; those checks remain listed above.
+
+# Historical repair acceptance — 25 October 2026
 
 Local preview: http://localhost:8787. Branch: `codex/admin-dashboard`, PR #1.
 Remote Preview:

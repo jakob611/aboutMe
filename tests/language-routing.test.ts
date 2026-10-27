@@ -1,3 +1,4 @@
+import "./server-component-runtime";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NextRequest } from "next/server";
@@ -169,7 +170,7 @@ test("navigation commits matching cookie and URL choices in both directions", ()
   }
 });
 
-test("server-rendered language controls and footer translate in both directions", () => {
+test("server-rendered language controls and footer translate in both directions", async () => {
   for (const lang of ["en", "sl"] as Lang[]) {
     const button = renderToStaticMarkup(
       createElement(LanguageSwitcher, {
@@ -182,7 +183,7 @@ test("server-rendered language controls and footer translate in both directions"
     assert.doesNotMatch(button, /<button[^>]*\sdisabled(?:=|\s|>)/);
     assert.ok(button.includes(lang === "en" ? ">SL<" : ">EN<"));
     const footer = renderToStaticMarkup(
-      createElement(Footer, { lang, t: translations[lang] }),
+      await Footer({ lang, t: translations[lang] }),
     );
     assert.ok(footer.includes(lang === "en" ? "Explore" : "Razišči"));
     assert.ok(footer.includes(lang === "en" ? "Back to top" : "Na vrh"));

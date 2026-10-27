@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { contactMessages } from "@/db/schema";
 import { parseContactPayload, readContactJson } from "@/lib/contact-delivery";
+import { verifyContactTurnstile } from "@/lib/contact-turnstile";
 
 // POST /api/contact
 export async function POST(req: Request) {
@@ -23,6 +24,14 @@ export async function POST(req: Request) {
       );
     }
     if (body.website) return NextResponse.json({ error: "Request not accepted" }, { status: 400 });
+    if (!(await verifyContactTurnstile({
+      request: req,
+      token: body["cf-turnstile-response"],
+      secret: process.env.TURNSTILE_SECRET,
+      hostnames: process.env.TURNSTILE_HOSTNAMES,
+    }))) {
+      return NextResponse.json({ error: "Verification failed. Please try again." }, { status: 403 });
+    }
     if (!process.env.DATABASE_URL) {
       return NextResponse.json({ error: "Contact form is unavailable" }, { status: 503 });
     }

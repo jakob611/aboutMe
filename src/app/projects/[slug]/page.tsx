@@ -4,7 +4,6 @@ import { ArrowLeft, ExternalLink, Code2, Calendar } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { CommentSection } from "@/components/CommentSection";
 import { getLang } from "@/lib/lang";
-import { translations } from "@/lib/i18n";
 import { getDb } from "@/db";
 import { projects, comments } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -12,7 +11,9 @@ import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
 import { publicCommentFields } from "@/lib/public-comments";
 import { ProjectGallery } from "@/components/ProjectGallery";
-import { projectCategoryLabel } from "@/lib/project-categories";
+import { serializeSiteStructuredData } from "@/lib/site-content";
+import { serializePublicProject } from "@/lib/project-media";
+import { getSiteContent } from "@/lib/site-content-server";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .select()
     .from(projects)
     .where(eq(projects.slug, slug));
-  if (!row) return { title: "Not found" };
+  if (!row) return { title: (await getSiteContent()).text(lang, "projects.notFound") };
   const title = lang === "sl" ? row.titleSl : row.titleEn;
   const description = lang === "sl" ? row.summarySl : row.summaryEn;
   return {
@@ -40,13 +41,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProjectPage({ params }: Props) {
   const { slug } = await params;
   const lang = await getLang();
-  const t = translations[lang];
+  const content = await getSiteContent();
+  const t = content.translation(lang);
 
-  const [project] = await getDb()
+  const [row] = await getDb()
     .select()
     .from(projects)
     .where(eq(projects.slug, slug));
-  if (!project) notFound();
+  if (!row) notFound();
+  const project = serializePublicProject(row);
 
   const projectComments = await getDb()
     .select(publicCommentFields)
@@ -58,7 +61,8 @@ export default async function ProjectPage({ params }: Props) {
   const summary = lang === "sl" ? project.summarySl : project.summaryEn;
   const description =
     lang === "sl" ? project.descriptionSl : project.descriptionEn;
-  const catLabel = projectCategoryLabel(project.category, lang);
+  const catLabel = content.categoryLabel(lang, project.category);
+  const coverCaption = lang === "sl" ? project.coverCaptionSl : project.coverCaptionEn;
 
   // Structured data for SEO
   const jsonLd = {
@@ -68,7 +72,7 @@ export default async function ProjectPage({ params }: Props) {
     description: summary,
     url: `${siteConfig.url}/projects/${project.slug}`,
     image: project.coverImage || undefined,
-    author: { "@type": "Person", name: siteConfig.name },
+    author: { "@type": "Person", name: content.profile().name },
     datePublished: project.createdAt.toISOString(),
     keywords: (project.tags ?? []).join(", "),
   };
@@ -78,7 +82,7 @@ export default async function ProjectPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+          __html: serializeSiteStructuredData(jsonLd),
         }}
       />
 
@@ -121,7 +125,7 @@ export default async function ProjectPage({ params }: Props) {
                 <ExternalLink size={15} />
               </a>
             )}
-            {project.repoUrl && (
+            {project.repoUrl && project.sourceVisibility !== "closed" && (
               <a
                 href={project.repoUrl}
                 target="_blank"
@@ -131,29 +135,33 @@ export default async function ProjectPage({ params }: Props) {
                 {t.projects.code} <Code2 size={15} />
               </a>
             )}
+            {project.sourceVisibility === "closed" && <span className="inline-flex items-center rounded-lg border border-white/15 px-4 py-2 text-sm text-[color:var(--color-fg-muted)]">{content.text(lang, "projects.closed")}</span>}
           </div>
         </Reveal>
 
         {project.coverImage && (
           <Reveal delay={0.1}>
+            <figure className="mt-10">
             <img
               src={project.coverImage}
-              alt={title}
+              alt={coverCaption || title}
               width={1400}
               height={900}
-              className="mt-10 max-h-[75vh] w-full rounded-2xl border border-white/10 bg-white/[0.02] object-contain"
+              className="max-h-[75vh] w-full rounded-2xl border border-white/10 bg-white/[0.02] object-contain"
             />
+            {coverCaption && <figcaption className="mt-3 text-sm leading-relaxed text-[color:var(--color-fg-muted)] [overflow-wrap:anywhere]">{coverCaption}</figcaption>}
+            </figure>
           </Reveal>
         )}
 
-        {project.gallery && project.gallery.length > 0 && (
-          <ProjectGallery images={project.gallery} title={title} lang={lang} />
+        {project.galleryImages.length > 0 && (
+          <ProjectGallery images={project.galleryImages} title={title} lang={lang} />
         )}
 
         <Reveal delay={0.15}>
           <div className="section-rule mt-12 grid gap-6 pt-8 sm:grid-cols-[140px_1fr]">
             <h2 className="section-label">
-              {lang === "sl" ? "O projektu" : "Project notes"}
+              {content.text(lang, "projects.notes")}
             </h2>
             <div>
               {description.split("\n\n").map((p, i) => (

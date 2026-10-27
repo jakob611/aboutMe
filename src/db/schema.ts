@@ -8,6 +8,7 @@ import {
   boolean,
   jsonb,
 } from "drizzle-orm/pg-core";
+import type { ProjectGallery } from "@/lib/project-media";
 
 // ---------- Projects ----------
 export const projects = pgTable("projects", {
@@ -22,7 +23,7 @@ export const projects = pgTable("projects", {
   category: varchar("category", { length: 60 }).notNull(), // 'android' | 'lego' | 'web' | 'other'
   tags: jsonb("tags").$type<string[]>().default([]),
   coverImage: varchar("cover_image", { length: 500 }).default(""),
-  gallery: jsonb("gallery").$type<string[]>().default([]),
+  gallery: jsonb("gallery").$type<ProjectGallery>().default([]),
   linkUrl: varchar("link_url", { length: 500 }).default(""),
   linkLabel: varchar("link_label", { length: 100 }).default(""),
   repoUrl: varchar("repo_url", { length: 500 }).default(""),

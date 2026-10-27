@@ -1,8 +1,8 @@
+import { getSiteContent } from "@/lib/site-content-server";
 import Link from "next/link";
 import { FragmentLink } from "@/components/FragmentLink";
 import { BrandLogo } from "@/components/BrandLogo";
 import { ArrowUp, ArrowUpRight, Mail } from "lucide-react";
-import { siteConfig } from "@/lib/site";
 import type { Translation, Lang } from "@/lib/i18n";
 
 type Props = { lang: Lang; t: Translation };
@@ -16,18 +16,19 @@ function isProfile(url: string) {
   }
 }
 
-export function Footer({ lang, t }: Props) {
+export async function Footer({ lang, t }: Props) {
+  const content = await getSiteContent();
   const year = new Date().getFullYear();
   const email =
-    /^\S+@\S+\.\S+$/.test(siteConfig.email) &&
-    !/@example\.(com|org|net)$/.test(siteConfig.email)
-      ? siteConfig.email
+    /^\S+@\S+\.\S+$/.test(content.profile().email) &&
+    !/@example\.(com|org|net)$/.test(content.profile().email)
+      ? content.profile().email
       : "";
   const profiles = [
-    { label: "GitHub", url: siteConfig.socials.github },
-    { label: "LinkedIn", url: siteConfig.socials.linkedin },
-    { label: "Instagram", url: siteConfig.socials.instagram },
-    { label: "X", url: siteConfig.socials.twitter },
+    { label: content.text(lang, "copy.1.1"), url: content.profile().github },
+    { label: content.text(lang, "copy.1.2"), url: content.profile().linkedin },
+    { label: content.text(lang, "copy.1.3"), url: content.profile().instagram },
+    { label: content.text(lang, "copy.1.4"), url: content.profile().twitter },
   ].filter((profile) => isProfile(profile.url));
 
   return (
@@ -40,7 +41,7 @@ export function Footer({ lang, t }: Props) {
           >
             <BrandLogo size={44} />
             <span>
-              {siteConfig.name}
+              {content.profile().name}
               <span
                 aria-hidden="true"
                 className="text-[color:var(--color-accent-2)]"
@@ -50,14 +51,12 @@ export function Footer({ lang, t }: Props) {
             </span>
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
-            {lang === "sl"
-              ? "Projekti, poskusi in ideje, ki dobivajo obliko. Na zaslonu in zunaj njega."
-              : "Projects, experiments, and ideas taking shape. On screen and away from it."}
+            {content.text(lang, "copy.1.5")}
           </p>
         </div>
         <div className="md:col-span-3">
           <h2 className="section-label mb-5">
-            {lang === "sl" ? "Razišči" : "Explore"}
+            {content.text(lang, "copy.1.6")}
           </h2>
           <ul className="space-y-3 text-sm text-[color:var(--color-fg-muted)]">
             {[
@@ -80,7 +79,7 @@ export function Footer({ lang, t }: Props) {
         </div>
         <div className="md:col-span-3">
           <h2 className="section-label mb-5">
-            {lang === "sl" ? "Ostaniva v stiku" : "Find me"}
+            {content.text(lang, "copy.1.7")}
           </h2>
           <ul className="space-y-3 text-sm text-[color:var(--color-fg-muted)]">
             <li>
@@ -114,9 +113,7 @@ export function Footer({ lang, t }: Props) {
                   {profile.label}
                   <ArrowUpRight aria-hidden="true" size={13} />
                   <span className="sr-only">
-                    {lang === "sl"
-                      ? "Odpre se v novem zavihku"
-                      : "Opens in a new tab"}
+                    {content.text(lang, "copy.1.8")}
                   </span>
                 </a>
               </li>
@@ -126,13 +123,13 @@ export function Footer({ lang, t }: Props) {
       </div>
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 border-t border-white/[0.08] px-5 py-6 text-xs text-[color:var(--color-fg-muted)] sm:px-8">
         <p>
-          © {year} {siteConfig.name}
+          © {year} {content.profile().name}
         </p>
         <FragmentLink
           href="#top"
           className="inline-flex items-center gap-2 transition-colors hover:text-[color:var(--color-fg)]"
         >
-          {lang === "sl" ? "Na vrh" : "Back to top"}
+          {content.text(lang, "copy.1.9")}
           <ArrowUp aria-hidden="true" size={13} />
         </FragmentLink>
       </div>

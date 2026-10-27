@@ -4,9 +4,10 @@ import Link from "next/link";
 import { ArrowUpRight, Search, X } from "lucide-react";
 import { ProjectCard, type Project } from "@/components/ProjectCard";
 import { Reveal } from "@/components/Reveal";
-import { translations, type Lang } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
+import { useSiteContent } from "@/components/SiteContentProvider";
 import { cn } from "@/lib/utils";
-import { PROJECT_CATEGORY_IDS, getProjectCategoryLabels, normalizeProjectCategory } from "@/lib/project-categories";
+import { PROJECT_CATEGORY_IDS, normalizeProjectCategory } from "@/lib/project-categories";
 
 type Props = { projects: Project[]; lang: Lang; initialCategory?: Category };
 const CATEGORIES = ["all", ...PROJECT_CATEGORY_IDS] as const;
@@ -22,13 +23,14 @@ export function ProjectsClient({
   lang,
   initialCategory = "all",
 }: Props) {
-  const t = translations[lang].projects;
+  const content = useSiteContent();
+  const t = content.translation(lang).projects;
   const [active, setActive] = useState<Category>(initialCategory);
   const [query, setQuery] = useState("");
-  const labels: Record<Category, string> = {
+  const labels = {
     all: t.filterAll,
-    ...getProjectCategoryLabels(lang),
-  };
+    ...Object.fromEntries(PROJECT_CATEGORY_IDS.map(category => [category, content.categoryLabel(lang, category)])),
+  } as Record<Category, string>;
   const categoryOf = (project: Project) =>
     normalizeProjectCategory(project.category);
   const term = normalize(query.trim());
@@ -75,7 +77,7 @@ export function ProjectsClient({
           <div
             className="flex flex-wrap gap-1"
             role="group"
-            aria-label={lang === "sl" ? "Vrsta projekta" : "Project category"}
+            aria-label={content.text(lang, "projects.categoryLabel")}
           >
             {CATEGORIES.map((category) => (
               <button
@@ -103,7 +105,7 @@ export function ProjectsClient({
           </div>
           <div className="relative w-full lg:max-w-64" role="search">
             <label htmlFor="project-search" className="sr-only">
-              {lang === "sl" ? "Išči po projektih" : "Search projects"}
+              {content.text(lang, "projects.searchLabel")}
             </label>
             <Search
               size={15}
@@ -115,18 +117,14 @@ export function ProjectsClient({
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={
-                lang === "sl"
-                  ? "Naslov, orodje, ideja …"
-                  : "Title, tool, idea …"
-              }
+              placeholder={content.text(lang, "projects.searchPlaceholder")}
               className="input !py-2 !pl-9 !pr-9 text-sm"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                aria-label={lang === "sl" ? "Počisti iskanje" : "Clear search"}
+                aria-label={content.text(lang, "projects.clearSearch")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-[color:var(--color-fg-muted)] hover:text-white"
               >
                 <X size={14} />
@@ -140,9 +138,7 @@ export function ProjectsClient({
         role="status"
         aria-live="polite"
       >
-        {lang === "sl"
-          ? `Prikazano: ${filtered.length} od ${projects.length}`
-          : `Showing ${filtered.length} of ${projects.length}`}
+        {content.text(lang, "projects.showing").replaceAll("{shown}", String(filtered.length)).replaceAll("{total}", String(projects.length))}
       </p>
       {filtered.length ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -155,23 +151,17 @@ export function ProjectsClient({
       ) : (
         <div className="surface-panel flex min-h-64 flex-col items-start justify-center rounded-2xl p-7 sm:p-10">
           <span className="section-label">
-            {lang === "sl" ? "Prostor za nove ideje" : "Room for the next idea"}
+            {content.text(lang, "projects.emptyEyebrow")}
           </span>
           <h2 className="mt-4 text-2xl font-medium tracking-tight">
             {projects.length
-              ? lang === "sl"
-                ? "Ni zadetkov za ta izbor."
-                : "Nothing matches this selection."
+              ? content.text(lang, "projects.noMatches")
               : t.noProjects}
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
             {projects.length
-              ? lang === "sl"
-                ? "Poskusi drug izraz ali si oglej vse projekte."
-                : "Try another search, or take a look at the full collection."
-              : lang === "sl"
-                ? "Tukaj bodo zbrani opisi aplikacij, spletnih projektov in drugih izdelkov."
-                : "This is where apps, web projects and physical builds will have their own notes and images."}
+              ? content.text(lang, "projects.searchHint")
+              : content.text(lang, "projects.emptyHint")}
           </p>
           {projects.length ? (
             <button
@@ -179,12 +169,12 @@ export function ProjectsClient({
               onClick={reset}
               className="btn-ghost mt-6 text-sm"
             >
-              {lang === "sl" ? "Počisti filtre" : "Clear filters"}
+              {content.text(lang, "projects.clearFilters")}
               <X size={13} />
             </button>
           ) : (
             <Link href="/contact" className="link-arrow mt-6 text-sm">
-              {lang === "sl" ? "Pogovoriva se o ideji" : "Talk about an idea"}
+              {content.text(lang, "projects.contactIdea")}
               <ArrowUpRight size={14} />
             </Link>
           )}

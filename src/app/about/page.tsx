@@ -1,11 +1,11 @@
+import { SiteSection } from "@/components/SiteContentProvider";
+import { getSiteContent } from "@/lib/site-content-server";
 import Link from "next/link";
 import { ArrowUpRight, Blocks, Box, Code2, Download, Smartphone } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { BrandLogo } from "@/components/BrandLogo";
 import { galleryImages } from "@/lib/gallery";
 import { getLang } from "@/lib/lang";
-import { translations } from "@/lib/i18n";
-import { siteConfig } from "@/lib/site";
 import { getCVMetadata } from "@/lib/cv";
 import type { Metadata } from "next";
 
@@ -13,47 +13,40 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
+  const content = await getSiteContent();
   return {
-    title: translations[lang].about.title,
-    description: translations[lang].about.subtitle,
+    title: content.translation(lang).about.title,
+    description: content.translation(lang).about.subtitle,
   };
 }
 
 export default async function AboutPage() {
   const lang = await getLang();
-  const t = translations[lang];
-  const sl = lang === "sl";
+  const content = await getSiteContent();
+  const t = content.translation(lang);
   let cvPublished = false;
   try { cvPublished = (await getCVMetadata()).published; }
   catch { /* About remains available when storage is unavailable. */ }
   const interests = [
     {
-      title: "Android",
+      title: content.text(lang, "copy.2.1"),
       icon: Smartphone,
-      detail: sl
-        ? "Ideje, ki jih lahko vzameš s seboj."
-        : "Ideas you can take with you.",
+      detail: content.text(lang, "copy.2.2"),
     },
     {
-      title: sl ? "Splet" : "Web",
+      title: content.text(lang, "copy.2.3"),
       icon: Code2,
-      detail: sl
-        ? "Od prve strani do delujočega orodja."
-        : "From a first page to a working tool.",
+      detail: content.text(lang, "copy.2.4"),
     },
     {
-      title: "LEGO",
+      title: content.text(lang, "copy.2.5"),
       icon: Blocks,
-      detail: sl
-        ? "Oblike, povezave in razmišljanje z rokami."
-        : "Shapes, connections, and thinking with your hands.",
+      detail: content.text(lang, "copy.2.6"),
     },
     {
-      title: sl ? "3D-tisk" : "3D printing",
+      title: content.text(lang, "copy.2.7"),
       icon: Box,
-      detail: sl
-        ? "Raziskovanje poti od ideje do fizične oblike."
-        : "Exploring the path from an idea to a physical form.",
+      detail: content.text(lang, "copy.2.8"),
     },
   ];
 
@@ -62,7 +55,7 @@ export default async function AboutPage() {
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <Reveal>
           <div className="section-label mb-6">
-            {sl ? "Nekaj o meni" : "A little context"}{" "}
+            {content.text(lang, "copy.2.9")}{" "}
             <span className="text-[color:var(--color-accent-2)]">/ 01</span>
           </div>
           <h1 className="display-title max-w-4xl">
@@ -91,17 +84,16 @@ export default async function AboutPage() {
                   href="/projects"
                   className="link-arrow text-[color:var(--color-fg)]"
                 >
-                  {t.home.heroCta}
+                  {content.text(lang, "about.work")}
                   <ArrowUpRight size={17} />
                 </Link>
                 <a
-                  href={siteConfig.socials.github}
+                  href={content.profile().github}
                   target="_blank"
                   rel="noreferrer"
                   className="link-arrow"
                 >
-                  GitHub
-                  <ArrowUpRight size={17} />
+                  {content.text(lang, "copy.2.10")}<ArrowUpRight size={17} />
                 </a>
               </div>
             </Reveal>
@@ -111,7 +103,7 @@ export default async function AboutPage() {
             <aside className="surface-panel rounded-2xl p-7 sm:p-9 relative overflow-hidden">
               <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
                 <span className="section-label">
-                  {sl ? "Na moji mizi" : "On my desk"}
+                  {content.text(lang, "copy.2.11")}
                 </span>
                 <span
                   aria-hidden="true"
@@ -119,18 +111,17 @@ export default async function AboutPage() {
                 />
               </div>
               <div className="py-10 space-y-2 text-5xl sm:text-6xl font-medium tracking-[-0.06em] leading-[1.04]">
-                <p>{sl ? "Koda." : "Code."}</p>
+                <p>{content.text(lang, "copy.2.12")}</p>
                 <p className="text-[color:var(--color-fg-muted)]">
-                  {sl ? "Zasloni." : "Screens."}
+                  {content.text(lang, "copy.2.13")}
                 </p>
-                <p>{sl ? "Kocke." : "Bricks."}</p>
+                <p>{content.text(lang, "copy.2.14")}</p>
               </div>
               <div className="pt-5 border-t border-white/10 flex items-end justify-between gap-4">
                 <div>
-                  <p className="font-medium">{siteConfig.name}</p>
+                  <p className="font-medium">{content.profile().name}</p>
                   <p className="text-xs text-[color:var(--color-fg-muted)] mt-1">
-                    jakobtominc.com
-                  </p>
+                    {content.text(lang, "copy.2.15")}</p>
                 </div>
                 <BrandLogo size={44} />
               </div>
@@ -138,12 +129,10 @@ export default async function AboutPage() {
           </Reveal>
         </div>
 
-        <div className="section-rule mt-20 sm:mt-28 pt-8">
+        <SiteSection name="about.interests"><div className="section-rule mt-20 sm:mt-28 pt-8">
           <Reveal>
             <h2 className="section-label mb-8">
-              {sl
-                ? "Štiri različna izhodišča"
-                : "Four different starting points"}
+              {content.text(lang, "copy.2.16")}
             </h2>
           </Reveal>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
@@ -166,13 +155,13 @@ export default async function AboutPage() {
               </Reveal>
             ))}
           </div>
-        </div>
+        </div></SiteSection>
 
-        <div className="section-rule mt-16 sm:mt-20 pt-8">
+        <SiteSection name="about.skills"><div className="section-rule mt-16 sm:mt-20 pt-8">
           <Reveal>
             <h2 className="section-label mb-6">{t.about.skillsTitle}</h2>
             <div className="flex flex-wrap gap-x-7 gap-y-4">
-              {siteConfig.skills.map((skill) => (
+              {content.skills().map((skill) => (
                 <span
                   key={skill}
                   className="text-sm text-[color:var(--color-fg-muted)] border-b border-white/15 pb-1"
@@ -182,9 +171,9 @@ export default async function AboutPage() {
               ))}
             </div>
           </Reveal>
-        </div>
+        </div></SiteSection>
 
-        {galleryImages.length > 0 && (
+        {content.section("about.gallery") && galleryImages.length > 0 && (
           <div className="section-rule mt-20 pt-8">
             <Reveal>
               <h2 className="text-3xl tracking-tight">
@@ -199,11 +188,7 @@ export default async function AboutPage() {
                 <Reveal key={src} delay={i * 0.04}>
                   <img
                     src={src}
-                    alt={
-                      sl
-                        ? `Utrinek iz delavnice ${i + 1}`
-                        : `A detail from the workshop ${i + 1}`
-                    }
+                    alt={content.text(lang, "about.galleryImage").replaceAll("{number}", String(i + 1))}
                     loading="lazy"
                     width={800}
                     height={600}
@@ -214,14 +199,14 @@ export default async function AboutPage() {
             </div>
           </div>
         )}
-        {cvPublished && (
+        {content.section("about.cv") && cvPublished && (
           <div className="section-rule mt-16 sm:mt-20 pt-8">
             <Reveal>
               <div className="flex flex-wrap items-center justify-between gap-5">
-                <h2 className="section-label">{sl ? "Življenjepis" : "Curriculum vitae"}</h2>
+                <h2 className="section-label">{content.text(lang, "copy.2.17")}</h2>
                 <a href="/api/cv" download="Jakob-Tominc-CV.pdf" className="btn-ghost text-sm">
                   <Download size={15} aria-hidden="true" />
-                  {sl ? "Prenesi CV" : "Download CV"}
+                  {content.text(lang, "copy.2.18")}
                 </a>
               </div>
             </Reveal>
