@@ -9,6 +9,16 @@ function storage() {
 }
 const base: SiteContentDraft = { version: 1, savedAt: 1000, baseRevision: "a".repeat(32), overrides: { "en.home.titleLine1": "Draft title", "profile.github": "https://", "i18n.en.about.title": "", "section.about.skills": false } };
 
+test("retiring Latest preserves valid unsaved edits and their original revision", () => {
+  const tab = storage();
+  const legacy = { ...base, overrides: { ...base.overrides, "en.workshop.latest": "Recent", "sl.workshop.latest": "Zadnje" } };
+  tab.setItem(SITE_CONTENT_DRAFT_KEY, JSON.stringify(legacy));
+  assert.deepEqual(readSiteContentDraft(tab, 1001), base);
+  assert.equal(saveSiteContentDraft(tab, legacy), false);
+  tab.setItem(SITE_CONTENT_DRAFT_KEY, JSON.stringify({ ...legacy, overrides: { ...legacy.overrides, UPLOAD_PASSWORD: "not public" } }));
+  assert.equal(readSiteContentDraft(tab, 1001), null);
+});
+
 test("CMS draft recovers incomplete public edits and keeps its original CAS revision", () => {
   const tab = storage();
   assert.equal(saveSiteContentDraft(tab, base), true);

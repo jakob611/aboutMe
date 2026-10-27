@@ -7,7 +7,7 @@ import type { Lang } from "@/lib/i18n";
 type TurnstileApi = {
   render(container: HTMLElement, options: {
     sitekey: string;
-    action: "contact";
+    action: "contact" | "comment";
     language: Lang;
     theme: "dark";
     size: "compact" | "flexible";
@@ -26,6 +26,7 @@ declare global { interface Window { turnstile?: TurnstileApi } }
 
 type Props = {
   siteKey: string;
+  action?: "contact" | "comment";
   lang: Lang;
   label: string;
   resetKey: number;
@@ -35,7 +36,7 @@ type Props = {
 };
 
 /** Owns one explicitly rendered widget; no token is stored across pages or retries. */
-export function ContactTurnstile({ siteKey, lang, label, resetKey, onToken, onError, onExpired }: Props) {
+export function ContactTurnstile({ siteKey, action = "contact", lang, label, resetKey, onToken, onError, onExpired }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const widget = useRef<{ api: TurnstileApi; id: string } | null>(null);
   const callbacks = useRef({ onToken, onError, onExpired });
@@ -54,7 +55,7 @@ export function ContactTurnstile({ siteKey, lang, label, resetKey, onToken, onEr
       try {
         const id = api.render(element, {
           sitekey: siteKey,
-          action: "contact",
+          action,
           language: lang,
           theme: "dark",
           size: compact ? "compact" : "flexible",
@@ -85,7 +86,7 @@ export function ContactTurnstile({ siteKey, lang, label, resetKey, onToken, onEr
       if (widget.current) widget.current.api.remove(widget.current.id);
       widget.current = null;
     };
-  }, [ready, siteKey, lang]);
+  }, [ready, siteKey, action, lang]);
 
   useEffect(() => {
     if (!widget.current) return;

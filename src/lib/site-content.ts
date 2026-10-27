@@ -6,9 +6,15 @@ import { siteConfig } from "./site";
 import { inquiryCategories } from "./inquiry-topics";
 import { getProjectCategoryLabels, isProjectCategory } from "./project-categories";
 import { contactVerificationCopy } from "./contact-verification-copy";
+import { submissionCopy } from "./submission-copy";
 
 export type ContentValue = string | boolean;
 export type ContentValues = Record<string, ContentValue>;
+/** Read-time migration only. New publishes still reject retired/unknown fields. */
+export function migrateRetiredContentFields(input: unknown): unknown {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return input;
+  return Object.fromEntries(Object.entries(input).filter(([key]) => key !== "en.workshop.latest" && key !== "sl.workshop.latest"));
+}
 export type ContentField = { key: string; group: string; label: string; lang?: Lang; type: "text" | "url" | "email" | "boolean"; defaultValue: ContentValue; maxLength: number; optional?: boolean };
 const fields: ContentField[] = [];
 function fieldLabel(path: string) {
@@ -31,6 +37,7 @@ for (const lang of ["en", "sl"] as const) {
   strings(servicePageCopy[lang], `serviceCopy.${lang}`, "Services", lang);
   for (const [key, value] of Object.entries(homeContentDefaults[lang])) fields.push({ key: `${lang}.${key}`, group: key.startsWith("workshop.") ? "Sketchbook" : key.startsWith("gallery.") ? "Project gallery" : key.startsWith("projects.") ? "Projects" : "Home", lang, label: fieldLabel(key), type: "text", defaultValue: value, maxLength: 6000 });
   for (const [key, value] of Object.entries(contactVerificationCopy[lang])) fields.push({ key: `${lang}.${key}`, group: "Contact", lang, label: fieldLabel(key), type: "text", defaultValue: value, maxLength: 6000 });
+  for (const [key, value] of Object.entries(submissionCopy[lang])) fields.push({ key: `${lang}.${key}`, group: key.startsWith("comments.") ? "Comments" : "Contact & comments", lang, label: fieldLabel(key), type: "text", defaultValue: value, maxLength: 6000 });
 }
 for (const [key, value] of Object.entries(homeSectionDefaults)) fields.push({ key: `section.${key}`, group: "Section visibility", label: fieldLabel(key), type: "boolean", defaultValue: value, maxLength: 0 });
 for (const key of ["about.interests", "about.skills", "about.gallery", "about.cv", "services.offerings", "services.process", "services.additional", "contact.prompts", "support.ways", "support.donations", "support.opensource", "files.downloads", "files.drive", "projects.comments"]) fields.push({ key: `section.${key}`, group: "Section visibility", label: fieldLabel(key), type: "boolean", defaultValue: true, maxLength: 0 });

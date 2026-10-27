@@ -30,7 +30,7 @@ export default async function AdminPage() {
   try {
     [projectRows, messageRows] = await Promise.all([
       getDb().select().from(projects).orderBy(desc(projects.createdAt)),
-      getDb().select().from(contactMessages).orderBy(desc(contactMessages.createdAt)),
+      getDb().select().from(contactMessages).orderBy(desc(contactMessages.createdAt), desc(contactMessages.id)).limit(40),
     ]);
   } catch {
     console.error("Could not load admin data; check DATABASE_URL and the application tables.");

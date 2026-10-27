@@ -3,12 +3,13 @@ import { getDb } from "@/db";
 import { contactMessages } from "@/db/schema";
 import { parseContactPayload, readContactJson } from "@/lib/contact-delivery";
 import { verifyContactTurnstile } from "@/lib/contact-turnstile";
+import { captureSubmission, isSubmissionBlocked, storeSubmission } from "@/lib/moderation-store";
+import { isSameOrigin } from "@/lib/admin-auth";
 
 // POST /api/contact
 export async function POST(req: Request) {
   try {
-    const origin = req.headers.get("origin");
-    if (origin && origin !== new URL(req.url).origin) {
+    if (!isSameOrigin(req)) {
       return NextResponse.json({ error: "Request not allowed" }, { status: 403 });
     }
     if (!req.headers.get("content-type")?.includes("application/json")) {
@@ -32,17 +33,26 @@ export async function POST(req: Request) {
     }))) {
       return NextResponse.json({ error: "Verification failed. Please try again." }, { status: 403 });
     }
+    let submission: Awaited<ReturnType<typeof captureSubmission>>;
+    try {
+      submission = await captureSubmission(req);
+      if (await isSubmissionBlocked(submission)) return NextResponse.json({ error: "This submission cannot be accepted." }, { status: 403 });
+    } catch {
+      return NextResponse.json({ error: "The inbox is temporarily unavailable. Please try again later." }, { status: 503 });
+    }
     if (!process.env.DATABASE_URL) {
       return NextResponse.json({ error: "Contact form is unavailable" }, { status: 503 });
     }
     const { name, email, subject, message } = body;
 
-    await getDb().insert(contactMessages).values({
+    const [inserted] = await getDb().insert(contactMessages).values({
       name,
       email,
       subject: subject || null,
       message,
-    });
+    }).returning({ id: contactMessages.id });
+    try { await storeSubmission("message", inserted.id, submission); }
+    catch { console.error("Private inbox moderation metadata could not be stored."); }
 
     return NextResponse.json({ ok: true, delivery: "inbox" });
   } catch {

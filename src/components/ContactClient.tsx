@@ -17,6 +17,7 @@ import { emptyInquiry, findInquiryCategory, inquiryCategories, inquiryFromQuery,
 import { submitContact, type ContactDelivery } from "@/lib/contact-delivery";
 import { ContactTurnstile } from "@/components/ContactTurnstile";
 import { contactVerificationCopy } from "@/lib/contact-verification-copy";
+import { submissionCopy } from "@/lib/submission-copy";
 
 type Props = {
   lang: Lang;
@@ -294,6 +295,7 @@ export function ContactClient({
               />
               <p role="status" aria-live="polite" className="text-xs leading-relaxed text-[color:var(--color-fg-muted)]">{verificationToken ? verificationText("complete") : verificationText(verificationState)}</p>
             </div>}
+            <p className="text-xs leading-relaxed text-[color:var(--color-fg-muted)]">{content.text(lang, "submission.privacy", submissionCopy[lang]["submission.privacy"])}</p>
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
               <p className="max-w-xs text-xs leading-relaxed text-[color:var(--color-fg-muted)]">
                 {delivery.mode === "unavailable" ? (lang === "sl" ? content.text(lang, "copy.7.19") : content.text(lang, "copy.7.19")) : delivery.mode === "email" ? (lang === "sl" ? content.text(lang, "copy.7.20") : content.text(lang, "copy.7.20")) : (lang === "sl" ? content.text(lang, "copy.7.21") : content.text(lang, "copy.7.21"))}

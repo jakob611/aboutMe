@@ -1,5 +1,6 @@
 /** Server-side contact verification. Never import a secret into a client component. */
 export const CONTACT_TURNSTILE_ACTION = "contact";
+export const COMMENT_TURNSTILE_ACTION = "comment";
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
 
@@ -8,6 +9,7 @@ type VerificationInput = {
   token: unknown;
   secret: string | undefined;
   hostnames: string | undefined;
+  action?: typeof CONTACT_TURNSTILE_ACTION | typeof COMMENT_TURNSTILE_ACTION;
 };
 
 /** Bind a token to this exact frontend, not a wildcard or a forwarded Host header. */
@@ -23,7 +25,7 @@ export function contactTurnstileHostname(requestUrl: string, configured: string 
 
 /** Each attempt redeems its own token once; failures never run the existing handler. */
 export async function verifyContactTurnstile(
-  { request, token, secret, hostnames }: VerificationInput,
+  { request, token, secret, hostnames, action = CONTACT_TURNSTILE_ACTION }: VerificationInput,
   send: typeof fetch = fetch,
 ): Promise<boolean> {
   const expectedHostname = contactTurnstileHostname(request.url, hostnames);
@@ -44,7 +46,7 @@ export async function verifyContactTurnstile(
     const result: unknown = await response.json();
     if (!result || typeof result !== "object") return false;
     const verified = result as { success?: unknown; action?: unknown; hostname?: unknown };
-    return verified.success === true && verified.action === CONTACT_TURNSTILE_ACTION && verified.hostname === expectedHostname;
+    return verified.success === true && verified.action === action && verified.hostname === expectedHostname;
   } catch {
     return false;
   }

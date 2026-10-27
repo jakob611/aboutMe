@@ -6,6 +6,20 @@ import { ADMIN_COOKIE, createAdminSession } from "../src/lib/admin-auth";
 import { GET, PUT } from "../src/app/api/admin/site-content/route";
 import { CONTENT_MAX_BYTES, contentFields, createSiteContent, serializeSiteStructuredData, validateContentOverrides } from "../src/lib/site-content";
 import { SITE_CONTENT_KEY, boundedJSON, readSiteContent, type ContentBucket } from "../src/lib/site-content-store";
+
+test("retiring the Latest label preserves other saved wording and its concurrency revision", async () => {
+  const snapshot = (overrides: Record<string, unknown>): ContentBucket => ({
+    async get() {
+      const text = JSON.stringify({ version: 1, overrides });
+      return { etag: "legacy-revision", size: new TextEncoder().encode(text).byteLength, body: new Blob([text]).stream() };
+    },
+    async put() { throw new Error("Reading a migration must not write to storage."); },
+  });
+  const result = await readSiteContent(snapshot({ "en.workshop.latest": "Recent", "sl.workshop.latest": "Zadnje", "en.home.titleLine1": "Owner's title" }));
+  assert.deepEqual(result.overrides, { "en.home.titleLine1": "Owner's title" });
+  assert.equal(result.revision, "legacy-revision");
+  await assert.rejects(() => readSiteContent(snapshot({ "en.workshop.latest": "Recent", "unknown.content.field": "Unexpected" })));
+});
 import { SiteContentProvider } from "../src/components/SiteContentProvider";
 import { CommentSection } from "../src/components/CommentSection";
 import { ProjectsClient } from "../src/components/ProjectsClient";

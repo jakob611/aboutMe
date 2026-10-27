@@ -1,6 +1,6 @@
 import { getUploads } from "./storage";
 import { siteConfig } from "./site";
-import { CONTENT_MAX_BYTES, createSiteContent, validateContentOverrides, type ContentValues } from "./site-content";
+import { CONTENT_MAX_BYTES, createSiteContent, migrateRetiredContentFields, validateContentOverrides, type ContentValues } from "./site-content";
 
 export const SITE_CONTENT_KEY = "site/content.v1.json";
 type ObjectBody = { body: ReadableStream<Uint8Array>; size: number; etag: string };
@@ -22,7 +22,10 @@ export async function readSiteContent(bucket: ContentBucket) {
   if (object.size > CONTENT_MAX_BYTES) { await object.body.cancel(); throw new Error("Stored content is too large."); }
   const parsed = await boundedJSON(object.body);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || Object.keys(parsed).some(key => key !== "version" && key !== "overrides") || (parsed as { version?: unknown }).version !== 1) throw new Error("Unsupported site content document.");
-  return { overrides: validateContentOverrides((parsed as { overrides?: unknown }).overrides), revision: object.etag };
+  const saved = (parsed as { overrides?: unknown }).overrides;
+  // Removing a UI field must not invalidate the owner's other saved wording.
+  // Only these explicitly retired keys migrate; all other unknown keys still fail.
+  return { overrides: validateContentOverrides(migrateRetiredContentFields(saved)), revision: object.etag };
 }
 export async function contentBucket() { return await getUploads() as unknown as ContentBucket; }
 export function configuredDefaults(): ContentValues {

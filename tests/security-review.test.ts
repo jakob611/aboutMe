@@ -1,3 +1,4 @@
+import "./server-component-runtime";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { neonConfig } from "@neondatabase/serverless";
@@ -8,12 +9,13 @@ import { GET as listComments, POST as postComment } from "../src/app/api/project
 import { createAdminSession, verifyAdminSession } from "../src/lib/admin-auth";
 
 test("security review regressions", async t => {
-  const keys = ["UPLOAD_PASSWORD", "ADMIN_PASSWORD", "ADMIN_SESSION_SECRET", "DATABASE_URL"] as const;
+  const keys = ["UPLOAD_PASSWORD", "ADMIN_PASSWORD", "ADMIN_SESSION_SECRET", "DATABASE_URL", "TURNSTILE_SECRET", "TURNSTILE_HOSTNAMES", "MODERATION_SECRET"] as const;
   const before = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   const symbol = Symbol.for("__cloudflare-context__");
   const globals = globalThis as unknown as Record<symbol, unknown>;
   const oldContext = globals[symbol];
   const oldFetch = neonConfig.fetchFunction;
+  const oldGlobalFetch = globalThis.fetch;
   t.after(() => {
     for (const key of keys) {
       if (before[key] === undefined) delete process.env[key];
@@ -22,6 +24,7 @@ test("security review regressions", async t => {
     if (oldContext === undefined) delete globals[symbol];
     else globals[symbol] = oldContext;
     neonConfig.fetchFunction = oldFetch;
+    globalThis.fetch = oldGlobalFetch;
   });
   process.env.UPLOAD_PASSWORD = "test-password-not-a-real-secret";
   delete process.env.ADMIN_PASSWORD;
@@ -64,6 +67,11 @@ test("security review regressions", async t => {
   });
 
   await t.test("public comment responses do not expose email addresses", async () => {
+    process.env.TURNSTILE_SECRET = "test-only-turnstile";
+    process.env.TURNSTILE_HOSTNAMES = "example.com";
+    process.env.MODERATION_SECRET = "test-only-moderation-secret-at-least32";
+    globals[symbol] = { env: { UPLOADS: { async get() { return null; }, async put() { return { etag: "fixture" }; } } } };
+    globalThis.fetch = (async () => Response.json({ success: true, hostname: "example.com", action: "comment" })) as typeof fetch;
     const queries: string[] = [];
     neonConfig.fetchFunction = async (_url: string, init: RequestInit) => {
       const { query } = JSON.parse(String(init.body)) as { query: string };
@@ -75,8 +83,8 @@ test("security review regressions", async t => {
       assert.ok(projection);
       assert.equal(projection.includes('"email"'), false);
       return Response.json({
-        fields: ["id", "author", "content", "created_at"].map(name => ({ name, dataTypeID: 25 })),
-        rows: [["1", "Visitor", "Hello", "2026-10-24 12:00:00"]], rowCount: 1,
+        fields: ["id", "author", "content", "created_at"].map(name => ({ name, dataTypeID: name === "id" ? 23 : 25 })),
+        rows: [[1, "Visitor", "Hello", "2026-10-24 12:00:00"]], rowCount: 1,
       });
     };
     const ctx = { params: Promise.resolve({ slug: "test" }) };
@@ -85,7 +93,7 @@ test("security review regressions", async t => {
     assert.equal("email" in (await listed.json()).comments[0], false);
     const posted = await postComment(new NextRequest("https://example.com/api/projects/test/comments", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ author: "Visitor", email: "private@example.com", content: "Hello" }),
+      body: JSON.stringify({ author: "Visitor", email: "private@example.com", content: "Hello", "cf-turnstile-response": "fresh-comment-fixture" }),
     }), ctx);
     assert.equal(posted.status, 200);
     const body = await posted.json();

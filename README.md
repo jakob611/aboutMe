@@ -6,6 +6,9 @@ Bilingual Next.js portfolio using PostgreSQL (Neon) and Cloudflare Workers.
 local Cloudflare preview: [ADMIN.md](ADMIN.md). This is a server-rendered
 application, not a static Pages site. Do not publish `.next` as a Pages output directory.
 
+Comment removal, address blocks, private request information and the comment
+cache: [MODERATION.md](MODERATION.md).
+
 ## Development
 
 Use Node.js 22 or 24 and npm:

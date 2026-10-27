@@ -1,3 +1,4 @@
+import "./server-component-runtime";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { contactTurnstileHostname, verifyContactTurnstile } from "../src/lib/contact-turnstile";
@@ -82,19 +83,25 @@ test("verified inbox availability and response handling are explicit", async () 
 });
 
 test("the existing inbox handler verifies every attempt before persisting a message", async t => {
-  const keys = ["TURNSTILE_SECRET", "TURNSTILE_HOSTNAMES", "DATABASE_URL"] as const;
+  const keys = ["TURNSTILE_SECRET", "TURNSTILE_HOSTNAMES", "DATABASE_URL", "MODERATION_SECRET"] as const;
   const environment = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   const originalFetch = globalThis.fetch;
   const originalNeonFetch = neonConfig.fetchFunction;
+  const symbol = Symbol.for("__cloudflare-context__");
+  const globals = globalThis as unknown as Record<symbol, unknown>;
+  const previousContext = globals[symbol];
   t.after(() => {
     for (const key of keys) {
       if (environment[key] === undefined) delete process.env[key]; else process.env[key] = environment[key];
     }
     globalThis.fetch = originalFetch;
     neonConfig.fetchFunction = originalNeonFetch;
+    if (previousContext === undefined) delete globals[symbol]; else globals[symbol] = previousContext;
   });
   process.env.TURNSTILE_SECRET = "fixture-secret";
   process.env.TURNSTILE_HOSTNAMES = "jakobtominc.com";
+  process.env.MODERATION_SECRET = "test-only-stable-moderation-secret-at-least32";
+  globals[symbol] = { env: { UPLOADS: { async get() { return null; }, async put() { return { etag: "fixture" }; } } } };
   process.env.DATABASE_URL = "postgresql://test:test@example.neon.tech/neondb?sslmode=require";
   let verificationCalls = 0, inserts = 0;
   const consumed = new Set<string>();
@@ -113,7 +120,7 @@ test("the existing inbox handler verifies every attempt before persisting a mess
     const { query } = JSON.parse(String(options.body)) as { query: string };
     assert.match(query, /^insert into "contact_messages"/);
     inserts++;
-    return Response.json({ fields: [], rows: [], rowCount: 1 });
+    return Response.json({ fields: [{ name: "id", dataTypeID: 23 }], rows: [[1]], rowCount: 1 });
   };
   const payload = { name: "Visitor", email: "visitor@example.com", subject: "Hello", message: "A message" };
   const attempt = (token?: string, extra: Record<string, unknown> = {}) => submitInbox(new Request(request.url, {

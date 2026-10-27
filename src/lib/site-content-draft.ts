@@ -1,4 +1,4 @@
-import { CONTENT_MAX_BYTES, contentFields, type ContentValues } from "./site-content";
+import { CONTENT_MAX_BYTES, contentFields, migrateRetiredContentFields, type ContentValues } from "./site-content";
 
 export const SITE_CONTENT_DRAFT_KEY = "admin-site-content-draft";
 export const SITE_CONTENT_DRAFT_CLEAR_EVENT = "admin-site-content-draft-clear";
@@ -19,11 +19,11 @@ function draftValues(input: unknown): ContentValues {
   }
   return values;
 }
-function validateDraft(value: unknown): SiteContentDraft {
+function validateDraft(value: unknown, migrate = false): SiteContentDraft {
   if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some(key => !["version", "savedAt", "baseRevision", "overrides"].includes(key))) throw new Error("Invalid draft.");
   const draft = value as SiteContentDraft;
   if (draft.version !== 1 || !Number.isSafeInteger(draft.savedAt) || draft.savedAt < 0 || (draft.baseRevision !== null && (typeof draft.baseRevision !== "string" || !/^[a-f0-9]{32}(?:-\d+)?$/.test(draft.baseRevision)))) throw new Error("Invalid draft metadata.");
-  return { version: 1, savedAt: draft.savedAt, baseRevision: draft.baseRevision, overrides: draftValues(draft.overrides) };
+  return { version: 1, savedAt: draft.savedAt, baseRevision: draft.baseRevision, overrides: draftValues(migrate ? migrateRetiredContentFields(draft.overrides) : draft.overrides) };
 }
 export function clearSiteContentDraft(storage: DraftStorage) {
   try { storage.removeItem(SITE_CONTENT_DRAFT_KEY); } catch { /* Storage can be disabled. */ }
@@ -41,7 +41,7 @@ export function readSiteContentDraft(storage: DraftStorage, now = Date.now()): S
     const raw = storage.getItem(SITE_CONTENT_DRAFT_KEY);
     if (!raw) return null;
     if (raw.length > CONTENT_MAX_BYTES || new TextEncoder().encode(raw).byteLength > CONTENT_MAX_BYTES) throw new Error("Draft too large.");
-    const draft = validateDraft(JSON.parse(raw));
+    const draft = validateDraft(JSON.parse(raw), true);
     if (now < draft.savedAt || now - draft.savedAt > SITE_CONTENT_DRAFT_TTL) throw new Error("Draft expired.");
     return draft;
   } catch { clearSiteContentDraft(storage); return null; }
