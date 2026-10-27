@@ -1,7 +1,7 @@
 # Admin dashboard and local development
 
 Sign in at `/admin` with the existing `UPLOAD_PASSWORD`. The dashboard manages
-projects, public site content, the CV PDF and private contact messages. Sessions
+projects, public site content, the CV PDF, comments and private contact messages. Sessions
 last up to seven days or until **Sign out**. Signed HTTP-only cookies, same-origin
 mutation checks and server authentication protect private actions.
 `ADMIN_PASSWORD` is a fallback only when `UPLOAD_PASSWORD` is absent.
@@ -45,6 +45,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for Builds configuration.
 | `UPLOAD_PASSWORD` | Secret; existing admin/file password |
 | `ADMIN_PASSWORD` | Optional secret fallback |
 | `ADMIN_SESSION_SECRET` | Secret; independent random signing value, at least 32 characters |
+| `MODERATION_SECRET` | Secret; independent stable moderation encryption/address key, at least 32 random characters |
 | `TURNSTILE_SECRET` | Secret; Cloudflare Turnstile secret key |
 | `TURNSTILE_HOSTNAMES` | Runtime variable; comma-separated exact frontend hostnames |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public build setting; Cloudflare Turnstile site key |

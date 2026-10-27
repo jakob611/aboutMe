@@ -2,6 +2,11 @@
 
 For the admin dashboard and local preview, see [ADMIN.md](ADMIN.md).
 
+The comment moderation release additionally needs an independent stable Worker
+secret `MODERATION_SECRET` (32+ random characters). Keep it across deployments and
+separate from the session signing secret. No new database migration is needed.
+See [MODERATION.md](MODERATION.md) for privacy, caching and key-rotation details.
+
 The existing Cloudflare Worker is named **aboutme**. Keep that name: it matches
 `wrangler.jsonc`. GitHub's repository name `aboutMe` does not need to change.
 

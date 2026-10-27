@@ -2,41 +2,39 @@
 
 import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Braces, Blocks, Smartphone, Printer, Grid2X2 } from "lucide-react";
+import { ArrowUpRight, Braces, Blocks, Smartphone, Printer } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
 import { createWorkshopRotation } from "./workshop-rotation";
 import styles from "./WorkshopScene.module.css";
 import { homeContentDefaults } from "@/lib/home-content-defaults";
-import { workshopSlides, workshopSubjects, type WorkshopFilter, type WorkshopProject, type WorkshopSubject } from "@/lib/workshop-slides";
+import { workshopSlides, workshopSubjects, type WorkshopProject, type WorkshopSubject } from "@/lib/workshop-slides";
 
 const subjects = workshopSubjects;
 const icons = { web: Braces, android: Smartphone, lego: Blocks, "3d-printing": Printer };
 const noProjects: WorkshopProject[] = [];
 
 export function WorkshopScene({ lang, projects = noProjects, copy }: { lang: Lang; projects?: WorkshopProject[]; copy?: Record<string, string> }) {
-  const [selection, setSelection] = useState<{filter: WorkshopFilter; index: number; previous: WorkshopSubject | null}>({filter: "all", index: 0, previous: null});
+  const [selection, setSelection] = useState<{index: number; previous: WorkshopSubject | null}>({index: 0, previous: null});
   const [paused, setPaused] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const rotation = useRef<ReturnType<typeof createWorkshopRotation> | null>(null);
   const id = useId().replace(/:/g, "");
   const t = (key: string) => copy?.["workshop." + key] ?? homeContentDefaults[lang]["workshop." + key] ?? "";
-  const slides = workshopSlides(projects, selection.filter);
-  const project = slides.length ? slides[selection.index % slides.length] : undefined;
-  const active = project?.subject ?? (selection.filter === "all" ? subjects[selection.index % subjects.length] : selection.filter);
+  const slides = workshopSlides(projects);
+  const slot = slides[selection.index % subjects.length];
+  const project = slot.project;
+  const active = slot.subject;
   const previous = selection.previous;
-  const href = project?.href ?? (selection.filter === "all" ? "/projects" : "/projects?category=" + active);
+  const href = project?.href ?? "/projects?category=" + active;
   const linkLabel = project ? t("project") + ": " + project.title : t("link") + ": " + t(active + ".label");
   useEffect(() => {
     if (!root.current) return;
     const controller = createWorkshopRotation(root.current, () => {
       setSelection(scene => {
-        const current = workshopSlides(projects, scene.filter);
-        const subject = current.length ? current[scene.index % current.length].subject : scene.filter === "all" ? subjects[scene.index % subjects.length] : scene.filter;
-        return {...scene, index: scene.index + 1, previous: subject};
+        return {index: (scene.index + 1) % subjects.length, previous: subjects[scene.index % subjects.length]};
       });
     }, value => {
       setPaused(value);
-      if (!value) setSelection(scene => scene.filter === "all" ? scene : {filter: "all", index: 0, previous: scene.filter});
     }, {
       preference: window.matchMedia("(prefers-reduced-motion: reduce)"),
       page: document, viewportHeight: window.innerHeight,
@@ -45,17 +43,11 @@ export function WorkshopScene({ lang, projects = noProjects, copy }: { lang: Lan
       createObserver: "IntersectionObserver" in window ? callback => new IntersectionObserver(callback, {threshold: 0.15}) : undefined,
     });
     rotation.current = controller;
-    const resetCategory = (event: Event) => {
-      const category = (event.target as Element | null)?.closest?.("[data-workshop-subject]");
-      if (category && root.current?.contains(category)) return;
-      setSelection(scene => scene.filter === "all" ? scene : {filter: "all", index: 0, previous: scene.filter});
-    };
-    document.addEventListener("click", resetCategory);
-    return () => { controller.destroy(); rotation.current = null; document.removeEventListener("click", resetCategory); };
+    return () => { controller.destroy(); rotation.current = null; };
   }, [projects]);
-  const selectSubject = (filter: WorkshopFilter) => {
+  const selectSubject = (subject: WorkshopSubject) => {
     rotation.current?.setPaused(true);
-    setSelection({filter, index: selection.filter === filter ? selection.index + 1 : 0, previous: active});
+    setSelection({index: subjects.indexOf(subject), previous: active});
   };
   const layerState = (subject: WorkshopSubject) => subject === active ? "active" : subject === previous ? "previous" : "idle";
   const followPointer = (event: PointerEvent<HTMLDivElement>) => {
@@ -76,7 +68,7 @@ export function WorkshopScene({ lang, projects = noProjects, copy }: { lang: Lan
       <div className="sketchbook-topline">
         <span className="section-label">{t("label")}</span>
         <span className="sketchbook-counter" aria-hidden="true">
-          {String((selection.index % (slides.length || (selection.filter === "all" ? subjects.length : 1))) + 1).padStart(2, "0")} / {String(slides.length || (selection.filter === "all" ? subjects.length : 1)).padStart(2, "0")}
+          {String((selection.index % subjects.length) + 1).padStart(2, "0")} / {String(subjects.length).padStart(2, "0")}
         </span>
       </div>
       <Link href={href} aria-label={linkLabel} className={`sketchbook-art ${styles.artLink}`} data-subject={active}>
@@ -375,7 +367,6 @@ export function WorkshopScene({ lang, projects = noProjects, copy }: { lang: Lan
         </svg>}
       </Link>
       <div className={`sketchbook-switch ${styles.switcher}`} role="group" aria-label={t("hint")}>
-        <button type="button" data-workshop-subject="all" aria-pressed={selection.filter === "all"} onClick={() => selectSubject("all")}><Grid2X2 size={15} aria-hidden="true" />{t("latest")}</button>
         {subjects.map((subject) => {
           const Icon = icons[subject];
           return (
@@ -383,7 +374,7 @@ export function WorkshopScene({ lang, projects = noProjects, copy }: { lang: Lan
               key={subject}
               type="button"
               data-workshop-subject={subject}
-              aria-pressed={selection.filter === subject}
+              aria-pressed={active === subject}
               onClick={() => selectSubject(subject)}
             >
               <Icon size={15} aria-hidden="true" />
@@ -398,10 +389,8 @@ export function WorkshopScene({ lang, projects = noProjects, copy }: { lang: Lan
       </div>
       {project && <p className={styles.imageCaption}>{project.image?.caption || ""}</p>}
       <div className={"sketchbook-caption " + styles.captions}>
-        {slides.length ? slides.map((slide, index) => <div key={slide.key} className={styles.caption} data-state={index === selection.index % slides.length ? "active" : "idle"} aria-hidden={index !== selection.index % slides.length}>
-          <h2>{slide.title}</h2><p className={styles.summary}>{slide.summary}</p>
-        </div>) : subjects.map(subject => <div key={subject} className={styles.caption} data-state={layerState(subject)} aria-hidden={subject !== active}>
-          <h2>{t(subject + ".title")}</h2><p>{t(subject + ".description")}</p>
+        {slides.map(slide => <div key={slide.subject} className={styles.caption} data-state={layerState(slide.subject)} aria-hidden={slide.subject !== active}>
+          <h2>{slide.project?.title ?? t(slide.subject + ".title")}</h2><p className={slide.project ? styles.summary : undefined}>{slide.project?.summary ?? t(slide.subject + ".description")}</p>
         </div>)}
       </div>
       <div className={styles.actions}>

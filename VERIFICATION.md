@@ -1,3 +1,46 @@
+# Category sketchbook and private moderation — 27 October 2026
+
+This release supersedes the earlier Latest/all-project sketchbook behavior.
+There are exactly four category choices; each uses its newest posted project.
+The four-second category cycle, category pause and click-away resume remain.
+
+- [x] 135 automated tests pass; TypeScript passes; lint has zero errors and the
+  existing 11 image/font advisories. Final OpenNext build and deploy dry run pass
+  with 36 assets. The rebuilt local Worker is running on port 8787.
+- [x] Comment removal/restoration, address blocks, private encrypted metadata,
+  authentication/origin/body bounds, action-bound Turnstile-before-Neon ordering,
+  public projection privacy and cache invalidation have regression coverage.
+- [x] An independent critic found no source/security blocker and independently
+  ran the moderation suite (17 tests) and CMS/draft suite (8 tests).
+- [x] Actual browser checks show four choices without Latest, category pause and
+  click-away resume, private login/logout, moderation filters, honest missing-DB
+  feedback, and a real local API/R2 block fixture followed by browser unblocking.
+  At 390px the moderation layout measured 382px body/document width.
+- [x] The single disposable local block registry was removed with explicit local
+  storage targeting. Its original absence was recorded; final authenticated read
+  again returns revision null and zero blocks. No production record was changed.
+- [x] Real Miniflare R2 tests used the actual cache helpers: repeated reads reuse
+  one loader result, a simulator restart retains it, invalidation refreshes it,
+  and a stale in-flight conditional cache fill cannot overwrite a tombstone.
+  This is persistence evidence, not a production Neon latency benchmark.
+- [x] Explicit read-time migration of the retired EN/SL Latest label keys preserves
+  other published text and two-hour drafts, including their concurrency revision.
+  Unknown fields and new writes with retired keys remain rejected.
+- [x] Independent production `MODERATION_SECRET` was generated securely and stored
+  in the existing Worker; readback confirms its name and existing secret bindings.
+  The local key is different and remains ignored. No value was printed.
+- [ ] New PR/Cloudflare branch build, merge and exact-commit production deployment.
+- [ ] Production read-only browser/API checks of the new moderation and cache.
+
+Lead-operated browser evidence was independently critiqued from screenshots/AX;
+the reviewer did not operate a separate browser. Without a development Neon
+database, live comment posting/removal/restoration and new request-location
+capture remain untested against production. No live comment, block, project,
+message or upload was created or changed during this release's acceptance.
+Old submissions have no location metadata; this is shown as unavailable.
+See [MODERATION.md](MODERATION.md) for caching benefits and limits.
+Evidence and logs: ignored `artifacts/category-moderation-2026-10-27/`.
+
 # Editor, content management and contact verification — 27 October 2026
 
 Current branch: `codex/editor-content-management`. This section supersedes earlier

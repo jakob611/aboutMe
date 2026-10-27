@@ -1,3 +1,4 @@
+import "./server-component-runtime";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { neonConfig } from "@neondatabase/serverless";
@@ -20,7 +21,7 @@ test("admin security, CRUD, messages, and image regressions", async t => {
   const globals = globalThis as unknown as Record<symbol, unknown>;
   const oldContext = globals[symbol];
   t.after(() => {
-    for (const key of ["ADMIN_PASSWORD", "ADMIN_SESSION_SECRET", "DATABASE_URL"]) {
+    for (const key of ["ADMIN_PASSWORD", "ADMIN_SESSION_SECRET", "DATABASE_URL", "MODERATION_SECRET"]) {
       if (oldEnv[key] === undefined) delete process.env[key]; else process.env[key] = oldEnv[key];
     }
     neonConfig.fetchFunction = oldFetch;
@@ -28,6 +29,7 @@ test("admin security, CRUD, messages, and image regressions", async t => {
   });
   process.env.ADMIN_PASSWORD = "test-only-admin";
   process.env.ADMIN_SESSION_SECRET = "test-only-session-secret-at-least-32-characters";
+  process.env.MODERATION_SECRET = "test-only-independent-moderation-secret-at-least32";
   process.env.DATABASE_URL = "postgresql://test:test@example.neon.tech/neondb?sslmode=require";
   let blocked = false, storageReads = 0;
   const objects = new Map<string, { bytes: ArrayBuffer; type: string }>();
@@ -53,7 +55,11 @@ test("admin security, CRUD, messages, and image regressions", async t => {
     const { query, params } = JSON.parse(String(init.body)) as { query: string; params: unknown[] };
     sql.push(query);
     if (query.includes('"contact_messages"')) {
-      if (query.startsWith("insert")) submitted = ["1", ...params.map(String), "2026-10-24 12:00:00"];
+      if (query.startsWith("insert")) {
+        submitted = ["1", ...params.map(String), "2026-10-24 12:00:00"];
+        assert.match(query, /returning "id"$/);
+        return Response.json({ fields: [{ name: "id", dataTypeID: 23 }], rows: [[1]], rowCount: 1 });
+      }
       return Response.json({
         fields: ["id","name","email","subject","message","created_at"].map(name => ({ name, dataTypeID: 25 })),
         rows: query.startsWith("select") && submitted ? [submitted] : [], rowCount: submitted ? 1 : 0,

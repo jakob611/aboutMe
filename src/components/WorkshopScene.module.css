@@ -44,7 +44,7 @@
 
 .book .switcher {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .switcher button {
@@ -52,7 +52,6 @@
 }
 
 .switcher button[data-workshop-subject="web"] { --subject-accent: #bfd3c7; }
-.switcher button[data-workshop-subject="all"] { --subject-accent: #eeeae0; }
 .switcher button[data-workshop-subject="android"] { --subject-accent: #d0c5df; }
 .switcher button[data-workshop-subject="lego"] { --subject-accent: #ddc9a6; }
 .switcher button[data-workshop-subject="3d-printing"] { --subject-accent: #bfcfd0; }
@@ -160,8 +159,6 @@
   .book .switcher {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .book .switcher button:first-child { grid-column: 1 / -1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

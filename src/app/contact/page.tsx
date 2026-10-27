@@ -26,7 +26,8 @@ export default async function ContactPage({ searchParams }: Props) {
   // The middleware overwrites x-url; caller-supplied Host forwarding cannot configure verification.
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
   const requestUrl = (await headers()).get("x-url") || "";
-  const verificationAvailable = Boolean(siteKey && process.env.TURNSTILE_SECRET?.trim() && contactTurnstileHostname(requestUrl, process.env.TURNSTILE_HOSTNAMES));
+  const verificationAvailable = Boolean(siteKey && process.env.TURNSTILE_SECRET?.trim() &&
+    (process.env.MODERATION_SECRET?.length ?? 0) >= 32 && contactTurnstileHostname(requestUrl, process.env.TURNSTILE_HOSTNAMES));
   const delivery = verifiedInboxDelivery(Boolean(process.env.DATABASE_URL), verificationAvailable);
   const contactEmail =
     /^\S+@\S+\.\S+$/.test(content.profile().email) &&

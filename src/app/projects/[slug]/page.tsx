@@ -5,11 +5,13 @@ import { Reveal } from "@/components/Reveal";
 import { CommentSection } from "@/components/CommentSection";
 import { getLang } from "@/lib/lang";
 import { getDb } from "@/db";
-import { projects, comments } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { projects } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { siteConfig } from "@/lib/site";
-import { publicCommentFields } from "@/lib/public-comments";
+import { getCachedComments } from "@/lib/get-comments";
+import { contactTurnstileHostname } from "@/lib/contact-turnstile";
 import { ProjectGallery } from "@/components/ProjectGallery";
 import { serializeSiteStructuredData } from "@/lib/site-content";
 import { serializePublicProject } from "@/lib/project-media";
@@ -51,11 +53,13 @@ export default async function ProjectPage({ params }: Props) {
   if (!row) notFound();
   const project = serializePublicProject(row);
 
-  const projectComments = await getDb()
-    .select(publicCommentFields)
-    .from(comments)
-    .where(and(eq(comments.projectId, project.id), eq(comments.approved, true)))
-    .orderBy(desc(comments.createdAt));
+  const commentsVisible = content.section("projects.comments");
+  const projectComments = commentsVisible ? await getCachedComments(project.id) : [];
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
+  // Proxy overwrites x-url with the real incoming URL before rendering.
+  const requestUrl = (await headers()).get("x-url") || "";
+  const verificationAvailable = Boolean(siteKey && process.env.TURNSTILE_SECRET?.trim() && (process.env.MODERATION_SECRET?.length ?? 0) >= 32 &&
+    contactTurnstileHostname(requestUrl, process.env.TURNSTILE_HOSTNAMES));
 
   const title = lang === "sl" ? project.titleSl : project.titleEn;
   const summary = lang === "sl" ? project.summarySl : project.summaryEn;
@@ -194,9 +198,11 @@ export default async function ProjectPage({ params }: Props) {
         {/* COMMENTS */}
         <div className="mt-16">
           <CommentSection
+            key={project.slug}
             slug={project.slug}
             initialComments={projectComments}
             lang={lang}
+            verificationSiteKey={verificationAvailable ? siteKey : undefined}
           />
         </div>
       </div>

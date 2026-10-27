@@ -2,13 +2,13 @@
 
 import { startTransition, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, FileText, FolderKanban, Inbox, LogOut, Pencil, Plus, Settings2, Star, Trash2 } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { AlertCircle, Ban, CheckCircle2, FileText, FolderKanban, Inbox, LogOut, MessageSquare, Pencil, Plus, Settings2, Star, Trash2 } from "lucide-react";
 import { clearProjectDraft, readProjectDraft, PROJECT_DRAFT_CLEAR_EVENT, type AdminProject, type ProjectDraft, type ProjectEditorForm } from "@/lib/project-editor";
 import { AdminProjectEditor } from "@/components/AdminProjectEditor";
 import { AdminCV } from "@/components/AdminCV";
 import { AdminSiteContent } from "@/components/AdminSiteContent";
 import { clearSiteContentDraft, SITE_CONTENT_DRAFT_CLEAR_EVENT } from "@/lib/site-content-draft";
+import { AdminBlocks, AdminComments, AdminMessages } from "@/components/AdminModeration";
 
 export type { AdminProject } from "@/lib/project-editor";
 export type AdminMessage = { id: number; name: string; email: string; subject: string | null; message: string; createdAt: string };
@@ -17,7 +17,7 @@ type Editing = { id: number | "new"; initialDraft?: ProjectEditorForm };
 
 export function AdminDashboard({ projects, messages, loadError }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<"projects" | "messages" | "cv" | "content">("projects");
+  const [tab, setTab] = useState<"projects" | "messages" | "cv" | "content" | "comments" | "blocks">("projects");
   const [editing, setEditing] = useState<Editing | null>(null);
   const [pendingDraft, setPendingDraft] = useState<ProjectDraft | null>(null);
   const [busy, setBusy] = useState(false);
@@ -60,7 +60,9 @@ export function AdminDashboard({ projects, messages, loadError }: Props) {
       ["projects", <FolderKanban key="projects" size={14} />, `Projects (${projects.length})`],
       ["content", <Settings2 key="content" size={14} />, "Site content"],
       ["cv", <FileText key="cv" size={14} />, "CV"],
-      ["messages", <Inbox key="messages" size={14} />, `${messages.length} messages`],
+      ["messages", <Inbox key="messages" size={14} />, "Messages"],
+      ["comments", <MessageSquare key="comments" size={14} />, "Comments"],
+      ["blocks", <Ban key="blocks" size={14} />, "Blocked addresses"],
     ] as const).map(([value, icon, label]) => <button key={value} type="button" disabled={busy} onClick={() => setTab(value)} aria-pressed={tab === value} className={tab === value ? "btn-primary text-sm" : "btn-ghost text-sm"}>{icon}{label}</button>)}</nav>
     {loadError && (tab === "projects" || tab === "messages") && <p role="alert" className="mb-4 text-sm text-amber-100">{loadError} Site content and CV remain independent of this connection.</p>}
     {status && <p role="status" className="mb-4 flex gap-2 text-sm text-emerald-200"><CheckCircle2 size={16} />{status}</p>}
@@ -77,6 +79,8 @@ export function AdminDashboard({ projects, messages, loadError }: Props) {
     </div>
     {tab === "content" && <AdminSiteContent />}
     {tab === "cv" && <AdminCV />}
-    {tab === "messages" && <section><div className="mb-4 flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">Contact messages</h2><button type="button" className="btn-ghost text-sm" onClick={() => router.refresh()}>Refresh</button></div>{messages.length === 0 ? <p className="rounded-xl border border-white/10 p-6 text-[color:var(--color-fg-muted)]">{loadError ? "Messages are unavailable until the database reconnects." : "No messages yet."}</p> : <ul className="space-y-3">{messages.map(message => <li key={message.id} className="rounded-xl border border-white/10 p-5"><div className="flex flex-wrap justify-between gap-2"><h3 className="font-medium">{message.name}</h3><span className="text-xs text-[color:var(--color-fg-muted)]">{formatDate(message.createdAt, "en")}</span></div><a href={`mailto:${message.email}`} className="text-sm text-[color:var(--color-accent-2)] underline">{message.email}</a>{message.subject && <p className="mt-2 text-sm font-medium">{message.subject}</p>}<p className="mt-2 whitespace-pre-wrap text-sm text-[color:var(--color-fg-muted)]">{message.message}</p></li>)}</ul>}</section>}
+    {tab === "messages" && <AdminMessages initialMessages={messages} loadError={loadError} />}
+    {tab === "comments" && <AdminComments />}
+    {tab === "blocks" && <AdminBlocks />}
   </div></section>;
 }
