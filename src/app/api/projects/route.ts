@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { projects } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
+import { serializePublicProject } from "@/lib/project-media";
 
 // GET /api/projects?featured=1 — list all projects (optionally only featured)
 export async function GET(req: Request) {
@@ -21,9 +22,9 @@ export async function GET(req: Request) {
       )
       .orderBy(desc(projects.createdAt));
 
-    return NextResponse.json({ projects: rows });
-  } catch (err) {
-    console.error("GET /api/projects error", err);
+    return NextResponse.json({ projects: rows.map(serializePublicProject) });
+  } catch {
+    console.error("GET /api/projects failed.");
     return NextResponse.json(
       { error: "Failed to load projects" },
       { status: 500 },

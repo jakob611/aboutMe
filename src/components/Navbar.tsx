@@ -1,4 +1,5 @@
 "use client";
+import { useSiteContent } from "@/components/SiteContentProvider";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,6 +14,7 @@ import { synchronizeDocumentLanguage } from "@/lib/language-lifecycle";
 type Props = { lang: Lang; t: Translation; name: string };
 
 export function Navbar({ lang, t, name }: Props) {
+  const content = useSiteContent();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -66,7 +68,7 @@ export function Navbar({ lang, t, name }: Props) {
       className="sticky top-0 z-50 border-b border-white/[0.08] bg-[color:var(--color-bg)]/90 backdrop-blur-xl"
     >
       <nav
-        aria-label={lang === "sl" ? "Glavna navigacija" : "Main navigation"}
+        aria-label={content.text(lang, "copy.0.1")}
         className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-5 sm:px-8"
       >
         <Link
@@ -113,7 +115,7 @@ export function Navbar({ lang, t, name }: Props) {
           >
             <span className="sm:hidden">{t.nav.contact}</span>
             <span className="hidden sm:inline">
-              {lang === "sl" ? "Začniva pogovor" : "Let’s talk"}
+              {content.text(lang, "copy.0.2")}
             </span>
             <ArrowUpRight aria-hidden="true" size={14} />
           </Link>
@@ -122,12 +124,8 @@ export function Navbar({ lang, t, name }: Props) {
             type="button"
             aria-label={
               open
-                ? lang === "sl"
-                  ? "Zapri meni"
-                  : "Close menu"
-                : lang === "sl"
-                  ? "Odpri meni"
-                  : "Open menu"
+                ? content.text(lang, "copy.0.3")
+                : content.text(lang, "copy.0.4")
             }
             aria-expanded={open}
             aria-controls="mobile-navigation"
@@ -146,7 +144,7 @@ export function Navbar({ lang, t, name }: Props) {
         <nav
           id="mobile-navigation"
           aria-label={
-            lang === "sl" ? "Mobilna navigacija" : "Mobile navigation"
+            content.text(lang, "copy.0.5")
           }
           className="border-t border-white/[0.08] bg-[color:var(--color-bg)] lg:hidden"
         >

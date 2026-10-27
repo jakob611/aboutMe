@@ -1,7 +1,7 @@
+import { getSiteContent } from "@/lib/site-content-server";
 import { Reveal } from "@/components/Reveal";
 import { FilesClient } from "@/components/FilesClient";
 import { getLang } from "@/lib/lang";
-import { translations } from "@/lib/i18n";
 import { getDb } from "@/db";
 import { files } from "@/db/schema";
 import { desc } from "drizzle-orm";
@@ -9,13 +9,15 @@ import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const lang = await getLang();
-  const t = translations[lang];
+  const content = await getSiteContent();
+  const t = content.translation(lang);
   return { title: t.files.title, description: t.files.subtitle };
 }
 
 export default async function FilesPage() {
   const lang = await getLang();
-  const t = translations[lang];
+  const content = await getSiteContent();
+  const t = content.translation(lang);
   let allFiles: (typeof files.$inferSelect)[] = [];
   let unavailable = false;
   try {
@@ -33,15 +35,11 @@ export default async function FilesPage() {
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <Reveal className="max-w-3xl">
           <p className="section-label mb-5">
-            {lang === "sl"
-              ? "Knjižnica / uporabne stvari"
-              : "Library / useful things"}
+            {content.text(lang, "copy.5.1")}
           </p>
           <h1 className="display-title">{t.files.title}</h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[color:var(--color-fg-muted)]">
-            {lang === "sl"
-              ? "Datoteke, viri in drugi materiali, ki jih lahko preneseš in uporabiš. Brez računa."
-              : "Files, resources, and other materials to download and use. No account needed."}
+            {content.text(lang, "copy.5.2")}
           </p>
         </Reveal>
         <FilesClient

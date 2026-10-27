@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
-import { projectCategoryLabel } from "@/lib/project-categories";
 import { cn } from "@/lib/utils";
+import { useSiteContent } from "./SiteContentProvider";
+import type { SourceVisibility } from "@/lib/project-media";
 
 export type Project = {
   id: number;
@@ -16,6 +19,7 @@ export type Project = {
   linkUrl: string | null;
   repoUrl: string | null;
   tags: string[] | null;
+  sourceVisibility?: SourceVisibility;
 };
 type Props = { project: Project; lang: Lang; featured?: boolean };
 const categoryAccents: Record<string, string> = {
@@ -27,9 +31,10 @@ const categoryAccents: Record<string, string> = {
 };
 
 export function ProjectCard({ project, lang, featured }: Props) {
+  const content = useSiteContent();
   const title = lang === "sl" ? project.titleSl : project.titleEn;
   const summary = lang === "sl" ? project.summarySl : project.summaryEn;
-  const category = projectCategoryLabel(project.category, lang);
+  const category = content.categoryLabel(lang, project.category);
   const accent = categoryAccents[project.category] ?? categoryAccents.other;
   return (
     <Link
@@ -93,6 +98,7 @@ export function ProjectCard({ project, lang, featured }: Props) {
             style={{ background: accent }}
           />
           {category}
+          {project.sourceVisibility === "closed" && <span className="ml-auto rounded border border-white/15 px-2 py-1 text-[9px] normal-case tracking-normal">{content.text(lang, "projects.closed")}</span>}
         </div>
         <h3 className="min-w-0 text-xl font-medium tracking-tight text-[color:var(--color-fg)] [overflow-wrap:anywhere]">
           {title}
@@ -110,7 +116,7 @@ export function ProjectCard({ project, lang, featured }: Props) {
             </span>
           ))}
           <span className="ml-auto inline-flex items-center gap-1.5 text-[color:var(--color-fg)]">
-            {lang === "sl" ? "O projektu" : "Project notes"}
+            {content.text(lang, "projects.notes")}
             <ArrowUpRight size={12} />
           </span>
         </div>

@@ -168,6 +168,22 @@ test("admin security, CRUD, messages, and image regressions", async t => {
     const edited = await edit(request("/api/admin/projects/1", "PATCH", { ...input, titleEn: "Updated", gallery: ["/api/media/projects/shared.png"] }, cookie), { params: Promise.resolve({ id: "1" }) });
     assert.equal(edited.status, 200);
     assert.equal((await edited.json()).project.titleEn, "Updated");
+    const media = { version: 2, images: [
+      { url: "/api/media/projects/first.png", captionEn: "First", captionSl: "Prva" },
+      { url: "/api/media/projects/second.png", captionEn: "Second", captionSl: "Druga" },
+    ], coverCaptionEn: "Cover", coverCaptionSl: "Naslovna", sourceVisibility: "closed" };
+    const captioned = await edit(request("/api/admin/projects/1", "PATCH", { ...input, gallery: media, repoUrl: "https://example.com/private", linkUrl: "glowupp.org" }, cookie), { params: Promise.resolve({ id: "1" }) });
+    assert.equal(captioned.status, 200);
+    const captionedProject = (await captioned.json()).project;
+    assert.deepEqual(captionedProject.gallery, media);
+    assert.equal(captionedProject.repoUrl, "https://example.com/private", "the authenticated editor retains the private URL");
+    assert.equal(captionedProject.linkUrl, "https://glowupp.org/");
+    const oldClient = await edit(request("/api/admin/projects/1", "PATCH", { ...input, gallery: [media.images[1].url, media.images[0].url] }, cookie), { params: Promise.resolve({ id: "1" }) });
+    assert.equal(oldClient.status, 200);
+    const preserved = (await oldClient.json()).project;
+    assert.deepEqual(preserved.gallery, { ...media, images: [media.images[1], media.images[0]] });
+    assert.equal(preserved.repoUrl, captionedProject.repoUrl);
+    assert.equal(preserved.linkUrl, captionedProject.linkUrl);
     assert.equal((await remove(request("/api/admin/projects/1", "DELETE", undefined, cookie), { params: Promise.resolve({ id: "1" }) })).status, 200);
     assert.equal((await remove(request("/api/admin/projects/1", "DELETE", undefined, cookie), { params: Promise.resolve({ id: "1" }) })).status, 404);
     assert.equal((await edit(request("/api/admin/projects/nope", "PATCH", input, cookie), { params: Promise.resolve({ id: "nope" }) })).status, 400);
@@ -183,11 +199,24 @@ test("admin security, CRUD, messages, and image regressions", async t => {
     assert.equal((await create(malformed)).status, 400);
   });
   await t.test("contact submissions are visible only to the admin", async () => {
-    assert.equal((await contact(request("/api/contact", "POST", { name: "Visitor", email: "visitor@example.com", subject: "Hello", message: "A message" }))).status, 200);
-    assert.equal((await messages(request("/api/admin/messages"))).status, 401);
-    const res = await messages(request("/api/admin/messages", "GET", undefined, cookie));
-    assert.equal(res.status, 200);
-    assert.equal((await res.json()).messages[0].message, "A message");
+    const before = { secret: process.env.TURNSTILE_SECRET, hosts: process.env.TURNSTILE_HOSTNAMES, fetch: globalThis.fetch };
+    try {
+      process.env.TURNSTILE_SECRET = "test-only-turnstile-secret";
+      process.env.TURNSTILE_HOSTNAMES = "example.com";
+      globalThis.fetch = (async url => {
+        assert.equal(String(url), "https://challenges.cloudflare.com/turnstile/v0/siteverify");
+        return Response.json({ success: true, action: "contact", hostname: "example.com" });
+      }) as typeof fetch;
+      assert.equal((await contact(request("/api/contact", "POST", { name: "Visitor", email: "visitor@example.com", subject: "Hello", message: "A message", "cf-turnstile-response": "test-only-token" }))).status, 200);
+      assert.equal((await messages(request("/api/admin/messages"))).status, 401);
+      const res = await messages(request("/api/admin/messages", "GET", undefined, cookie));
+      assert.equal(res.status, 200);
+      assert.equal((await res.json()).messages[0].message, "A message");
+    } finally {
+      globalThis.fetch = before.fetch;
+      if (before.secret === undefined) delete process.env.TURNSTILE_SECRET; else process.env.TURNSTILE_SECRET = before.secret;
+      if (before.hosts === undefined) delete process.env.TURNSTILE_HOSTNAMES; else process.env.TURNSTILE_HOSTNAMES = before.hosts;
+    }
   });
   const imageRequest = (value: File | string) => {
     const form = new FormData(); form.set("file", value);

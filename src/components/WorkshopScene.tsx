@@ -2,111 +2,62 @@
 
 import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Braces, Blocks, Smartphone, Printer } from "lucide-react";
+import { ArrowUpRight, Braces, Blocks, Smartphone, Printer, Grid2X2 } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
 import { createWorkshopRotation } from "./workshop-rotation";
 import styles from "./WorkshopScene.module.css";
+import { homeContentDefaults } from "@/lib/home-content-defaults";
+import { workshopSlides, workshopSubjects, type WorkshopFilter, type WorkshopProject, type WorkshopSubject } from "@/lib/workshop-slides";
 
-const subjects = ["web", "android", "lego", "3d-printing"] as const;
-type Subject = (typeof subjects)[number];
-export type WorkshopProjectLinks = Partial<Record<Subject, { href: string; title: string }>>;
+const subjects = workshopSubjects;
 const icons = { web: Braces, android: Smartphone, lego: Blocks, "3d-printing": Printer };
-const copy = {
-  en: {
-    label: "The sketchbook",
-    hint: "Pick something to explore",
-    link: "Explore the projects",
-    project: "View project",
-    automatic: "Automatic · choose a subject to pause",
-    manual: "Paused · click elsewhere to continue",
-    reduced: "Automatic rotation is off with reduced motion",
-    web: [
-      "Web",
-      "A clear idea. A useful interface.",
-      "From the first wireframe to the small details that make a page feel right.",
-    ],
-    android: [
-      "Android",
-      "Small screens. Real possibilities.",
-      "Exploring how an idea becomes something you can carry in your pocket.",
-    ],
-    lego: [
-      "LEGO",
-      "Thinking with my hands.",
-      "Another way to build: one piece, one adjustment, one new possibility at a time.",
-    ],
-    "3d-printing": [
-      "3D printing",
-      "From a shape to something tangible.",
-      "Exploring form, fit and the small adjustments between a model and a printed piece.",
-    ],
-  },
-  sl: {
-    label: "Skicirka",
-    hint: "Izberi, kaj te zanima",
-    link: "Razišči projekte",
-    project: "Poglej projekt",
-    automatic: "Samodejno · izberi področje za premor",
-    manual: "Premor · za nadaljevanje klikni drugje",
-    reduced: "Samodejna menjava je izklopljena ob zmanjšanem gibanju",
-    web: [
-      "Splet",
-      "Jasna ideja. Uporaben vmesnik.",
-      "Od prve skice do drobnih podrobnosti, zaradi katerih stran deluje premišljeno.",
-    ],
-    android: [
-      "Android",
-      "Majhen zaslon. Veliko možnosti.",
-      "Raziskujem, kako ideja postane nekaj, kar lahko nosiš v žepu.",
-    ],
-    lego: [
-      "LEGO",
-      "Razmišljanje z rokami.",
-      "Drugačen način ustvarjanja: kos za kosom, popravek za popravkom, do nove možnosti.",
-    ],
-    "3d-printing": [
-      "3D-tisk",
-      "Od oblike do oprijemljivega izdelka.",
-      "Raziskujem obliko, prileganje in drobne popravke med modelom in natisnjenim kosom.",
-    ],
-  },
-};
+const noProjects: WorkshopProject[] = [];
 
-export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; projectLinks?: WorkshopProjectLinks }) {
-  const [{ active, previous }, setScene] = useState<{ active: Subject; previous: Subject | null }>({ active: "web", previous: null });
+export function WorkshopScene({ lang, projects = noProjects, copy }: { lang: Lang; projects?: WorkshopProject[]; copy?: Record<string, string> }) {
+  const [selection, setSelection] = useState<{filter: WorkshopFilter; index: number; previous: WorkshopSubject | null}>({filter: "all", index: 0, previous: null});
   const [paused, setPaused] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const rotation = useRef<ReturnType<typeof createWorkshopRotation> | null>(null);
   const id = useId().replace(/:/g, "");
-  const t = copy[lang];
-  const project = projectLinks[active];
-  const href = project?.href ?? "/projects?category=" + active;
-  const linkLabel = project ? `${t.project}: ${project.title}` : `${t.link}: ${t[active][0]}`;
+  const t = (key: string) => copy?.["workshop." + key] ?? homeContentDefaults[lang]["workshop." + key] ?? "";
+  const slides = workshopSlides(projects, selection.filter);
+  const project = slides.length ? slides[selection.index % slides.length] : undefined;
+  const active = project?.subject ?? (selection.filter === "all" ? subjects[selection.index % subjects.length] : selection.filter);
+  const previous = selection.previous;
+  const href = project?.href ?? (selection.filter === "all" ? "/projects" : "/projects?category=" + active);
+  const linkLabel = project ? t("project") + ": " + project.title : t("link") + ": " + t(active + ".label");
   useEffect(() => {
     if (!root.current) return;
     const controller = createWorkshopRotation(root.current, () => {
-      setScene((scene) => ({
-        previous: scene.active,
-        active: subjects[(subjects.indexOf(scene.active) + 1) % subjects.length],
-      }));
-    }, setPaused, {
+      setSelection(scene => {
+        const current = workshopSlides(projects, scene.filter);
+        const subject = current.length ? current[scene.index % current.length].subject : scene.filter === "all" ? subjects[scene.index % subjects.length] : scene.filter;
+        return {...scene, index: scene.index + 1, previous: subject};
+      });
+    }, value => {
+      setPaused(value);
+      if (!value) setSelection(scene => scene.filter === "all" ? scene : {filter: "all", index: 0, previous: scene.filter});
+    }, {
       preference: window.matchMedia("(prefers-reduced-motion: reduce)"),
-      page: document,
-      viewportHeight: window.innerHeight,
+      page: document, viewportHeight: window.innerHeight,
       setTimer: (callback, milliseconds) => setTimeout(callback, milliseconds),
-      clearTimer: (timer) => clearTimeout(timer),
-      createObserver: "IntersectionObserver" in window
-        ? (callback) => new IntersectionObserver(callback, { threshold: 0.15 })
-        : undefined,
+      clearTimer: timer => clearTimeout(timer),
+      createObserver: "IntersectionObserver" in window ? callback => new IntersectionObserver(callback, {threshold: 0.15}) : undefined,
     });
     rotation.current = controller;
-    return () => { controller.destroy(); rotation.current = null; };
-  }, []);
-  const selectSubject = (subject: Subject) => {
+    const resetCategory = (event: Event) => {
+      const category = (event.target as Element | null)?.closest?.("[data-workshop-subject]");
+      if (category && root.current?.contains(category)) return;
+      setSelection(scene => scene.filter === "all" ? scene : {filter: "all", index: 0, previous: scene.filter});
+    };
+    document.addEventListener("click", resetCategory);
+    return () => { controller.destroy(); rotation.current = null; document.removeEventListener("click", resetCategory); };
+  }, [projects]);
+  const selectSubject = (filter: WorkshopFilter) => {
     rotation.current?.setPaused(true);
-    setScene((scene) => scene.active === subject ? scene : { active: subject, previous: scene.active });
+    setSelection({filter, index: selection.filter === filter ? selection.index + 1 : 0, previous: active});
   };
-  const layerState = (subject: Subject) => subject === active ? "active" : subject === previous ? "previous" : "idle";
+  const layerState = (subject: WorkshopSubject) => subject === active ? "active" : subject === previous ? "previous" : "idle";
   const followPointer = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "mouse") return;
     const rect = event.currentTarget.getBoundingClientRect();
@@ -121,15 +72,15 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
   };
 
   return (
-    <div ref={root} className={`sketchbook ${styles.book}`} onPointerMove={followPointer}>
+    <div ref={root} className={`sketchbook ${styles.book}`} onPointerMove={followPointer} onFocusCapture={() => rotation.current?.setPaused(true)}>
       <div className="sketchbook-topline">
-        <span className="section-label">{t.label}</span>
+        <span className="section-label">{t("label")}</span>
         <span className="sketchbook-counter" aria-hidden="true">
-          0{subjects.indexOf(active) + 1} / 04
+          {String((selection.index % (slides.length || (selection.filter === "all" ? subjects.length : 1))) + 1).padStart(2, "0")} / {String(slides.length || (selection.filter === "all" ? subjects.length : 1)).padStart(2, "0")}
         </span>
       </div>
       <Link href={href} aria-label={linkLabel} className={`sketchbook-art ${styles.artLink}`} data-subject={active}>
-        <svg
+        {project?.image ? <img key={project.key} src={project.image.url} alt={project.image.caption || project.title} width={960} height={640} className={styles.projectImage} /> : <svg
           viewBox="0 0 520 350"
           fill="none"
           aria-hidden="true"
@@ -421,9 +372,10 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
             stroke="#7a8d81"
             opacity=".5"
           />
-        </svg>
+        </svg>}
       </Link>
-      <div className={`sketchbook-switch ${styles.switcher}`} role="group" aria-label={t.hint}>
+      <div className={`sketchbook-switch ${styles.switcher}`} role="group" aria-label={t("hint")}>
+        <button type="button" data-workshop-subject="all" aria-pressed={selection.filter === "all"} onClick={() => selectSubject("all")}><Grid2X2 size={15} aria-hidden="true" />{t("latest")}</button>
         {subjects.map((subject) => {
           const Icon = icons[subject];
           return (
@@ -431,31 +383,33 @@ export function WorkshopScene({ lang, projectLinks = {} }: { lang: Lang; project
               key={subject}
               type="button"
               data-workshop-subject={subject}
-              aria-pressed={subject === active}
+              aria-pressed={selection.filter === subject}
               onClick={() => selectSubject(subject)}
             >
               <Icon size={15} aria-hidden="true" />
-              {t[subject][0]}
+              {t(subject + ".label")}
             </button>
           );
         })}
       </div>
       <div className={styles.rotationControls}>
-        <span className={styles.motionHint}>{paused ? t.manual : t.automatic}</span>
-        <span className={styles.reducedHint}>{t.reduced}</span>
+        <span className={styles.motionHint}>{paused ? t("manual") : t("automatic")}</span>
+        <span className={styles.reducedHint}>{t("reduced")}</span>
       </div>
-      <div className={`sketchbook-caption ${styles.captions}`}>
-        {subjects.map((subject) => (
-          <div key={subject} className={styles.caption} data-state={layerState(subject)} aria-hidden={subject !== active}>
-            <h2>{t[subject][1]}</h2>
-            <p>{t[subject][2]}</p>
-          </div>
-        ))}
+      {project && <p className={styles.imageCaption}>{project.image?.caption || ""}</p>}
+      <div className={"sketchbook-caption " + styles.captions}>
+        {slides.length ? slides.map((slide, index) => <div key={slide.key} className={styles.caption} data-state={index === selection.index % slides.length ? "active" : "idle"} aria-hidden={index !== selection.index % slides.length}>
+          <h2>{slide.title}</h2><p className={styles.summary}>{slide.summary}</p>
+        </div>) : subjects.map(subject => <div key={subject} className={styles.caption} data-state={layerState(subject)} aria-hidden={subject !== active}>
+          <h2>{t(subject + ".title")}</h2><p>{t(subject + ".description")}</p>
+        </div>)}
       </div>
-      <Link href={href} className="sketchbook-link" aria-label={linkLabel}>
-        {project ? t.project : t.link}
-        <ArrowUpRight size={16} />
-      </Link>
+      <div className={styles.actions}>
+        <Link href={href} className="sketchbook-link" aria-label={linkLabel}>{project ? t("project") : t("link")}<ArrowUpRight size={16} /></Link>
+        {project?.linkUrl && <a href={project.linkUrl} target="_blank" rel="noreferrer" className="sketchbook-link">{t("visit")}<ArrowUpRight size={14} /></a>}
+        {project?.repoUrl && !project.closed && <a href={project.repoUrl} target="_blank" rel="noreferrer" className="sketchbook-link">{t("code")}<ArrowUpRight size={14} /></a>}
+        {project?.closed && <span className={styles.closed}>{t("closed")}</span>}
+      </div>
     </div>
   );
 }

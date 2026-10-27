@@ -1,8 +1,9 @@
+import "./server-component-runtime";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToReadableStream } from "react-dom/server";
 import { neonConfig } from "@neondatabase/serverless";
 import ServicesPage from "../src/app/services/page";
 import {
@@ -47,7 +48,7 @@ test("service catalog remains useful without Neon and preserves configured servi
       };
       for (const selected of ["en", "sl"] as const) {
         lang = selected;
-        const html = renderToStaticMarkup(await ServicesPage());
+        const html = await new Response(await renderToReadableStream(await ServicesPage())).text();
         for (const id of ["android", "web", "automation", "printing"]) {
           assert.equal(html.split(`id="${id}"`).length - 1, 1);
         }
@@ -136,7 +137,7 @@ test("service catalog remains useful without Neon and preserves configured servi
       };
       for (const selected of ["en", "sl"] as const) {
         lang = selected;
-        const html = renderToStaticMarkup(await ServicesPage());
+        const html = await new Response(await renderToReadableStream(await ServicesPage())).text();
         for (const id of ["android", "web", "automation", "printing"])
           assert.equal(html.split(`id="${id}"`).length - 1, 1);
         for (const row of rows) {

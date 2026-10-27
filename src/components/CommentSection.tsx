@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { MessageSquare, Send, User, CheckCircle2, AlertCircle } from "lucide-react";
-import { translations, type Lang } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
+import { useSiteContent } from "@/components/SiteContentProvider";
 import { Reveal } from "@/components/Reveal";
 import { formatDate } from "@/lib/utils";
 
@@ -20,7 +21,8 @@ type Props = {
 };
 
 export function CommentSection({ slug, initialComments, lang }: Props) {
-  const t = translations[lang].projects;
+  const siteContent = useSiteContent();
+  const t = siteContent.translation(lang).projects;
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [author, setAuthor] = useState("");
   const [email, setEmail] = useState("");
@@ -51,6 +53,7 @@ export function CommentSection({ slug, initialComments, lang }: Props) {
     });
   };
 
+  if (!siteContent.section("projects.comments")) return null;
   return (
     <section>
       <Reveal>
@@ -70,6 +73,7 @@ export function CommentSection({ slug, initialComments, lang }: Props) {
         >
           <div className="grid sm:grid-cols-2 gap-3">
             <input
+              aria-label={t.commentName}
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               required
@@ -78,6 +82,7 @@ export function CommentSection({ slug, initialComments, lang }: Props) {
               className="input"
             />
             <input
+              aria-label={t.commentEmail}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               type="email"
@@ -87,6 +92,7 @@ export function CommentSection({ slug, initialComments, lang }: Props) {
             />
           </div>
           <textarea
+            aria-label={t.commentBody}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             required
@@ -141,7 +147,7 @@ export function CommentSection({ slug, initialComments, lang }: Props) {
         ))}
         {comments.length === 0 && (
           <li className="text-center text-[color:var(--color-fg-muted)] py-10">
-            —
+            {siteContent.text(lang, "projects.noComments")}
           </li>
         )}
       </ul>

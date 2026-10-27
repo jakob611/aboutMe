@@ -3,10 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Expand, X } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
+import { projectImageCaption, type ProjectImage } from "@/lib/project-media";
+import { useSiteContent } from "./SiteContentProvider";
 
-type Props = { images: string[]; title: string; lang: Lang };
+type Props = { images: (string | ProjectImage)[]; title: string; lang: Lang };
 
 export function ProjectGallery({ images, title, lang }: Props) {
+  const content = useSiteContent();
+  const copy = (key: string) => content.text(lang, "gallery." + key);
+  const entries = images.map(image => typeof image === "string" ? { url: image, captionEn: "", captionSl: "" } : image);
+  const caption = (index: number) => projectImageCaption(entries[index], lang);
   const dialog = useRef<HTMLDialogElement>(null);
   const [active, setActive] = useState<number | null>(null);
   const count = images.length;
@@ -22,10 +28,10 @@ export function ProjectGallery({ images, title, lang }: Props) {
   return (
     <>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        {images.map((image, index) => (
+        {entries.map((image, index) => (
+          <figure key={`${image.url}-${index}`} className="min-w-0">
           <a
-            key={`${image}-${index}`}
-            href={image}
+            href={image.url}
             target="_blank"
             rel="noreferrer"
             onClick={(event) => {
@@ -44,14 +50,12 @@ export function ProjectGallery({ images, title, lang }: Props) {
             }}
             className="group relative block overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]"
             aria-label={
-              lang === "sl"
-                ? `Povečaj fotografijo ${index + 1}: ${title}`
-                : `Enlarge image ${index + 1}: ${title}`
+              `${copy("enlarge")} ${index + 1}: ${caption(index) || title}`
             }
           >
             <img
-              src={image}
-              alt={`${title} — ${index + 1}`}
+              src={image.url}
+              alt={caption(index) || `${title} — ${index + 1}`}
               loading="lazy"
               width={900}
               height={600}
@@ -64,6 +68,8 @@ export function ProjectGallery({ images, title, lang }: Props) {
               <Expand size={13} />
             </span>
           </a>
+          {caption(index) && <figcaption className="mt-3 text-sm leading-relaxed text-[color:var(--color-fg-muted)] [overflow-wrap:anywhere]">{caption(index)}</figcaption>}
+          </figure>
         ))}
       </div>
       <dialog
@@ -83,7 +89,7 @@ export function ProjectGallery({ images, title, lang }: Props) {
           }
         }}
         aria-label={
-          lang === "sl" ? `Fotografije: ${title}` : `Images: ${title}`
+          `${copy("images")}: ${title}`
         }
         className="fixed inset-0 m-auto max-h-[94dvh] w-[min(94vw,1100px)] overflow-auto rounded-2xl border border-white/20 bg-[#101317] p-3 text-white shadow-2xl backdrop:bg-black/90 sm:p-5"
       >
@@ -101,17 +107,18 @@ export function ProjectGallery({ images, title, lang }: Props) {
                 onClick={close}
                 className="shrink-0 rounded-full border border-white/15 p-2 hover:bg-white/10"
                 aria-label={
-                  lang === "sl" ? "Zapri fotografije" : "Close images"
+                  copy("close")
                 }
               >
                 <X size={18} />
               </button>
             </div>
             <img
-              src={images[active]}
-              alt={`${title} — ${active + 1}`}
+              src={entries[active].url}
+              alt={caption(active) || `${title} — ${active + 1}`}
               className="max-h-[70dvh] w-full object-contain"
             />
+            {caption(active) && <p className="mt-4 text-sm leading-relaxed text-white/80 [overflow-wrap:anywhere]" aria-live="polite">{caption(active)}</p>}
             {count > 1 && (
               <div className="mt-4 flex items-center justify-between">
                 <button
@@ -120,7 +127,7 @@ export function ProjectGallery({ images, title, lang }: Props) {
                   className="btn-ghost text-sm"
                 >
                   <ArrowLeft size={14} />
-                  {lang === "sl" ? "Prejšnja" : "Previous"}
+                  {copy("previous")}
                 </button>
                 <span className="hidden font-mono text-[10px] text-white/40 sm:inline">
                   ← → / ESC
@@ -130,7 +137,7 @@ export function ProjectGallery({ images, title, lang }: Props) {
                   onClick={next}
                   className="btn-ghost text-sm"
                 >
-                  {lang === "sl" ? "Naslednja" : "Next"}
+                  {copy("next")}
                   <ArrowRight size={14} />
                 </button>
               </div>

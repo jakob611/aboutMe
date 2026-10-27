@@ -1,4 +1,5 @@
 "use client";
+import { SiteSection, useSiteContent } from "@/components/SiteContentProvider";
 
 import {
   useEffect,
@@ -23,7 +24,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { translations, type Lang } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 import { formatBytes, formatDate } from "@/lib/utils";
 
 type DbFile = {
@@ -73,7 +74,8 @@ export function FilesClient({
   lang,
   unavailable = false,
 }: Props) {
-  const t = translations[lang].files;
+  const content = useSiteContent();
+  const t = content.translation(lang).files;
   const router = useRouter();
   const [files, setFiles] = useState(initialFiles);
   const [unlocked, setUnlocked] = useState(false);
@@ -92,13 +94,9 @@ export function FilesClient({
   const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const limitedMessage =
-    lang === "sl"
-      ? "Preveč poskusov. Počakaj minuto in poskusi znova."
-      : "Too many attempts. Wait a minute and try again.";
+    content.text(lang, "copy.8.1");
   const unavailableMessage =
-    lang === "sl"
-      ? "Storitev trenutno ni na voljo. Poskusi znova pozneje."
-      : "The service is unavailable right now. Please try again later.";
+    content.text(lang, "copy.8.2");
   const responseMessage = (status: number) =>
     status === 401
       ? t.wrongPassword
@@ -151,9 +149,7 @@ export function FilesClient({
     if (!selectedFile || !password || unavailable) return;
     if (selectedFile.size > 50 * 1024 * 1024) {
       setUploadError(
-        lang === "sl"
-          ? "Datoteka je prevelika. Največja velikost je 50 MB."
-          : "The file is too large. The maximum size is 50 MB.",
+        content.text(lang, "copy.8.3"),
       );
       setUploadMsg("err");
       return;
@@ -169,9 +165,7 @@ export function FilesClient({
       if (!res.ok) {
         setUploadError(
           res.status === 413
-            ? lang === "sl"
-              ? "Datoteka je prevelika. Največja velikost je 50 MB."
-              : "The file is too large. The maximum size is 50 MB."
+            ? content.text(lang, "copy.8.4")
             : responseMessage(res.status),
         );
         setUploadMsg("err");
@@ -216,9 +210,7 @@ export function FilesClient({
       setFiles((previous) => previous.filter((file) => file.id !== id));
     } catch {
       setRemoveError(
-        lang === "sl"
-          ? "Brisanje ni uspelo. Datoteka ostaja na seznamu."
-          : "Could not delete the file. It remains in the list.",
+        content.text(lang, "copy.8.5"),
       );
     } finally {
       setRemovingId(null);
@@ -228,6 +220,7 @@ export function FilesClient({
   return (
     <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:gap-14">
       <div className="lg:col-span-7">
+        <SiteSection name="files.downloads">
         <Reveal>
           <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-4">
             <h2 className="text-xl font-medium tracking-tight">
@@ -249,14 +242,10 @@ export function FilesClient({
                 className="mb-5 text-[color:var(--color-accent-2)]"
               />
               <h3 className="text-lg font-medium">
-                {lang === "sl"
-                  ? "Knjižnica trenutno ni dostopna."
-                  : "The library is temporarily unavailable."}
+                {content.text(lang, "copy.8.6")}
               </h3>
               <p className="mt-3 max-w-md text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
-                {lang === "sl"
-                  ? "Seznama datotek ni bilo mogoče naložiti. Poskusi znova malo pozneje."
-                  : "The file list could not be loaded. Please try again a little later."}
+                {content.text(lang, "copy.8.7")}
               </p>
               <button
                 type="button"
@@ -264,7 +253,7 @@ export function FilesClient({
                 className="btn-ghost mt-6 text-sm"
               >
                 <RefreshCw aria-hidden="true" size={14} />
-                {lang === "sl" ? "Poskusi znova" : "Try again"}
+                {content.text(lang, "copy.8.8")}
               </button>
             </div>
           </Reveal>
@@ -277,14 +266,10 @@ export function FilesClient({
                 className="mb-5 text-[color:var(--color-fg-muted)]"
               />
               <h3 className="text-lg font-medium">
-                {lang === "sl"
-                  ? "Še nič za prenos."
-                  : "Nothing to download just yet."}
+                {content.text(lang, "copy.8.9")}
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-[color:var(--color-fg-muted)]">
-                {lang === "sl"
-                  ? "Ko bom imel kaj uporabnega za deliti, bo na voljo tukaj."
-                  : "When I have something useful to share, it will be available here."}
+                {content.text(lang, "copy.8.10")}
               </p>
             </div>
           </Reveal>
@@ -331,11 +316,12 @@ export function FilesClient({
           </ul>
         )}
 
+        </SiteSection>
         {driveConfigured && (
-          <section className="mt-12">
+          <SiteSection name="files.drive"><section className="mt-12">
             <Reveal>
               <div className="mb-6 border-b border-white/10 pb-4">
-                <p className="section-label mb-3">Google Drive</p>
+                <p className="section-label mb-3">{content.text(lang, "copy.8.11")}</p>
                 <h2 className="flex items-center gap-2 text-xl font-medium">
                   <Cloud aria-hidden="true" size={19} />
                   {t.driveTitle}
@@ -350,9 +336,7 @@ export function FilesClient({
                 role="status"
                 className="surface-panel rounded-xl p-5 text-sm text-[color:var(--color-fg-muted)]"
               >
-                {lang === "sl"
-                  ? "Datoteke iz Drive trenutno niso dosegljive. Poskusi znova pozneje."
-                  : "Drive files are unavailable right now. Please try again later."}
+                {content.text(lang, "copy.8.12")}
               </p>
             ) : driveFiles.length === 0 ? (
               <p className="surface-panel rounded-xl p-5 text-sm text-[color:var(--color-fg-muted)]">
@@ -408,9 +392,7 @@ export function FilesClient({
                               {t.driveOpen}
                               <ArrowUpRight aria-hidden="true" size={14} />
                               <span className="sr-only">
-                                {lang === "sl"
-                                  ? "Odpre se v novem zavihku"
-                                  : "Opens in a new tab"}
+                                {content.text(lang, "copy.8.13")}
                               </span>
                             </a>
                           )}
@@ -421,14 +403,14 @@ export function FilesClient({
                 })}
               </ul>
             )}
-          </section>
+          </section></SiteSection>
         )}
       </div>
 
       <Reveal className="lg:col-span-5">
         <aside className="surface-panel rounded-2xl p-6 sm:p-8">
           <p className="section-label mb-5">
-            {lang === "sl" ? "Za lastnika strani" : "For the site owner"}
+            {content.text(lang, "copy.8.14")}
           </p>
           <h2 className="flex items-center gap-2 text-xl font-medium">
             {unlocked ? (
@@ -443,9 +425,7 @@ export function FilesClient({
           </p>
           {unavailable && (
             <p className="mb-5 text-sm text-[color:var(--color-fg-muted)]">
-              {lang === "sl"
-                ? "Nalaganje bo spet na voljo, ko bo knjižnica dosegljiva."
-                : "Uploads will be available again when the library reconnects."}
+              {content.text(lang, "copy.8.15")}
             </p>
           )}
           {!unlocked ? (
@@ -477,7 +457,7 @@ export function FilesClient({
                         size={14}
                         className="animate-spin"
                       />
-                      {translations[lang].common.loading}
+                      {content.translation(lang).common.loading}
                     </>
                   ) : (
                     t.unlock
@@ -525,9 +505,7 @@ export function FilesClient({
                   <p className="text-xs text-[color:var(--color-fg-muted)]">
                     {selectedFile
                       ? `${selectedFile.name} · ${formatBytes(selectedFile.size)}`
-                      : lang === "sl"
-                        ? "Največja velikost: 50 MB."
-                        : "Maximum file size: 50 MB."}
+                      : content.text(lang, "copy.8.16")}
                   </p>
                   <label className="block">
                     <span className="mb-2 block text-sm">{t.description}</span>
@@ -589,7 +567,7 @@ export function FilesClient({
               </form>
               <div className="mt-7 border-t border-white/10 pt-6">
                 <h3 className="section-label mb-4">
-                  {lang === "sl" ? "Upravljanje datotek" : "Manage uploads"}
+                  {content.text(lang, "copy.8.17")}
                 </h3>
                 {files.length > 0 ? (
                   <ul className="max-h-64 space-y-2 overflow-auto">
@@ -606,7 +584,7 @@ export function FilesClient({
                           onClick={() => remove(file.id)}
                           disabled={removingId !== null || unavailable}
                           className="rounded-md p-2 text-rose-300 transition-colors hover:bg-white/5 disabled:opacity-40"
-                          aria-label={`${lang === "sl" ? "Izbriši" : "Delete"} ${file.originalName}`}
+                          aria-label={`${content.text(lang, "copy.8.18")} ${file.originalName}`}
                         >
                           {removingId === file.id ? (
                             <Loader2

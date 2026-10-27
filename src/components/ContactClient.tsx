@@ -1,4 +1,6 @@
 "use client";
+import { SiteSection } from "@/components/SiteContentProvider";
+import { useSiteContent } from "@/components/SiteContentProvider";
 
 import { useEffect, useState, useTransition, type FormEvent } from "react";
 import {
@@ -13,6 +15,8 @@ import type { Translation, Lang } from "@/lib/i18n";
 import { LANGUAGE_CHANGE_EVENT, saveContactDraft, takeContactDraft } from "@/lib/contact-draft";
 import { emptyInquiry, findInquiryCategory, inquiryCategories, inquiryFromQuery, inquirySubject, needsCustomSubject, validInquiry, type InquirySelection } from "@/lib/inquiry-topics";
 import { submitContact, type ContactDelivery } from "@/lib/contact-delivery";
+import { ContactTurnstile } from "@/components/ContactTurnstile";
+import { contactVerificationCopy } from "@/lib/contact-verification-copy";
 
 type Props = {
   lang: Lang;
@@ -21,6 +25,7 @@ type Props = {
   githubUrl?: string;
   initialInquiry?: InquirySelection;
   delivery: ContactDelivery;
+  verificationSiteKey?: string;
 };
 
 export function ContactClient({
@@ -30,7 +35,9 @@ export function ContactClient({
   githubUrl = "",
   initialInquiry = emptyInquiry,
   delivery,
+  verificationSiteKey,
 }: Props) {
+  const content = useSiteContent();
   const c = t.contact;
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -40,8 +47,12 @@ export function ContactClient({
   const selectedCategory = findInquiryCategory(inquiry.category);
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<
-    null | "ok" | "err" | "limit" | "required"
+    null | "ok" | "err" | "limit" | "required" | "verification"
   >(null);
+  const [verificationToken, setVerificationToken] = useState("");
+  const [verificationState, setVerificationState] = useState<"pending" | "expired" | "error">("pending");
+  const [verificationReset, setVerificationReset] = useState(0);
+  const verificationText = (key: string) => content.text(lang, `contact.verification.${key}`, contactVerificationCopy[lang][`contact.verification.${key}`]);
   const [pending, startTransition] = useTransition();
   useEffect(() => {
     let draft;
@@ -82,16 +93,21 @@ export function ContactClient({
       return;
     }
     if (delivery.mode === "unavailable") return;
+    if (delivery.mode === "inbox" && (!verificationSiteKey || !verificationToken)) {
+      setStatus("verification");
+      return;
+    }
     setStatus(null);
     startTransition(async () => {
       try {
         const payload = {
           name: name.trim(), email: email.trim(), subject, message: message.trim(),
           category: inquiry.category, topic: inquiry.topic, customSubject: inquiry.customSubject.trim(), website,
+          ...(delivery.mode === "inbox" ? { "cf-turnstile-response": verificationToken } : {}),
         };
         const result = await submitContact(delivery, payload);
         if (result !== "ok") {
-          setStatus(result === "limit" ? "limit" : "err");
+          setStatus(result === "limit" ? "limit" : result === "verification" ? "verification" : "err");
           return;
         }
         setStatus("ok");
@@ -102,6 +118,12 @@ export function ContactClient({
         setMessage("");
       } catch {
         setStatus("err");
+      } finally {
+        if (delivery.mode === "inbox") {
+          setVerificationToken("");
+          setVerificationState("pending");
+          setVerificationReset(value => value + 1);
+        }
       }
     });
   };
@@ -109,41 +131,43 @@ export function ContactClient({
     lang === "sl"
       ? [
           {
-            title: "Kaj želiš narediti?",
-            body: "Nova ideja, obstoječ projekt ali nekaj, kar bi moralo delovati bolje.",
+            title: content.text(lang, "copy.7.1"),
+            body: content.text(lang, "copy.7.2"),
           },
           {
-            title: "Kaj je že znano?",
-            body: "Platforma, okviren obseg in morebitni rok. Tudi če je načrt še odprt.",
+            title: content.text(lang, "copy.7.3"),
+            body: content.text(lang, "copy.7.4"),
           },
           {
-            title: "Imaš kaj za pokazati?",
-            body: "Povezava, posnetek zaslona ali skica pomaga pojasniti zamisel.",
+            title: content.text(lang, "copy.7.5"),
+            body: content.text(lang, "copy.7.6"),
           },
         ]
       : [
           {
-            title: "What are you making?",
-            body: "A new idea, an existing project, or something that should work better.",
+            title: content.text(lang, "copy.7.1"),
+            body: content.text(lang, "copy.7.2"),
           },
           {
-            title: "What do you know so far?",
-            body: "The platform, a rough scope, and any timing constraints. An unfinished plan is fine.",
+            title: content.text(lang, "copy.7.3"),
+            body: content.text(lang, "copy.7.4"),
           },
           {
-            title: "Anything I should see?",
-            body: "A link, screenshot, or sketch can help explain what you have in mind.",
+            title: content.text(lang, "copy.7.5"),
+            body: content.text(lang, "copy.7.6"),
           },
         ];
   const feedback =
-    status === "required"
+    status === "verification"
+      ? verificationText("required")
+      : status === "required"
       ? lang === "sl"
-        ? "Dodaj ime, e-pošto, zadevo in kratko sporočilo."
-        : "Add your name, email, subject, and a short message."
+        ? content.text(lang, "copy.7.7")
+        : content.text(lang, "copy.7.7")
       : status === "limit"
         ? lang === "sl"
-          ? "Poslanih je bilo preveč sporočil. Poskusi znova malo pozneje."
-          : "Too many messages were sent. Please try again a little later."
+          ? content.text(lang, "copy.7.8")
+          : content.text(lang, "copy.7.8")
         : c.error;
 
   return (
@@ -175,7 +199,7 @@ export function ContactClient({
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   className="input"
-                  placeholder={lang === "sl" ? "Tvoje ime" : "Your name"}
+                  placeholder={lang === "sl" ? content.text(lang, "copy.7.9") : content.text(lang, "copy.7.9")}
                 />
               </label>
               <label className="block">
@@ -197,12 +221,12 @@ export function ContactClient({
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="input"
-                  placeholder="you@domain.com"
+                  placeholder={content.text(lang, "copy.7.10")}
                 />
               </label>
             </div>
             <div className="hidden" aria-hidden="true">
-              <label>Website<input name="website" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" /></label>
+              <label>{content.text(lang, "copy.7.11")}<input name="website" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" /></label>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
             <label className="block">
@@ -216,22 +240,22 @@ export function ContactClient({
                 onChange={(event) => setInquiry({ category: findInquiryCategory(event.target.value)?.id ?? "", topic: "", customSubject: "" })}
                 className="input select"
               >
-                <option value="">{lang === "sl" ? "Izberi področje" : "Choose a category"}</option>
-                {inquiryCategories.map((category) => <option key={category.id} value={category.id}>{category.label[lang]}</option>)}
+                <option value="">{lang === "sl" ? content.text(lang, "copy.7.12") : content.text(lang, "copy.7.12")}</option>
+                {inquiryCategories.map((category) => <option key={category.id} value={category.id}>{content.inquiryLabel(lang, category.id)}</option>)}
               </select>
             </label>
             {selectedCategory && inquiry.category !== "other" && <label className="block">
-              <span className="mb-2 block text-sm">{lang === "sl" ? "Tema" : "Topic"} <span aria-hidden="true">*</span></span>
+              <span className="mb-2 block text-sm">{lang === "sl" ? content.text(lang, "copy.7.13") : content.text(lang, "copy.7.13")} <span aria-hidden="true">*</span></span>
               <select required name="topic" value={inquiry.topic} onChange={(event) => setInquiry({ ...inquiry, topic: event.target.value, customSubject: "" })} className="input select">
-                <option value="">{lang === "sl" ? "Izberi temo" : "Choose a topic"}</option>
-                {selectedCategory.topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.label[lang]}</option>)}
-                <option value="other">{lang === "sl" ? "Drugo" : "Other"}</option>
+                <option value="">{lang === "sl" ? content.text(lang, "copy.7.14") : content.text(lang, "copy.7.14")}</option>
+                {selectedCategory.topics.map((topic) => <option key={topic.id} value={topic.id}>{content.inquiryLabel(lang, selectedCategory!.id, topic.id)}</option>)}
+                <option value="other">{lang === "sl" ? content.text(lang, "copy.7.15") : content.text(lang, "copy.7.15")}</option>
               </select>
             </label>}
             </div>
             {needsCustomSubject(inquiry) && <label className="block">
-              <span className="mb-2 block text-sm">{lang === "sl" ? "Tvoja zadeva" : "Your subject"} <span aria-hidden="true">*</span></span>
-              <input required name="customSubject" maxLength={160} value={inquiry.customSubject} onChange={(event) => setInquiry({ ...inquiry, customSubject: event.target.value })} className="input" placeholder={lang === "sl" ? "Za kaj gre?" : "What would you like to discuss?"} />
+              <span className="mb-2 block text-sm">{lang === "sl" ? content.text(lang, "copy.7.16") : content.text(lang, "copy.7.16")} <span aria-hidden="true">*</span></span>
+              <input required name="customSubject" maxLength={160} value={inquiry.customSubject} onChange={(event) => setInquiry({ ...inquiry, customSubject: event.target.value })} className="input" placeholder={lang === "sl" ? content.text(lang, "copy.7.17") : content.text(lang, "copy.7.17")} />
             </label>}
             <label className="block">
               <span className="mb-2 block text-sm">
@@ -253,18 +277,30 @@ export function ContactClient({
                 className="textarea"
                 placeholder={
                   lang === "sl"
-                    ? "Opiši zamisel po svoje. Ni treba, da je vse že določeno."
-                    : "Tell me about it in your own words. You don’t need to have everything figured out."
+                    ? content.text(lang, "copy.7.18")
+                    : content.text(lang, "copy.7.18")
                 }
               />
             </label>
+            {verificationSiteKey && <div className="space-y-2">
+              <ContactTurnstile
+                siteKey={verificationSiteKey}
+                lang={lang}
+                label={verificationText("label")}
+                resetKey={verificationReset}
+                onToken={token => { setVerificationToken(token); if (token) setVerificationState("pending"); }}
+                onError={() => setVerificationState("error")}
+                onExpired={() => setVerificationState("expired")}
+              />
+              <p role="status" aria-live="polite" className="text-xs leading-relaxed text-[color:var(--color-fg-muted)]">{verificationToken ? verificationText("complete") : verificationText(verificationState)}</p>
+            </div>}
             <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
               <p className="max-w-xs text-xs leading-relaxed text-[color:var(--color-fg-muted)]">
-                {delivery.mode === "unavailable" ? (lang === "sl" ? "Tvoj e-poštni naslov omogoča odgovor." : "Your email address gives me a way to reply.") : delivery.mode === "email" ? (lang === "sl" ? "Sporočilo bo prek Web3Forms poslano na mojo e-pošto. Tvoj naslov omogoča odgovor." : "Web3Forms will deliver your message to my email. Your address lets me reply.") : (lang === "sl" ? "Sporočilo bo shranjeno v moj zasebni predal na strani. Tvoj naslov omogoča odgovor." : "Your message will be saved to my private site inbox. Your address lets me reply.")}
+                {delivery.mode === "unavailable" ? (lang === "sl" ? content.text(lang, "copy.7.19") : content.text(lang, "copy.7.19")) : delivery.mode === "email" ? (lang === "sl" ? content.text(lang, "copy.7.20") : content.text(lang, "copy.7.20")) : (lang === "sl" ? content.text(lang, "copy.7.21") : content.text(lang, "copy.7.21"))}
               </p>
               <button
                 type="submit"
-                disabled={pending || delivery.mode === "unavailable"}
+                disabled={pending || delivery.mode === "unavailable" || (delivery.mode === "inbox" && (!verificationSiteKey || !verificationToken))}
                 className="btn-primary disabled:cursor-wait disabled:opacity-60"
               >
                 {pending ? (
@@ -286,8 +322,8 @@ export function ContactClient({
             </div>
           </fieldset>
           {delivery.mode === "unavailable" && <p role="status" className="mt-5 text-sm leading-relaxed text-[color:var(--color-fg-muted)]">{contactEmail
-            ? lang === "sl" ? "Kontaktni obrazec trenutno ni na voljo. Pišeš mi lahko na spodnji e-poštni naslov." : "The contact form is currently unavailable. You can email me below."
-            : lang === "sl" ? "Kontaktni obrazec je še v pripravi. Obišči stran znova kmalu." : "The contact form is being set up. Please check back soon."}</p>}
+            ? lang === "sl" ? content.text(lang, "copy.7.22") : content.text(lang, "copy.7.22")
+            : lang === "sl" ? content.text(lang, "copy.7.23") : content.text(lang, "copy.7.23")}</p>}
           {status === "ok" && (
             <div
               role="status"
@@ -299,7 +335,7 @@ export function ContactClient({
                 size={17}
                 className="mt-0.5 shrink-0"
               />
-              {delivery.mode === "email" ? (lang === "sl" ? "Sporočilo je bilo oddano za dostavo na mojo e-pošto. Hvala za povpraševanje." : "Your message was accepted for delivery to my email. Thanks for getting in touch.") : (lang === "sl" ? "Sporočilo je shranjeno v moj zasebni predal na strani. Hvala za povpraševanje." : "Your message was saved to my private site inbox. Thanks for getting in touch.")}
+              {delivery.mode === "email" ? (lang === "sl" ? content.text(lang, "copy.7.24") : content.text(lang, "copy.7.24")) : (lang === "sl" ? content.text(lang, "copy.7.25") : content.text(lang, "copy.7.25"))}
             </div>
           )}
           {status !== null && status !== "ok" && (
@@ -316,17 +352,17 @@ export function ContactClient({
                 {feedback}{" "}
                 {status === "err" &&
                   (lang === "sl"
-                    ? "Vsebina sporočila ostane v obrazcu."
-                    : "Your draft is still in the form.")}
+                    ? content.text(lang, "copy.7.26")
+                    : content.text(lang, "copy.7.26"))}
               </span>
             </div>
           )}
         </form>
       </Reveal>
       <Reveal delay={0.12} className="lg:col-span-5">
-        <aside className="lg:pt-2">
+        <SiteSection name="contact.prompts"><aside className="lg:pt-2">
           <h2 className="section-label">
-            {lang === "sl" ? "Dober začetek" : "A useful starting point"}
+            {lang === "sl" ? content.text(lang, "copy.7.27") : content.text(lang, "copy.7.27")}
           </h2>
           <ol className="mt-6">
             {prompts.map((prompt, index) => (
@@ -377,19 +413,19 @@ export function ContactClient({
                   className="inline-flex items-center gap-2 text-xs text-[color:var(--color-fg-muted)] transition-colors hover:text-[color:var(--color-fg)]"
                 >
                   {lang === "sl"
-                    ? "Moja koda na GitHubu"
-                    : "Find my code on GitHub"}
+                    ? content.text(lang, "copy.7.28")
+                    : content.text(lang, "copy.7.28")}
                   <ArrowUpRight aria-hidden="true" size={13} />
                   <span className="sr-only">
                     {lang === "sl"
-                      ? "Odpre se v novem zavihku"
-                      : "Opens in a new tab"}
+                      ? content.text(lang, "copy.7.29")
+                      : content.text(lang, "copy.7.29")}
                   </span>
                 </a>
               )}
             </div>
           )}
-        </aside>
+        </aside></SiteSection>
       </Reveal>
     </div>
   );

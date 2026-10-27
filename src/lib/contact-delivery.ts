@@ -7,9 +7,15 @@ export function contactDelivery(publicAccessKey: string | undefined, databaseAva
   return accessKey ? { mode: "email", accessKey } : databaseAvailable ? { mode: "inbox" } : { mode: "unavailable" };
 }
 
+/** The active contact form uses the owner's verified private inbox. */
+export function verifiedInboxDelivery(databaseAvailable: boolean, verificationAvailable: boolean): ContactDelivery {
+  return databaseAvailable && verificationAvailable ? { mode: "inbox" } : { mode: "unavailable" };
+}
+
 export type ContactPayload = {
   name: string; email: string; subject: string; message: string;
   category?: string; topic?: string; customSubject?: string; website?: string;
+  "cf-turnstile-response"?: string;
 };
 
 export async function readContactJson(request: Request): Promise<{ ok: true; value: unknown } | { ok: false; status: 400 | 413 }> {
@@ -44,7 +50,7 @@ export async function readContactJson(request: Request): Promise<{ ok: true; val
 export function parseContactPayload(value: unknown, lang: Lang = "en"): ContactPayload | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const body = value as Record<string, unknown>;
-  const limits = { name: 120, email: 200, subject: 200, message: 10000, category: 30, topic: 40, customSubject: 160, website: 200 };
+  const limits = { name: 120, email: 200, subject: 200, message: 10000, category: 30, topic: 40, customSubject: 160, website: 200, "cf-turnstile-response": 2048 };
   for (const [field, limit] of Object.entries(limits)) {
     if (body[field] !== undefined && (typeof body[field] !== "string" || body[field].length > limit)) return null;
   }
@@ -61,7 +67,7 @@ export function parseContactPayload(value: unknown, lang: Lang = "en"): ContactP
     subject = inquirySubject(selection, lang);
   }
   if (/[\r\n]/.test(name + email + subject)) return null;
-  return { name, email, subject, message, ...(typeof body.website === "string" ? { website: body.website } : {}) };
+  return { name, email, subject, message, ...(typeof body.website === "string" ? { website: body.website } : {}), ...(typeof body["cf-turnstile-response"] === "string" ? { "cf-turnstile-response": body["cf-turnstile-response"] } : {}) };
 }
 
 /** A 200 response alone is not proof that the provider accepted the message. */
@@ -69,7 +75,7 @@ export function web3FormsAccepted(responseOk: boolean, value: unknown): boolean 
   return responseOk && Boolean(value && typeof value === "object" && "success" in value && value.success === true);
 }
 
-export async function submitContact(delivery: ContactDelivery, payload: ContactPayload, request: typeof fetch = fetch): Promise<"ok" | "err" | "limit" | "unavailable"> {
+export async function submitContact(delivery: ContactDelivery, payload: ContactPayload, request: typeof fetch = fetch): Promise<"ok" | "err" | "limit" | "verification" | "unavailable"> {
   if (delivery.mode === "unavailable") return "unavailable";
   try {
     const response = await request(delivery.mode === "email" ? "https://api.web3forms.com/submit" : "/api/contact", {
@@ -82,6 +88,7 @@ export async function submitContact(delivery: ContactDelivery, payload: ContactP
     });
     const result: unknown = await response.json().catch(() => null);
     if (response.status === 429) return "limit";
+    if (delivery.mode === "inbox" && response.status === 403) return "verification";
     const accepted = delivery.mode === "email" ? web3FormsAccepted(response.ok, result) : response.ok && Boolean(result && typeof result === "object" && "ok" in result && result.ok === true);
     return accepted ? "ok" : "err";
   } catch {

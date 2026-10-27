@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { projects, comments } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { serializePublicProject } from "@/lib/project-media";
+import { publicCommentFields } from "@/lib/public-comments";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -18,14 +20,14 @@ export async function GET(_req: Request, ctx: Params) {
     }
 
     const projectComments = await getDb()
-      .select()
+      .select(publicCommentFields)
       .from(comments)
       .where(and(eq(comments.projectId, row.id), eq(comments.approved, true)))
       .orderBy(comments.createdAt);
 
-    return NextResponse.json({ project: row, comments: projectComments });
-  } catch (err) {
-    console.error("GET /api/projects/[slug] error", err);
+    return NextResponse.json({ project: serializePublicProject(row), comments: projectComments });
+  } catch {
+    console.error("GET /api/projects/[slug] failed.");
     return NextResponse.json(
       { error: "Failed to load project" },
       { status: 500 }

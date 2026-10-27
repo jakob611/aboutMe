@@ -48,8 +48,8 @@ The build itself does not access R2, but deployment requires this bucket to exis
 
 Open **Workers & Pages → aboutme → Settings → Runtime variables and secrets**,
 with **Production** selected. Current account inspection confirms DATABASE_URL
-and UPLOAD_PASSWORD already exist; preserve their values. ADMIN_SESSION_SECRET
-is absent and must be added before releasing the dashboard. Required settings:
+and UPLOAD_PASSWORD already exist; preserve their values. Keep the current
+ADMIN_SESSION_SECRET too. Required settings:
 
 | Type | Name | Value |
 | --- | --- | --- |
@@ -57,6 +57,8 @@ is absent and must be added before releasing the dashboard. Required settings:
 | Secret | UPLOAD_PASSWORD | Keep your existing password; it now signs in to `/admin` as well as managing `/files` |
 | Secret | ADMIN_PASSWORD | Optional fallback if UPLOAD_PASSWORD is absent; not required |
 | Secret | ADMIN_SESSION_SECRET | An independent random signing secret, at least 32 characters |
+| Secret | TURNSTILE_SECRET | Cloudflare Turnstile secret key, runtime only |
+| Variable | TURNSTILE_HOSTNAMES | Exact intended frontend hostnames, comma-separated; no localhost in production |
 | Variable | SITE_OWNER | Jakob Tominc |
 | Variable | SITE_TAGLINE | Your chosen short description |
 | Variable | CONTACT_EMAIL | Your contact email address |
@@ -92,9 +94,14 @@ Under **Builds → Variables and secrets**, add these ordinary build variables t
 | SITE_OWNER | Jakob Tominc |
 | SITE_TAGLINE | The same description as above |
 | CONTACT_EMAIL | The same contact email as above |
+| NEXT_PUBLIC_TURNSTILE_SITE_KEY | Public site key matching the Turnstile runtime secret |
 
 These public/site settings are also consumed by statically built metadata and
 client-side components. Keep them consistent with the runtime values.
+Allow the intended frontend domains in the Cloudflare Turnstile widget settings.
+The active contact form verifies tokens on the Worker before writing to the private
+Admin inbox. It does not send Web3Forms email. Missing verification/database settings
+disable sending; see [ADMIN.md](ADMIN.md) for local versus production allowlists.
 
 The screenshot says **Configured API token unavailable**. Under the Builds API token
 setting, choose **Create new token** if available, then save. Cloudflare creates
@@ -168,7 +175,9 @@ The branch Preview is available at
 Independent browser and HTTP checks passed authentication, logout, invalid-session
 rejection and an isolated R2 upload/read/delete. See [VERIFICATION.md](VERIFICATION.md)
 for deployment/build evidence and remaining limits. Project CRUD and the contact
-inbox still need the development database. No production deployment was performed.
+inbox still need a development database for isolated CRUD testing. This historical
+Preview evidence does not certify the latest production release; consult
+[VERIFICATION.md](VERIFICATION.md) for its current status.
 
 ## 6. Deploy, verify, then connect the domain
 

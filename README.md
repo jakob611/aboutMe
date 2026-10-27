@@ -54,15 +54,17 @@ pages show an honest unavailable state when the database cannot be reached.
 
 ## Content and features
 
-- Edit `src/lib/site.ts` for real profile links, tools and optional support links.
-  The site deliberately omits invented statistics and unconfigured profiles.
+- Use `/admin` → **Site content** for public English/Slovenian wording, profile
+  links, services and section visibility. Published R2 overrides apply on the next
+  page load; source defaults remain the fallback. Credentials and code are managed
+  separately.
 - Manage real projects, publish a CV PDF and view contact messages at `/admin`,
   using UPLOAD_PASSWORD.
   The CV tab uses R2 independently of Neon; [ADMIN.md](ADMIN.md) explains publication.
-  Edit the core Android, web, AI/automation and 3D printing offerings in
-  `src/lib/service-offerings.ts`; these are available without a database.
-  Add optional service details and additional offerings through Neon's Tables UI
-  or SQL Editor. Configured prices are kept; no fallback prices are invented.
+  Core service descriptions and optional prices are editable in Site content and
+  available without a database. Additional database-backed offerings remain in
+  Neon. Project images support file drops, reordering and bilingual captions;
+  **Not open source** hides the repository URL publicly while keeping it privately.
 - `npm run db:seed` optionally adds **fictional example content**. It loads `.env`,
   skips existing slugs and never deletes your projects, services or comments.
 - Put gallery photos in `public/gallery/` and list `/gallery/filename.jpg` URLs in
@@ -73,10 +75,10 @@ pages show an honest unavailable state when the database cannot be reached.
   subject. Service links preselect the relevant enquiry, including ongoing support.
   Existing `?subject=` links remain usable. Category, topic, custom subject and
   message fields survive the existing language-switch draft handoff.
-- Optional `NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY` enables browser-direct email delivery.
-  With no key, configured Neon receives submissions in `contact_messages` without
-  sending email; with neither configured, sending is disabled and real contact
-  links remain available. See [ADMIN.md](ADMIN.md) for key setup and current limits.
+- Contact submissions require server-side Cloudflare Turnstile verification and
+  go to **Admin → Messages** in Neon. The active form does not send email. Missing
+  database or verification configuration disables sending while preserving direct
+  contact links. See [ADMIN.md](ADMIN.md) for setup.
 - Google Drive integration is optional: configure `GOOGLE_DRIVE_API_KEY` and
   `GOOGLE_DRIVE_FOLDER_ID` for a public folder.
 - Support links to the owner's Ko-fi page, `https://ko-fi.com/jakobtominc`.
@@ -84,12 +86,13 @@ pages show an honest unavailable state when the database cannot be reached.
   the panel loads after a click and is removed on close or navigation. A normal
   Ko-fi link remains available when embedded content is blocked. Optional
   `BUY_ME_A_COFFEE_URL` adds another link; `KO_FI_URL` overrides the profile link.
-- The home-page sketchbook has original web, Android, LEGO and 3D printing SVG
-  scenes. It advances every four seconds. Choosing a subject pauses rotation;
+- The home-page sketchbook presents newest real projects with their images,
+  summaries and actions, using category artwork when no project is available.
+  It advances every four seconds. Choosing a category pauses rotation;
   clicking anywhere except a subject control resumes it, without a Play button.
   Hidden/offscreen pages and reduced motion still suspend automatic rotation.
-  The artwork opens the newest real project in its category when available,
-  otherwise the category collection. Project cover/gallery images always come
+  Project artwork opens its project; fallback artwork opens the category
+  collection. Project cover/gallery images always come
   from the project records. One Contact button sits beside the language control;
   Support remains in the main navigation.
 - Project categories have shareable URLs (for example `/projects?category=3d-printing`).
