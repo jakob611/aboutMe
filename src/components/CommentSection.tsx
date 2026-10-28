@@ -153,19 +153,19 @@ export function CommentSection({ slug, initialComments, lang, verificationSiteKe
       <ul className="mt-8 space-y-4">
         {comments.map((c, i) => (
           <Reveal key={c.id} delay={Math.min(i * 0.03, 0.2)}>
-            <li className="glass rounded-2xl p-5">
+            <li className="glass min-w-0 rounded-2xl p-5">
               <div className="flex items-center gap-3 mb-2">
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#7c5cff] to-[#22d3ee] flex items-center justify-center text-sm font-bold">
+                <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-br from-[#7c5cff] to-[#22d3ee] flex items-center justify-center text-sm font-bold">
                   <User size={16} />
                 </div>
-                <div>
-                  <div className="font-medium">{c.author}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium [overflow-wrap:anywhere]">{c.author}</div>
                   <div className="text-xs text-[color:var(--color-fg-muted)]">
                     {formatDate(c.createdAt, lang)}
                   </div>
                 </div>
               </div>
-              <p className="text-[color:var(--color-fg-muted)] whitespace-pre-wrap leading-relaxed">
+              <p className="text-[color:var(--color-fg-muted)] whitespace-pre-wrap leading-relaxed [overflow-wrap:anywhere]">
                 {c.content}
               </p>
             </li>

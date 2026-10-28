@@ -188,7 +188,7 @@ export default async function ProjectPage({ params }: Props) {
                   key={tag}
                   className="px-3 py-1 rounded-full text-xs border border-white/10 text-[color:var(--color-fg-muted)]"
                 >
-                  #{tag}
+                  {tag.startsWith("#") ? tag : `#${tag}`}
                 </span>
               ))}
             </div>

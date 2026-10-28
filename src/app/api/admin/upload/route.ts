@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { IMAGE_TYPES, imageBytesMatch } from "@/lib/media";
 import { getUploads } from "@/lib/storage";
+import { readBoundedForm } from "@/lib/request-body";
 
 const MAX_SIZE = 12 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const denied = await requireAdmin(req);
   if (denied) return denied;
-  if (Number(req.headers.get("content-length")) > MAX_SIZE + 65536) {
-    return NextResponse.json({ error: "Image too large (max 12 MB)" }, { status: 413 });
-  }
   try {
-    const form = await req.formData();
+    const parsed = await readBoundedForm(req, MAX_SIZE + 65536);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.status === 413 ? "Image too large (max 12 MB)" : "Invalid image upload" }, { status: parsed.status });
+    const form = parsed.value;
     const file = form.get("file");
     if (!(file instanceof File) || file.size === 0) {
       return NextResponse.json({ error: "Choose a non-empty image file" }, { status: 400 });

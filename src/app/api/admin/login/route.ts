@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ADMIN_COOKIE, PRIVATE_HEADERS, adminCookieOptions, allowAdminLogin, createAdminSession, getAdminPassword, isSameOrigin, passwordsMatch } from "@/lib/admin-auth";
+import { readBoundedJson } from "@/lib/request-body";
 
 const input = z.object({ password: z.string().min(1).max(1024) });
 
@@ -14,7 +15,9 @@ export async function POST(req: Request) {
     if (!(await allowAdminLogin(req))) {
       return NextResponse.json({ error: "Too many login attempts. Try again in a minute." }, { status: 429, headers: { ...PRIVATE_HEADERS, "Retry-After": "60" } });
     }
-    const body = input.safeParse(await req.json().catch(() => null));
+    const parsed = await readBoundedJson(req, 16 * 1024);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.status === 413 ? "Login request is too large" : "Enter a valid password" }, { status: parsed.status, headers: PRIVATE_HEADERS });
+    const body = input.safeParse(parsed.value);
     if (!body.success) return NextResponse.json({ error: "Enter a valid password" }, { status: 400, headers: PRIVATE_HEADERS });
     if (!(await passwordsMatch(body.data.password, getAdminPassword()))) {
       return NextResponse.json({ error: "Wrong password" }, { status: 401, headers: PRIVATE_HEADERS });

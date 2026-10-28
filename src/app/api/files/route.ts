@@ -4,6 +4,7 @@ import { getDb } from "@/db";
 import { files } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { allowAdminLogin, passwordsMatch } from "@/lib/admin-auth";
+import { readBoundedForm } from "@/lib/request-body";
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 
@@ -37,7 +38,9 @@ export async function POST(req: NextRequest) {
   try {
     const limited = await checkPasswordRateLimit(req);
     if (limited) return limited;
-    const form = await req.formData();
+    const parsed = await readBoundedForm(req, MAX_SIZE + 65536);
+    if (!parsed.ok) return NextResponse.json({ error: parsed.status === 413 ? "File too large (max 50 MB)" : "Invalid file upload" }, { status: parsed.status });
+    const form = parsed.value;
     const passwordField = form.get("password");
     const password = typeof passwordField === "string" ? passwordField : "";
     const file = form.get("file");
@@ -66,16 +69,27 @@ export async function POST(req: NextRequest) {
         { status: 413 }
       );
     }
+    if (!file.name || Array.from(file.name).length > 255) {
+      return NextResponse.json({ error: "Use a filename of 1 to 255 characters" }, { status: 400 });
+    }
+    const mimeType = file.type || "application/octet-stream";
+    if (mimeType.length > 120) {
+      return NextResponse.json({ error: "The file type is too long" }, { status: 400 });
+    }
+    if (description.length > 500) {
+      return NextResponse.json({ error: "Description too long (max 500 characters)" }, { status: 400 });
+    }
 
     // Generate a safe, unique filename.
     const safeBase = file.name
       .replace(/[^\w.\-]+/g, "_")
-      .replace(/^\.+/, "_");
+      .replace(/^\.+/, "_")
+      .slice(0, 218); // Leave room for the UUID and hyphen in varchar(255).
     const id = crypto.randomUUID();
     const storedName = `${id}-${safeBase}`;
     const bucket = await getUploads();
     await bucket.put(storedName, await file.arrayBuffer(), {
-      httpMetadata: { contentType: file.type || "application/octet-stream" },
+      httpMetadata: { contentType: mimeType },
     });
 
     let inserted;
@@ -85,7 +99,7 @@ export async function POST(req: NextRequest) {
       .values({
         name: storedName,
         originalName: file.name,
-        mimeType: file.type || "application/octet-stream",
+        mimeType,
         size: file.size,
         description: description || null,
       })
