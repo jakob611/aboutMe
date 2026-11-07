@@ -36,6 +36,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       { url: `${base}${p}?lang=sl`, lastModified: now, changeFrequency: "weekly", priority: p === "" ? 0.9 : 0.7 }
     );
   }
+  entries.push(
+    { url: `${base}/play?scene=paper`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/play?scene=paper&lang=en`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${base}/play?scene=paper&lang=sl`, changeFrequency: "monthly", priority: 0.7 },
+  );
   for (const slug of projectSlugs) {
     entries.push(
       { url: `${base}/projects/${slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },

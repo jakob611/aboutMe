@@ -12,7 +12,7 @@ const homeLabels: Record<string, string> = {
   intro: "Introduction", work: "Projects button", contact: "Contact button", scroll: "Scroll prompt",
   servicesLabel: "Services · small heading", servicesTitle: "Services · headline", servicesIntro: "Services · introduction", serviceLink: "Services · link text",
   aboutLabel: "About · small heading", aboutTitle: "About · headline", aboutText: "About · introduction", aboutLink: "About · link text",
-  playLabel: "Playground · small heading", playTitle: "Playground · headline", playIntro: "Playground · introduction", playWorld: "Playground · island link", playPaper: "Playground · paper link", playNav: "Playground · navigation label",
+  playLabel: "Simulations · small heading", playTitle: "Simulations · headline", playIntro: "Simulations · introduction", playWorld: "Simulations · coast link", playPaper: "Simulations · paper link", playNav: "Simulations · navigation label",
 };
 const fieldLabel = (field: { key: string; label: string }) => field.key.match(/^(en|sl)\.home\.(.+)$/) ? homeLabels[field.key.split(".").slice(2).join(".")] ?? field.label : field.label;
 export function AdminSiteContent({ onBusy }: { onBusy?: (busy: boolean) => void } = {}) {

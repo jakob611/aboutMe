@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { FragmentLink } from "@/components/FragmentLink";
 import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
@@ -8,6 +9,7 @@ import styles from "./home.module.css";
 import { getLang } from "@/lib/lang";
 import { loadWorkshopProjects } from "@/lib/workshop-projects";
 import { homeContentDefaults } from "@/lib/home-content-defaults";
+import { simulationCopy } from "@/lib/simulation-copy";
 import { getSiteContent } from "@/lib/site-content-server";
 import type { Metadata } from "next";
 
@@ -82,8 +84,20 @@ export default async function HomePage() {
       {content.section("home.experiments") && <section id="playground" className={styles.experiments} aria-labelledby="home-play-heading">
         <div className={styles.experimentIntro}><p className="section-label">{t("playLabel")}</p><h2 id="home-play-heading">{t("playTitle")}</h2><p>{t("playIntro")}</p></div>
         <div className={styles.experimentLinks}>
-          <Link href="/play" className={styles.worldLink}><div className={styles.islandArt} aria-hidden="true"><span /><span /><span /></div><span><span>01 / STILLWATER RUSH</span><strong>{t("playWorld")}</strong></span><ArrowUpRight size={21} /></Link>
-          <Link href="/play?scene=paper" className={styles.paperLink}><div className={styles.paperArt} aria-hidden="true"><span /><span /></div><span><span>02 / PAPER LEAGUE</span><strong>{t("playPaper")}</strong></span><ArrowUpRight size={21} /></Link>
+          <Link href="/play" prefetch={false} className={styles.worldLink}>
+            <div className={styles.studyArt} aria-hidden="true">
+              <Image src="/simulation/previews/coast.webp" alt="" fill unoptimized sizes="(max-width: 767px) 94vw, 600px" />
+              <span>01</span>
+            </div>
+            <div className={styles.studyText}><span>{simulationCopy[lang].worldCategory}</span><strong>{t("playWorld")}</strong><ArrowUpRight size={21} aria-hidden="true" /></div>
+          </Link>
+          <Link href="/play?scene=paper" prefetch={false} className={styles.paperLink}>
+            <div className={styles.studyArt} aria-hidden="true">
+              <Image src="/simulation/previews/paper.webp" alt="" fill unoptimized sizes="(max-width: 767px) 94vw, 600px" />
+              <span>02</span>
+            </div>
+            <div className={styles.studyText}><span>{simulationCopy[lang].paperCategory}</span><strong>{t("playPaper")}</strong><ArrowUpRight size={21} aria-hidden="true" /></div>
+          </Link>
         </div>
       </section>}
 
