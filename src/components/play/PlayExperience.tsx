@@ -254,7 +254,7 @@ export function PlayExperience({ lang, initialMode: mode }: { lang: Lang; initia
           <div className={styles.score}><span>{t.score}</span><strong>{state.score.toString().padStart(4, "0")}</strong></div>
           <div className={styles.hudRight}>
             {coast ? <div className={styles.hearts} aria-label={`${t.hearts}: ${state.lives}/3`}>{[0, 1, 2].map(i => <Heart key={i} size={17} fill={i < state.lives ? "currentColor" : "none"} opacity={i < state.lives ? 1 : .36} />)}</div>
-              : <div className={styles.baskets} aria-label={`${t.baskets}: ${state.hits}/6`}><CircleDot size={16} /><b>{state.hits}<span>/6</span></b></div>}
+              : <div className={styles.baskets} aria-label={`${t.baskets}: ${state.hits}/${paperThrows}`}><CircleDot size={16} /><b>{state.hits}<span>/{paperThrows}</span></b></div>}
             <span className={styles.best}>{t.best} <b>{best}</b></span>
           </div>
         </div>
