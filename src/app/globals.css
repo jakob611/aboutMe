@@ -29,6 +29,8 @@ html:has(dialog[open]) {
   overflow: hidden;
 }
 
+body:has(.play-expanded) > main { z-index: 100; }
+
 body {
   min-width: 320px;
   background: var(--color-bg);
@@ -350,6 +352,10 @@ main[tabindex="-1"]:focus {
 
 .hero-title-accent {
   color: var(--color-accent-2);
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.055em;
 }
 
 .home-hero-intro {

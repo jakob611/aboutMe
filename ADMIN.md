@@ -91,9 +91,9 @@ Uploaded project images are public once their URL is known.
 
 ## Site content
 
-Open **Site content**, choose a language and section, or search public wording.
+Open **Pages & wording**, choose a language and section, or search public wording.
 Existing public text, profile links, core service copy/prices, category labels,
-section visibility and form labels are editable. **Save changes** publishes all
+section visibility and form labels are editable. **Publish changes** publishes all
 changes together; public pages use them on their next load. **Discard changes**
 returns to the loaded version; **Reload published** retrieves the latest version.
 Concurrent saves are rejected rather than overwriting another editor's work.
@@ -107,6 +107,33 @@ Only registered fields and typed values are accepted. This editor cannot execute
 HTML/JavaScript, change application layout, configure credentials or add new
 service database records. Overrides use fixed R2 object `site/content.v1.json`;
 removing it restores source defaults. Local publication affects local storage only.
+
+### Editing and reviewing changes
+
+The review above the editor compares published and pending values across both
+languages and all sections. **Undo** restores one field to its loaded published
+value; **Use default** removes that field's override. **Pending changes only**
+filters the current language and section (or search results), while the review
+always includes the complete set that will publish.
+
+Projects can be searched by title, slug, tag or link, filtered by category, and
+ordered by newest, name or featured marker. The preview arrow opens the public
+project in another tab. Project text is grouped by language; organisation, links
+and images have their own sections. Saving a project makes it public immediately.
+
+The optional homepage brick playground can be hidden under **Section visibility**
+using `home · playground`. Its labels are editable in **Brick playground**, in
+both languages. Visitor builds stay in temporary browser memory and use no
+database or external dependencies. The snap animation respects reduced motion,
+and every tile supports Tab, Enter and Space.
+
+## Playground
+
+The new `/play` experiences are linked from the homepage and navigation.
+**Pages & wording → Home** edits the invitation and navigation text;
+**Section visibility → home · experiments** hides the homepage invitation.
+Scene geometry, controls and detailed bilingual playground copy are maintained
+in source. See [PLAYGROUND.md](PLAYGROUND.md) for controls and rendering settings.
 
 ## CV publication
 

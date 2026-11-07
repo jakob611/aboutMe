@@ -19,6 +19,10 @@ export function AdminProjectEditor({ project, initialDraft, databaseUnavailable,
   const [draftSaved, setDraftSaved] = useState(false);
   const stopDraft = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    formRef.current?.scrollIntoView({ block: "start" });
+    formRef.current?.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+  }, []);
   const busy = saving || uploading;
   useEffect(() => { onBusy(busy); }, [busy, onBusy]);
   useEffect(() => {
@@ -104,24 +108,25 @@ export function AdminProjectEditor({ project, initialDraft, databaseUnavailable,
       {errors[key] && <span id={`project-${key}-error`} className="mt-1 block text-xs text-rose-300">{errors[key].join(" ")}</span>}
     </label>;
   };
-  return <form ref={formRef} onSubmit={save} noValidate className="min-w-0 rounded-2xl border border-white/10 bg-[color:var(--color-surface)] p-5 sm:p-7">
+  return <form ref={formRef} onSubmit={save} noValidate className="min-w-0 scroll-mt-24 rounded-2xl border border-white/10 bg-[color:var(--color-surface)] p-5 sm:p-7">
     <div className="mb-5 flex items-center justify-between gap-3"><h2 className="text-xl font-semibold">{project ? "Edit project" : "New project"}</h2><button type="button" disabled={busy} className="btn-ghost min-h-10 p-2" onClick={discard} aria-label="Cancel and close editor"><X size={18} /></button></div>
     <p className="mb-4 text-xs leading-relaxed text-[color:var(--color-fg-muted)]">Required text has an asterisk. Both languages are saved together. Photo changes appear on this project only after Save project. Removing a photo here does not delete its stored file.</p>
     {databaseUnavailable && <p role="status" className="mb-4 rounded-lg border border-amber-300/25 p-3 text-sm text-amber-100">The database is unavailable. Draft editing and image uploads remain available; Save project is blocked until it reconnects.</p>}
     {error && <div role="alert" className="mb-4 rounded-lg border border-rose-300/25 p-3 text-sm text-rose-200"><p className="flex gap-2"><AlertCircle className="mt-0.5 shrink-0" size={16} />{error}</p>{Object.keys(errors).length > 0 && <ul className="mt-2 list-disc space-y-1 pl-6">{Object.entries(errors).map(([field, messages]) => <li key={field}>{field}: {messages.join(" ")}</li>)}</ul>}</div>}
     <fieldset disabled={busy} className="min-w-0 space-y-5">
-      <div className="grid gap-4 sm:grid-cols-2">{textField("titleEn", "Title (EN)", 200, false, true)}{textField("titleSl", "Title (SL)", 200, false, true)}</div>
+      <section className="space-y-4" aria-label="English project text"><h3 className="border-b border-white/10 pb-3 text-sm font-medium">01 / English</h3>{textField("titleEn", "Title (EN)", 200, false, true)}{textField("summaryEn", "Short summary (EN)", 2000, true, true)}{textField("descriptionEn", "Description (EN)", 50000, true, true)}</section>
+      <section className="space-y-4" aria-label="Slovenian project text"><h3 className="border-b border-white/10 pb-3 pt-3 text-sm font-medium">02 / Slovenščina</h3>{textField("titleSl", "Title (SL)", 200, false, true)}{textField("summarySl", "Short summary (SL)", 2000, true, true)}{textField("descriptionSl", "Description (SL)", 50000, true, true)}</section>
+      <h3 className="border-b border-white/10 pb-3 pt-3 text-sm font-medium">03 / Organisation & links</h3>
       <div className="grid gap-4 sm:grid-cols-2">{textField("slug", "Slug", 120, false, true)}<label className="text-sm"><span className="mb-1.5 block text-[color:var(--color-fg-muted)]">Category *</span><select className="select" name="category" value={form.category} onChange={event => update("category", event.target.value as ProjectCategory)}>{PROJECT_CATEGORY_IDS.map(category => <option key={category} value={category}>{getProjectCategoryLabels("en")[category]}</option>)}</select></label></div>
-      {textField("summaryEn", "Short summary (EN)", 2000, true, true)}{textField("summarySl", "Short summary (SL)", 2000, true, true)}
-      {textField("descriptionEn", "Description (EN)", 50000, true, true)}{textField("descriptionSl", "Description (SL)", 50000, true, true)}
       {textField("tags", "Tags (comma-separated)", 1000)}
       <div className="grid gap-4 sm:grid-cols-2">{textField("linkUrl", "Live URL", 500)}{textField("linkLabel", "Link label", 100)}</div>
       <p className="-mt-2 text-xs text-[color:var(--color-fg-muted)]">A bare domain such as glowupp.org is saved as https://glowupp.org/. Only http and https links are accepted.</p>
       {textField("repoUrl", "Repository URL (optional)", 500)}
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.gallery.sourceVisibility === "closed"} onChange={event => update("gallery", { ...form.gallery, sourceVisibility: event.target.checked ? "closed" : "unspecified" })} /><span>Not open source<span className="mt-1 block text-xs text-[color:var(--color-fg-muted)]">Show a closed-source label and hide the repository link publicly. Any existing repository URL is kept privately.</span></span></label>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={form.featured} onChange={event => update("featured", event.target.checked)} /><span>Mark as featured<span className="mt-1 block text-xs text-[color:var(--color-fg-muted)]">Keeps this project’s featured marker. The Home sketchbook always shows the newest projects.</span></span></label>
+      <h3 className="border-b border-white/10 pb-3 pt-3 text-sm font-medium">04 / Cover & gallery</h3>
       <ProjectMediaEditor coverImage={form.coverImage} media={form.gallery} errors={errors} disabled={busy} uploading={uploading} onUpload={(files, kind) => void upload(files, kind)} onChange={(media, coverImage) => { update("gallery", media); update("coverImage", coverImage); }} />
-      <div className="flex flex-wrap gap-3 border-t border-white/10 pt-5"><button type="submit" disabled={busy || databaseUnavailable} className="btn-primary flex-1">{saving ? <><Loader2 className="animate-spin" size={16} /> Saving…</> : "Save project"}</button><button type="button" disabled={busy} onClick={discard} className="btn-ghost">Cancel draft</button></div>
+      <div className="sticky bottom-3 z-10 flex flex-wrap gap-3 rounded-lg border border-white/10 bg-[color:var(--color-surface)] p-3 shadow-xl"><button type="submit" disabled={busy || databaseUnavailable} className="btn-primary flex-1">{saving ? <><Loader2 className="animate-spin" size={16} /> Saving…</> : "Save project"}</button><button type="button" disabled={busy} onClick={discard} className="btn-ghost">Cancel draft</button></div>
     </fieldset>
     <p role="status" className="mt-4 text-xs text-[color:var(--color-fg-muted)]">{draftSaved ? "Draft saved in this tab for up to two hours. Save, Cancel or Sign out clears it." : "Drafts stay in this tab. If browser storage is blocked, keep this editor open until saved."}</p>
   </form>;
