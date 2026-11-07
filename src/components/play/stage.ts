@@ -1,8 +1,6 @@
 import * as T from "three";
 import { initialTier, slowerTier, qualitySettings, type Quality, type Tier } from "@/lib/play-model";
-import type { Options } from "./types";
-
-export function createStage(options: Options) {
+export function createStage(options: { host: HTMLDivElement; quality: Quality; onTier(tier: Tier): void; onError(): void }) {
   const { host } = options;
   const renderer = new T.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "default" });
   renderer.outputColorSpace = T.SRGBColorSpace;
