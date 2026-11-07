@@ -3,6 +3,8 @@ import { FragmentLink } from "@/components/FragmentLink";
 import { ArrowDown, ArrowRight, ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { WorkshopScene } from "@/components/WorkshopScene";
+import { BrickPlayground } from "@/components/BrickPlayground";
+import styles from "./home.module.css";
 import { getLang } from "@/lib/lang";
 import { loadWorkshopProjects } from "@/lib/workshop-projects";
 import { homeContentDefaults } from "@/lib/home-content-defaults";
@@ -67,9 +69,9 @@ export default async function HomePage() {
               </Link>
             </div>
           </Reveal>
-          {(content.section("home.services") || content.section("home.about")) && <FragmentLink href={content.section("home.services") ? "#services" : "#about"} className="hero-scroll">
+          {(content.section("home.experiments") || content.section("home.services") || content.section("home.about")) && <FragmentLink href={content.section("home.experiments") ? "#playground" : content.section("home.services") ? "#services" : "#about"} className="hero-scroll">
             <ArrowDown size={14} />
-            {t("scroll")}
+            {content.section("home.experiments") ? t("playNav") : t("scroll")}
           </FragmentLink>}
         </div>
         <Reveal delay={0.16} y={16} className="home-hero-visual">
@@ -77,7 +79,15 @@ export default async function HomePage() {
         </Reveal>
       </section>}
 
-      {content.section("home.services") && <section id="services" className="section-rule home-services mx-auto max-w-7xl px-5 sm:px-8">
+      {content.section("home.experiments") && <section id="playground" className={styles.experiments} aria-labelledby="home-play-heading">
+        <div className={styles.experimentIntro}><p className="section-label">{t("playLabel")}</p><h2 id="home-play-heading">{t("playTitle")}</h2><p>{t("playIntro")}</p></div>
+        <div className={styles.experimentLinks}>
+          <Link href="/play" className={styles.worldLink}><div className={styles.islandArt} aria-hidden="true"><span /><span /><span /></div><span><span>01 / STILLWATER</span><strong>{t("playWorld")}</strong></span><ArrowUpRight size={21} /></Link>
+          <Link href="/play?scene=paper" className={styles.paperLink}><div className={styles.paperArt} aria-hidden="true"><span /><span /></div><span><span>02 / PAPER STUDIES</span><strong>{t("playPaper")}</strong></span><ArrowUpRight size={21} /></Link>
+        </div>
+      </section>}
+
+      {content.section("home.services") && <section id="services" className={`${styles.services} home-services mx-auto max-w-7xl px-5 sm:px-8`}>
         <div className="section-heading-row">
           <Reveal>
             <p className="section-label">{t("servicesLabel")}</p>
@@ -89,16 +99,15 @@ export default async function HomePage() {
             <ArrowUpRight size={17} />
           </Link>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className={styles.serviceList}>
           {content.serviceOfferings(lang).map((service, i) => (
             <Reveal key={service.id} delay={i * 0.06}>
               <Link
                 href={`/services#${service.id}`}
-                className="service-preview surface-panel interactive-card"
+                className={styles.service}
               >
-                <span className="section-label">0{i + 1}</span>
-                <h3>{service.title}</h3>
-                <p>{service.summary}</p>
+                <span className={styles.number}>0{i + 1}</span>
+                <div><h3>{service.title}</h3><p>{service.summary}</p></div>
                 <ArrowUpRight size={21} aria-hidden="true" />
               </Link>
             </Reveal>
@@ -109,15 +118,16 @@ export default async function HomePage() {
       {content.section("home.about") && <section id="about" className="section-rule home-about mx-auto max-w-7xl px-5 sm:px-8">
         <Reveal>
           <p className="section-label">{t("aboutLabel")}</p>
-          <div className="home-about-grid">
-            <h2 className="display-title">{t("aboutTitle")}</h2>
-            <div>
+          <div className={styles.about}>
+            <div className={styles.aboutCopy}>
+              <h2 className="display-title">{t("aboutTitle")}</h2>
               <p className="section-intro !mt-0">{t("aboutText")}</p>
               <Link href="/about" className="link-arrow mt-6">
                 {t("aboutLink")}
                 <ArrowUpRight size={17} />
               </Link>
             </div>
+            {content.section("home.playground") && <BrickPlayground lang={lang} copy={resolved} />}
           </div>
         </Reveal>
       </section>}

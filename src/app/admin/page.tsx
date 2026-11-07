@@ -34,7 +34,7 @@ export default async function AdminPage() {
     ]);
   } catch {
     console.error("Could not load admin data; check DATABASE_URL and the application tables.");
-    loadError = "Could not load admin data. Check DATABASE_URL and the database tables, then refresh.";
+    loadError = "Projects and messages couldn’t be loaded. Refresh to try again.";
   }
 
   return (

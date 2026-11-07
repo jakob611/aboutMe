@@ -1,0 +1,27 @@
+.publishBar { position: sticky; top: 5rem; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; padding: .85rem; border: 1px solid var(--color-border-strong); border-radius: 6px; background: var(--color-bg); box-shadow: 0 8px 20px #0002; }
+.publishBar > span { flex: 1 1 200px; }
+.controls { display: grid; grid-template-columns: .7fr 1fr 1.4fr; gap: 1rem; }
+.sectionStrip { display: flex; gap: .4rem; flex-wrap: wrap; }
+.sectionStrip button { padding: .5rem .75rem; min-height: 44px; color: var(--color-fg-muted); border: 1px solid var(--color-border); border-radius: 5px; font-size: .75rem; }
+.sectionStrip button[aria-pressed="true"] { color: var(--color-fg); border-color: var(--color-accent-2); }
+.fieldHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-top: .75rem; }
+.fieldHeading h4 { font-size: 1.15rem; }
+.fieldHeading h4 span { display: block; margin-top: .3rem; font-size: .7rem; color: var(--color-fg-muted); }
+.fieldHeading label { display: flex; align-items: center; gap: .5rem; font-size: .75rem; }
+.fields { border-top: 1px solid var(--color-border); }
+.field { border-bottom: 1px solid var(--color-border); padding: 1.25rem .2rem; }
+.field[data-pending="true"] { border-left: 2px solid var(--color-accent-2); padding-left: 1rem; }
+.undo { display: block; margin-top: .65rem; padding-block: .5rem; font-size: .7rem; color: var(--color-accent-2); text-decoration: underline; text-underline-offset: 3px; }
+.review { border: 1px solid var(--color-border-strong); padding: 1rem; border-radius: 6px; }
+.review summary { cursor: pointer; min-height: 28px; font-size: .85rem; color: var(--color-accent-2); }
+.reviewHint { margin: .75rem 0; font-size: .75rem; line-height: 1.7; color: var(--color-fg-muted); }
+.review li { padding: 1rem 0; border-top: 1px solid var(--color-border); }
+.reviewTitle { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: .75rem; }
+.reviewTitle strong { font-weight: 500; overflow-wrap: anywhere; }
+.reviewTitle button { padding: .5rem; text-decoration: underline; }
+.comparison { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: .75rem; }
+.comparison > div { min-width: 0; background: var(--color-surface); padding: .75rem; }
+.comparison > div:last-child { border-left: 2px solid var(--color-accent-2); }
+.comparison span { color: var(--color-fg-muted); font-size: .65rem; }
+.comparison p { font-size: .8rem; line-height: 1.7; margin-top: .35rem; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 14rem; overflow-y: auto; }
+@media (max-width: 640px) { .controls, .comparison { grid-template-columns: 1fr; } .publishBar { position: static; } }

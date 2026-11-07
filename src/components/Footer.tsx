@@ -61,6 +61,7 @@ export async function Footer({ lang, t }: Props) {
           <ul className="space-y-3 text-sm text-[color:var(--color-fg-muted)]">
             {[
               { href: "/projects", label: t.nav.projects },
+              { href: "/play", label: content.text(lang, "home.playNav") },
               { href: "/about", label: t.nav.about },
               { href: "/services", label: t.nav.services },
               { href: "/files", label: t.nav.files },

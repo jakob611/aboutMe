@@ -35,7 +35,7 @@ for (const lang of ["en", "sl"] as const) {
   }
   for (const offering of serviceOfferings[lang]) strings(offering, `offering.${lang}.${offering.id}`, "Services", lang);
   strings(servicePageCopy[lang], `serviceCopy.${lang}`, "Services", lang);
-  for (const [key, value] of Object.entries(homeContentDefaults[lang])) fields.push({ key: `${lang}.${key}`, group: key.startsWith("workshop.") ? "Sketchbook" : key.startsWith("gallery.") ? "Project gallery" : key.startsWith("projects.") ? "Projects" : "Home", lang, label: fieldLabel(key), type: "text", defaultValue: value, maxLength: 6000 });
+  for (const [key, value] of Object.entries(homeContentDefaults[lang])) fields.push({ key: `${lang}.${key}`, group: key.startsWith("playground.") ? "Brick playground" : key.startsWith("workshop.") ? "Sketchbook" : key.startsWith("gallery.") ? "Project gallery" : key.startsWith("projects.") ? "Projects" : "Home", lang, label: fieldLabel(key), type: "text", defaultValue: value, maxLength: 6000 });
   for (const [key, value] of Object.entries(contactVerificationCopy[lang])) fields.push({ key: `${lang}.${key}`, group: "Contact", lang, label: fieldLabel(key), type: "text", defaultValue: value, maxLength: 6000 });
   for (const [key, value] of Object.entries(submissionCopy[lang])) fields.push({ key: `${lang}.${key}`, group: key.startsWith("comments.") ? "Comments" : "Contact & comments", lang, label: fieldLabel(key), type: "text", defaultValue: value, maxLength: 6000 });
 }
