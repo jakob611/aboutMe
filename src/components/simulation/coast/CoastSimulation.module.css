@@ -131,6 +131,12 @@
   .reticle span { display: none; }
   .panel .segmented button, .quality select { min-height: 44px; }
 }
+@media (max-width: 400px) {
+  .field { max-width: calc(100% - var(--edge) * 2 - 86px); }
+  .field p { line-height: 1.35; }
+  .hint { max-width: calc(50% - var(--edge) - 9px); }
+  .reading { max-width: calc(50% - var(--edge)); }
+}
 @media (orientation: landscape) and (max-height: 430px) {
   .frame { --edge: 12px; }
   .field h1 { font-size: 28px; }
