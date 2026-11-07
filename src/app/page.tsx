@@ -82,8 +82,8 @@ export default async function HomePage() {
       {content.section("home.experiments") && <section id="playground" className={styles.experiments} aria-labelledby="home-play-heading">
         <div className={styles.experimentIntro}><p className="section-label">{t("playLabel")}</p><h2 id="home-play-heading">{t("playTitle")}</h2><p>{t("playIntro")}</p></div>
         <div className={styles.experimentLinks}>
-          <Link href="/play" className={styles.worldLink}><div className={styles.islandArt} aria-hidden="true"><span /><span /><span /></div><span><span>01 / STILLWATER</span><strong>{t("playWorld")}</strong></span><ArrowUpRight size={21} /></Link>
-          <Link href="/play?scene=paper" className={styles.paperLink}><div className={styles.paperArt} aria-hidden="true"><span /><span /></div><span><span>02 / PAPER STUDIES</span><strong>{t("playPaper")}</strong></span><ArrowUpRight size={21} /></Link>
+          <Link href="/play" className={styles.worldLink}><div className={styles.islandArt} aria-hidden="true"><span /><span /><span /></div><span><span>01 / STILLWATER RUSH</span><strong>{t("playWorld")}</strong></span><ArrowUpRight size={21} /></Link>
+          <Link href="/play?scene=paper" className={styles.paperLink}><div className={styles.paperArt} aria-hidden="true"><span /><span /></div><span><span>02 / PAPER LEAGUE</span><strong>{t("playPaper")}</strong></span><ArrowUpRight size={21} /></Link>
         </div>
       </section>}
 

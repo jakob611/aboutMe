@@ -7,7 +7,7 @@ export function waterMaterial(objects: ReflectionObject[]) {
   while (entries.length < 32) entries.push({ center: new T.Vector3(0, -1000, 0), size: new T.Vector3(.01, .01, .01), color: new T.Color(), sphere: true });
   return new T.ShaderMaterial({
     uniforms: {
-      uTime: { value: 0 }, uLight: { value: 0 }, uReflections: { value: 1 }, uRing: { value: -1 },
+      uTime: { value: 0 }, uLight: { value: 0 }, uReflections: { value: 1 },
       uCenters: { value: entries.map(o => o.center) }, uSizes: { value: entries.map(o => o.size) },
       uColors: { value: entries.map(o => o.color) }, uKinds: { value: entries.map(o => o.sphere ? 1 : 0) },
       uSun: { value: new T.Vector3(-.5, .65, .32).normalize() },
@@ -16,12 +16,12 @@ export function waterMaterial(objects: ReflectionObject[]) {
       void main(){vec4 world=modelMatrix*vec4(position,1.);vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;}`,
     fragmentShader: `
       varying vec3 vWorld;
-      uniform float uTime,uLight,uReflections,uRing;
+      uniform float uTime,uLight,uReflections;
       uniform vec3 uSun,uCenters[32],uSizes[32],uColors[32];
       uniform float uKinds[32];
       vec3 sky(vec3 rd){
-        vec3 horizon=mix(vec3(.68,.76,.73),vec3(.12,.16,.26),uLight);
-        vec3 zenith=mix(vec3(.26,.49,.54),vec3(.025,.055,.13),uLight);
+        vec3 horizon=mix(vec3(.69,.35,.26),vec3(.24,.16,.29),uLight);
+        vec3 zenith=mix(vec3(.31,.32,.57),vec3(.035,.067,.18),uLight);
         vec3 c=mix(horizon,zenith,pow(max(rd.y,0.),.45));
         float sun=pow(max(dot(rd,uSun),0.),320.);
         return c+vec3(1.,.65,.28)*sun*(1.-uLight*.85);
@@ -40,14 +40,6 @@ export function waterMaterial(objects: ReflectionObject[]) {
         vec2 p=vWorld.xz;
         float nx=sin(p.x*.65+p.y*.29+uTime*.65)*.018+sin(p.y*1.7-uTime*.8)*.007;
         float nz=cos(p.y*.62-p.x*.32+uTime*.48)*.018+cos(p.x*1.9+uTime*.65)*.006;
-        float ripple=0.;
-        if(uRing>=0.){
-          vec2 fromBell=p-vec2(-6.,-7.55);
-          float crest=length(fromBell)-uRing*14.;
-          ripple=exp(-crest*crest*.28)*max(0.,1.-uRing/3.);
-          vec2 wake=fromBell/max(.01,length(fromBell))*sin(crest*2.2)*ripple*.045;
-          nx+=wake.x;nz+=wake.y;
-        }
         vec3 n=normalize(vec3(nx,1.,nz));
         vec3 viewDir=normalize(cameraPosition-vWorld),ray=reflect(-viewDir,n);
         vec3 reflection=sky(ray);
@@ -66,14 +58,11 @@ export function waterMaterial(objects: ReflectionObject[]) {
           }
         }
         float fresnel=.13+.75*pow(1.-max(dot(viewDir,n),0.),4.);
-        float shore=exp(-abs(length(p)-13.25)*2.3);
         vec3 water=mix(vec3(.13,.34,.33),vec3(.025,.09,.14),uLight);
         vec3 c=mix(water,reflection,fresnel*.83);
         float glint=pow(max(dot(reflect(-uSun,n),viewDir),0.),200.);
         c+=vec3(1.,.77,.43)*glint*(1.-uLight*.9);
-        c+=vec3(.14,.21,.15)*shore*(.65+.35*sin(length(p)*9.-uTime));
-        c+=vec3(.28,.22,.12)*ripple;
-        c=mix(c,sky(normalize(vec3(ray.x,.01,ray.z))),smoothstep(26.,110.,length(p)));
+        c=mix(c,sky(normalize(vec3(ray.x,.01,ray.z))),smoothstep(26.,120.,length(cameraPosition.xz-p)));
         gl_FragColor=vec4(c,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>

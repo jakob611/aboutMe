@@ -1,135 +1,317 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, Bell, Maximize2, Pause, Play, RotateCcw, Sun, Moon } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, ChevronLeft, ChevronRight, CircleDot, Diamond, Gamepad2, Heart, Pause, Play, RotateCcw, Volume2, VolumeX, Wind } from "lucide-react";
 import type { Lang } from "@/lib/i18n";
-import { playCopy, paperWords } from "@/lib/play-copy";
-import { landmarks, type LandmarkId, type Quality, type Tier } from "@/lib/play-model";
-import type { Engine, Mode } from "./types";
+import { coastLength, paperThrows, powerFromDrag, type RunAction } from "@/lib/arcade";
+import { playCopy } from "@/lib/play-copy";
+import type { Quality, Tier } from "@/lib/play-model";
+import { emptySnapshot, type Feedback, type Game, type Mode, type Phase, type Snapshot } from "./arcade-types";
 import styles from "./PlayExperience.module.css";
 
-export function PlayExperience({ lang, initialMode }: { lang: Lang; initialMode: Mode }) {
-  const t = playCopy[lang];
-  const [mode, setMode] = useState<Mode>(initialMode), [started, setStarted] = useState(false);
-  const [quality, setQuality] = useState<Quality>("auto"), [tier, setTier] = useState<Tier>("balanced");
-  const [loading, setLoading] = useState(false), [failed, setFailed] = useState(false), [retry, setRetry] = useState(0);
-  const [paused, setPaused] = useState(false), [light, setLight] = useState(0), [place, setPlace] = useState<LandmarkId>("arrival");
-  const [expanded, setExpanded] = useState(false);
-  const [visited, setVisited] = useState<LandmarkId[]>(["arrival"]), [activePaper, setActivePaper] = useState(0);
-  const [notes, setNotes] = useState(() => [...paperWords[lang]]), [folded, setFolded] = useState(false);
-  const [paperState, setPaperState] = useState<"opened" | "folded" | "thrown" | "gathered">("opened");
-  const noteRef = useRef(notes), qualityRef = useRef(quality), engine = useRef<Engine | null>(null);
-  const host = useRef<HTMLDivElement>(null), frame = useRef<HTMLDivElement>(null);
-  const current = landmarks.find(item => item.id === place)!;
-  const tierName = lang === "en" ? { low: "Low", balanced: "Balanced", cinematic: "Cinematic" }[tier] : { low: "Nizka", balanced: "Uravnotežena", cinematic: "Filmska" }[tier];
-  const motionStopped = paused || !started || loading;
+const graphicOptions: Quality[] = ["auto", "low", "balanced", "cinematic"];
+const read = (key: string) => { try { return localStorage.getItem(key); } catch { return null; } };
+const write = (key: string, value: string) => { try { localStorage.setItem(key, value); } catch { /* optional */ } };
+const scoreKey = (mode: Mode) => `arcade-best-${mode}`;
+const number = (n: number) => n.toString().padStart(2, "0");
+
+function playSound(context: AudioContext, event: Feedback | "go" | "toss") {
+  const notes = {
+    light: [740, 1110], hit: [185, 110], clear: [420, 680], chapter: [520, 660, 880], finish: [523, 659, 784, 1047],
+    perfect: [660, 880, 1175], miss: [215], go: [440, 660], toss: [315, 190],
+  }[event];
+  const gain = context.createGain(), now = context.currentTime;
+  gain.gain.value = .16; gain.connect(context.destination);
+  notes.forEach((hz, i) => {
+    const osc = context.createOscillator(), envelope = context.createGain();
+    const start = now + i * .065;
+    osc.type = event === "hit" ? "triangle" : "sine"; osc.frequency.value = hz;
+    envelope.gain.setValueAtTime(.001, start); envelope.gain.exponentialRampToValueAtTime(.37, start + .014);
+    envelope.gain.exponentialRampToValueAtTime(.001, start + .19);
+    osc.connect(envelope); envelope.connect(gain);
+    osc.start(start); osc.stop(start + .20);
+    if (i === notes.length - 1) osc.onended = () => gain.disconnect();
+  });
+}
+
+export function PlayExperience({ lang, initialMode: mode }: { lang: Lang; initialMode: Mode }) {
+  const t = playCopy[lang], coast = mode === "world";
+  const name = coast ? t.world : t.paper;
+  const chapters = coast ? t.worldChapters : t.paperChapters;
+  const [phase, setPhase] = useState<Phase>("ready");
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [state, setState] = useState<Snapshot>(emptySnapshot);
+  const [tier, setTier] = useState<Tier | "2d" | null>(null);
+  const [quality, setQuality] = useState<Quality>("auto");
+  const [sound, setSound] = useState(false);
+  const [best, setBest] = useState(0);
+  const [newBest, setNewBest] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [feedback, setFeedback] = useState<{ event: Feedback; id: number; points: number }>();
+  const host = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLDivElement>(null);
+  const primary = useRef<HTMLButtonElement>(null);
+  const engine = useRef<Game | null>(null);
+  const phaseRef = useRef<Phase>("ready"), stateRef = useRef<Snapshot>(emptySnapshot);
+  const audio = useRef<AudioContext | null>(null), soundRef = useRef(false);
+  const bestRef = useRef(0), signal = useRef(0);
+  const gesture = useRef<{ id: number; x: number; y: number; unit: number; aimScale: number } | null>(null);
+  const keyboardShot = useRef({ aim: 0, power: .73 });
+  const flat = useRef(false);
 
   useEffect(() => {
-    if (!expanded) return;
-    const previous = document.body.style.overflow, previousFocus = document.activeElement;
-    document.body.style.overflow = "hidden";
-    const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { event.preventDefault(); setExpanded(false); }
-      if (event.key === "Tab") {
-        const controls = frame.current?.querySelectorAll<HTMLElement>('button:not(:disabled),select,input:not(:disabled),textarea:not(:disabled),[tabindex="0"]');
-        if (!controls?.length) return;
-        const first = controls[0], last = controls[controls.length - 1];
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-      }
-    };
-    document.addEventListener("keydown", key);
-    return () => { document.body.style.overflow = previous; document.removeEventListener("keydown", key); if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus({ preventScroll: true }); };
-  }, [expanded]);
-
-  useEffect(() => {
-    try { const saved = localStorage.getItem("stillwater-quality"); if (["auto", "low", "balanced", "cinematic"].includes(saved ?? "")) { qualityRef.current = saved as Quality; setQuality(saved as Quality); } } catch { /* Optional preferences. */ }
-  }, []);
-  useEffect(() => {
-    if (!started || !host.current) return;
-    let cancelled = false, instance: Engine | null = null;
-    setLoading(true); setFailed(false); setPaused(false); setLight(0);
-    const node = host.current;
-    const initialize = async () => {
-      try {
-        const module = mode === "world" ? await import("./world") : await import("./paper");
+    let cancelled = false;
+    const saved = read("arcade-graphics") as Quality | null;
+    const selected = saved && graphicOptions.includes(saved) ? saved : "auto";
+    bestRef.current = Number(read(scoreKey(mode))) || 0;
+    soundRef.current = read("arcade-sound") === "on";
+    setBest(bestRef.current); setSound(soundRef.current); setQuality(selected);
+    if (!host.current) return;
+    const options = {
+      host: host.current, quality: selected,
+      onTier(value: Tier | "2d") { if (!cancelled) setTier(value); },
+      onUpdate(patch: Partial<Snapshot>, event?: Feedback) {
         if (cancelled) return;
-        const options = { host: node, quality: qualityRef.current, lang, notes: noteRef.current,
-          onTier: (value: Tier) => { if (!cancelled) setTier(value); },
-          onPlace: (value: LandmarkId) => { if (!cancelled) { setPlace(value); setVisited(previous => previous.includes(value) ? previous : [...previous, value]); } },
-          onPaper: (value: number, state: "opened" | "folded" | "thrown" = "opened") => { if (!cancelled) { setActivePaper(value); setPaperState(state); } },
-          onError: () => { if (!cancelled) { setFailed(true); instance?.dispose(); engine.current = null; } },
-        };
-        instance = "createWorld" in module ? module.createWorld(options) : module.createPaper(options);
-        if (cancelled) { instance.dispose(); return; }
-        engine.current = instance; setLoading(false);
-      } catch { if (!cancelled) { node.querySelectorAll("canvas").forEach(canvas => canvas.remove()); setFailed(true); setLoading(false); } }
+        stateRef.current = { ...stateRef.current, ...patch };
+        setState(stateRef.current);
+        if (event && phaseRef.current === "playing") {
+          setFeedback({ event, id: ++signal.current, points: stateRef.current.points });
+          if (soundRef.current && audio.current) playSound(audio.current, event);
+        }
+      },
+      onEnd() {
+        if (cancelled) return;
+        const score = stateRef.current.score;
+        if (score > bestRef.current) {
+          bestRef.current = score; setBest(score); setNewBest(true); write(scoreKey(mode), String(score));
+        }
+        phaseRef.current = "finished"; setPhase("finished");
+      },
+      onLost() {
+        if (cancelled) return;
+        flat.current = true; phaseRef.current = "ready";
+        setStatus("loading"); setPhase("ready"); setFeedback(undefined); setState(emptySnapshot); setReload(value => value + 1);
+      },
     };
-    void initialize();
-    return () => { cancelled = true; instance?.dispose(); engine.current = null; };
-  }, [started, mode, retry, lang]);
-  function changeMode(next: Mode) {
-    setMode(next); setFolded(false);
-    const url = new URL(window.location.href); url.searchParams.set("scene", next); window.history.replaceState(null, "", url);
+    const pending = mode === "world"
+      ? import("./coast").then(module => cancelled ? null : module.createCoast(options, flat.current))
+      : import("./paper-court").then(module => cancelled ? null : module.createPaperGame(options));
+    pending.then(game => {
+      if (!game) return;
+      if (cancelled) { game.dispose(); return; }
+      engine.current = game; setStatus("ready");
+    }).catch(() => { if (!cancelled) setStatus("error"); });
+    return () => { cancelled = true; engine.current?.dispose(); engine.current = null; };
+  }, [mode, reload]);
+
+  useEffect(() => () => { void audio.current?.close().catch(() => {}); audio.current = null; }, []);
+  useEffect(() => {
+    if (!feedback) return;
+    const id = window.setTimeout(() => setFeedback(undefined), feedback.event === "chapter" ? 2200 : 1050);
+    return () => window.clearTimeout(id);
+  }, [feedback]);
+  useEffect(() => {
+    if (phase === "paused" || phase === "finished") primary.current?.focus({ preventScroll: true });
+  }, [phase]);
+
+  const soundEffect = useCallback((event: Feedback | "go" | "toss") => {
+    if (!soundRef.current) return;
+    try {
+      audio.current ??= new AudioContext();
+      void audio.current.resume().catch(() => {});
+      playSound(audio.current, event);
+    } catch { /* audio is optional */ }
+  }, []);
+  function toggleSound() {
+    const value = !soundRef.current;
+    soundRef.current = value; setSound(value); write("arcade-sound", value ? "on" : "off");
+    if (value) soundEffect("go");
+    else void audio.current?.suspend().catch(() => {});
   }
-  function changeQuality(value: Quality) {
-    setQuality(value); qualityRef.current = value; engine.current?.setQuality(value);
-    try { localStorage.setItem("stillwater-quality", value); } catch { /* Quality still works without storage. */ }
+  function start(reset: boolean) {
+    if (!engine.current) return;
+    if (reset) {
+      engine.current.reset(); stateRef.current = emptySnapshot; setState(emptySnapshot);
+      setFeedback(undefined); setNewBest(false); keyboardShot.current = { aim: 0, power: .73 };
+    }
+    phaseRef.current = "playing"; setPhase("playing"); engine.current.play(true);
+    input.current?.focus({ preventScroll: true });
+    soundEffect("go");
   }
-  function travel(id: LandmarkId) {
-    setPlace(id); setVisited(previous => previous.includes(id) ? previous : [...previous, id]); engine.current?.travel(id);
+  function run(action: RunAction) { if (phaseRef.current === "playing") engine.current?.run?.(action); }
+  const toss = useCallback((aim: number, power: number) => {
+    if (phaseRef.current !== "playing") return;
+    engine.current?.toss?.(aim, power);
+    soundEffect("toss");
+  }, [soundEffect]);
+  function pause() {
+    if (phaseRef.current !== "playing") return;
+    engine.current?.play(false);
+    gesture.current = null; phaseRef.current = "paused"; setPhase("paused");
   }
-  function paper(action: "open" | "crumple" | "toss" | "reset", index = activePaper) {
-    setActivePaper(index); setFolded(action !== "open"); engine.current?.paper(action, index);
-    setPaperState({ open: "opened", crumple: "folded", toss: "thrown", reset: "gathered" }[action] as typeof paperState);
+  useEffect(() => {
+    const onHidden = () => { if (document.hidden) pause(); };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (event.key === "Escape" && phaseRef.current === "playing") {
+        event.preventDefault(); pause(); return;
+      }
+      if (phaseRef.current !== "playing" || /^(INPUT|SELECT|TEXTAREA)$/.test((event.target as HTMLElement)?.tagName)) return;
+      const key = event.key.toLowerCase();
+      if (key === " " && /^(BUTTON|A)$/.test((event.target as HTMLElement)?.tagName)) return;
+      if (!["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", " "].includes(key)) return;
+      event.preventDefault();
+      if (coast) {
+        if (event.repeat) return;
+        if (key === "arrowleft" || key === "a") run("left");
+        else if (key === "arrowright" || key === "d") run("right");
+        else if (key === " " || key === "arrowup" || key === "w") run("jump");
+        return;
+      }
+      const shot = keyboardShot.current;
+      if (key === " ") { if (!event.repeat) toss(shot.aim, shot.power); return; }
+      if (key === "arrowleft" || key === "a") shot.aim = Math.max(-3.9, shot.aim - .19);
+      if (key === "arrowright" || key === "d") shot.aim = Math.min(3.9, shot.aim + .19);
+      if (key === "arrowup" || key === "w") shot.power = Math.min(1.25, shot.power + .065);
+      if (key === "arrowdown" || key === "s") shot.power = Math.max(.18, shot.power - .065);
+      engine.current?.aim?.(shot.aim, shot.power);
+    };
+    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("visibilitychange", onHidden); window.removeEventListener("keydown", onKey);
+    };
+  }, [coast, toss]);
+
+  function gestureStart(event: PointerEvent<HTMLDivElement>) {
+    if (phaseRef.current !== "playing" || !event.isPrimary || event.button !== 0) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, unit: Math.max(52, Math.min(180, Math.min(rect.height * .23, rect.width * .32))), aimScale: Math.max(90, Math.min(rect.width * .39, rect.height * .47)) };
+    event.currentTarget.setPointerCapture(event.pointerId);
   }
-  function pause() { engine.current?.pause(!paused); setPaused(!paused); }
-  function dpad(x: number, z: number) { engine.current?.move(x, z); }
-  const directionButtons = [
-    { x: 0, z: -1, label: t.forward, icon: ArrowUp, position: "north" },
-    { x: -1, z: 0, label: t.left, icon: ArrowLeft, position: "west" },
-    { x: 0, z: 1, label: t.back, icon: ArrowDown, position: "south" },
-    { x: 1, z: 0, label: t.right, icon: ArrowRight, position: "east" },
-  ];
-  return <div className={styles.page}>
-    <header className={styles.intro}><div><p className="section-label">{t.eyebrow}</p><h1>{t.title}</h1></div><p>{t.intro}</p></header>
-    <div ref={frame} className={`${styles.experience} ${expanded ? styles.expanded + " play-expanded" : ""}`} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined} aria-label={expanded ? mode === "world" ? t.worldHeading : t.paperHeading : undefined}>
-      <div className={styles.toolbar}>
-        <div role="group" aria-label={lang === "en" ? "Choose an experience" : "Izberi doživetje"} className={styles.tabs}><button type="button" onClick={() => changeMode("world")} aria-pressed={mode === "world"}>{t.world}</button><button type="button" onClick={() => changeMode("paper")} aria-pressed={mode === "paper"}>{t.paper}</button></div>
-        <div className={styles.tools}><label><span className="sr-only">{t.quality}</span><select aria-label={t.quality} value={quality} onChange={event => changeQuality(event.target.value as Quality)}><option value="auto">{t.auto}</option><option value="low">{t.low}</option><option value="balanced">{t.balanced}</option><option value="cinematic">{t.cinematic}</option></select></label><button type="button" aria-label={expanded ? t.exitFullscreen : t.fullscreen} title={expanded ? t.exitFullscreen : t.fullscreen} onClick={() => setExpanded(previous => !previous)}><Maximize2 size={16} /></button></div>
-      </div>
-      <div className={styles.viewport} data-mode={mode} data-night={light > 55}>
-        <div ref={host} className={styles.canvasHost} tabIndex={0} role="application" aria-label={mode === "world" ? `${t.worldHeading}. ${t.worldHelp}` : `${t.paperHeading}. ${t.paperHelp}`} />
-        {(!started || loading) && <div className={styles.launch}>
-          <div className={mode === "world" ? styles.islandPoster : styles.paperPoster} aria-hidden="true">{mode === "world" ? <><span className={styles.posterSun} /><div className={styles.posterIsland}><span /><span /><span /></div></> : <><span /><span /><span /></>}</div>
-          <div className={styles.launchWords}><span>{mode === "world" ? "01 / STILLWATER" : "02 / PAPER STUDIES"}</span><h2>{mode === "world" ? t.worldHeading : t.paperHeading}</h2><p>{mode === "world" ? t.worldCaption : t.paperCaption}</p><button type="button" disabled={loading} onClick={() => setStarted(true)}>{loading ? t.loading : mode === "world" ? t.enter : t.enterPaper}<ArrowUpRight size={18} /></button></div>
-        </div>}
-        {failed && <div className={styles.fallback}>
-          {mode === "world" ? <div className={styles.fallbackMap} aria-hidden="true"><span>STILLWATER</span><div /><i /></div> : <div className={styles.fallbackSheet} data-folded={folded}><p>{folded ? t.fallbackCrumpled : notes[activePaper]}</p></div>}
-          <p role="status">{t.fallback}</p><button type="button" className="btn-ghost" onClick={() => setRetry(previous => previous + 1)}>{t.retry}</button>
-        </div>}
-        {started && !loading && !failed && <>
-          <div className={styles.sceneLabel}><span>{mode === "world" ? "STILLWATER" : "PAPER STUDIES"}</span><p aria-live={mode === "paper" ? "polite" : undefined}>{mode === "world" ? current[lang] : `${t.sheet} ${String(activePaper + 1).padStart(2, "0")} · ${t[paperState]}`}</p></div>
-          <div className={styles.sceneTools}><span>{quality === "auto" ? `${lang === "en" ? "Adaptive" : "Prilagojeno"} / ${tierName}` : tierName}</span><button type="button" onClick={pause} aria-label={paused ? t.resume : t.pause} title={paused ? t.resume : t.pause}>{paused ? <Play size={16} /> : <Pause size={16} />}</button>{mode === "world" && <button type="button" onClick={() => engine.current?.reframe()} aria-label={t.resetView} title={t.resetView}><RotateCcw size={16} /></button>}</div>
-          {mode === "world" && !paused && <button className={styles.bellButton} type="button" onClick={() => engine.current?.ring()}><Bell size={15} aria-hidden="true" />{t.ring}</button>}
-          {paused && <div className={styles.paused}><button type="button" onClick={pause}><Play size={20} />{t.resume}</button></div>}
-          {mode === "world" && <div className={styles.dpad} role="group" aria-label={t.movement}>{directionButtons.map(({ x, z, label, icon: Icon, position }) => <button key={position} type="button" data-position={position} aria-label={label} disabled={motionStopped} onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); dpad(x, z); }} onPointerUp={() => dpad(0, 0)} onPointerCancel={() => dpad(0, 0)} onLostPointerCapture={() => dpad(0, 0)} onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); dpad(x, z); } }} onKeyUp={() => dpad(0, 0)} onBlur={() => dpad(0, 0)}><Icon size={18} /></button>)}</div>}
+  function gestureMove(event: PointerEvent<HTMLDivElement>) {
+    const g = gesture.current;
+    if (coast || !g || g.id !== event.pointerId || phaseRef.current !== "playing") return;
+    const up = g.y - event.clientY;
+    engine.current?.aim?.((event.clientX - g.x) / g.aimScale * 3.9, powerFromDrag(up, g.unit));
+  }
+  function gestureEnd(event: PointerEvent<HTMLDivElement>) {
+    const g = gesture.current;
+    if (!g || g.id !== event.pointerId) return;
+    gesture.current = null;
+    engine.current?.clearAim?.();
+    const dx = event.clientX - g.x, up = g.y - event.clientY;
+    if (coast) {
+      if (Math.abs(dx) >= 24 && Math.abs(dx) > Math.abs(up)) run(dx < 0 ? "left" : "right");
+      else if (up > 20) run("jump");
+    } else if (up > 13) {
+      toss(dx / g.aimScale * 3.9, powerFromDrag(up, g.unit));
+    }
+  }
+  function gestureCancel() { gesture.current = null; engine.current?.clearAim?.(); }
+
+  const selectedGraphics = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value as Quality;
+    setQuality(value); write("arcade-graphics", value); engine.current?.quality?.(value);
+  };
+  const text = feedback?.event === "chapter" ? chapters[state.chapter]
+    : feedback?.event === "light" ? (state.chain > 1 ? `${t.gem} ×${state.chain}` : t.gem)
+    : feedback?.event === "hit" ? (coast ? t.hit : `${t.basket} +${feedback.points}`)
+    : feedback?.event === "perfect" ? `${t.perfect} +${feedback.points}`
+    : feedback?.event === "miss" ? t.miss
+    : feedback?.event === "clear" ? t.clear : "";
+  const resultTitle = coast ? state.won ? t.worldWin : t.worldLose : state.won ? t.paperWin : t.paperLose;
+  const resultDetail = coast ? state.won ? t.worldWinDetail : t.worldLoseDetail : state.won ? t.paperWinDetail : t.paperLoseDetail;
+  const gameLink = (target: Mode) => `/play?${target === "paper" ? "scene=paper&" : ""}lang=${lang}`;
+
+  return (
+    <section id="arcade" className={styles.arcade} data-mode={mode} data-phase={phase} aria-label={name}>
+      <header className={styles.topbar}>
+        <Link className={styles.back} href={`/?lang=${lang}#playground`} aria-label={t.home}><ArrowLeft size={17} /><span>{t.home}</span></Link>
+        <nav className={styles.tabs} aria-label={t.game}>
+          <Link href={gameLink("world")} prefetch={false} scroll={false} aria-current={coast ? "page" : undefined}><span>01</span>{t.worldTab}</Link>
+          <Link href={gameLink("paper")} prefetch={false} scroll={false} aria-current={!coast ? "page" : undefined}><span>02</span>{t.paperTab}</Link>
+        </nav>
+        <div className={styles.utility}>
+          <button type="button" onClick={toggleSound} aria-label={t.sound} aria-pressed={sound}>{sound ? <Volume2 size={18} /> : <VolumeX size={18} />}</button>
+          {phase === "playing" && <button type="button" onClick={pause} aria-label={t.pause}><Pause size={18} /></button>}
+        </div>
+      </header>
+
+      <div className={styles.game}>
+        <div className={styles.scene} ref={host} />
+        <div className={styles.input} ref={input} tabIndex={-1} aria-label={coast ? t.worldKeys : t.setAim}
+          onPointerDown={gestureStart} onPointerMove={gestureMove} onPointerUp={gestureEnd} onPointerCancel={gestureCancel} onLostPointerCapture={gestureCancel} />
+        <div className={styles.vignette} aria-hidden="true" />
+
+        <div className={styles.hud} aria-label={t.score}>
+          <div className={styles.hudLeft}>
+            <div className={styles.stageLabel}><span>{number(state.chapter + 1)}</span><strong>{chapters[state.chapter]}</strong></div>
+            {coast ? <div className={styles.progress} role="progressbar" aria-label={t.meters} aria-valuemax={coastLength} aria-valuenow={state.distance}><div style={{ width: `${state.distance / coastLength * 100}%` }} /></div>
+              : <div className={styles.dots} aria-label={`${t.shots}: ${state.shots}/${paperThrows}`}>{Array.from({ length: paperThrows }, (_, i) => <span key={i} data-spent={i < state.shots} />)}</div>}
+          </div>
+          <div className={styles.score}><span>{t.score}</span><strong>{state.score.toString().padStart(4, "0")}</strong></div>
+          <div className={styles.hudRight}>
+            {coast ? <div className={styles.hearts} aria-label={`${t.hearts}: ${state.lives}/3`}>{[0, 1, 2].map(i => <Heart key={i} size={17} fill={i < state.lives ? "currentColor" : "none"} opacity={i < state.lives ? 1 : .36} />)}</div>
+              : <div className={styles.baskets} aria-label={`${t.baskets}: ${state.hits}/6`}><CircleDot size={16} /><b>{state.hits}<span>/6</span></b></div>}
+            <span className={styles.best}>{t.best} <b>{best}</b></span>
+          </div>
+        </div>
+
+        {phase === "playing" && <>
+          <div className={styles.live} role="status" aria-live="polite">{text}</div>
+          {text && feedback && <div key={feedback.id} className={styles.feedback} data-event={feedback.event} aria-hidden="true">{text}</div>}
+          {feedback?.event === "hit" && coast && <div key={feedback.id} className={styles.damage} aria-hidden="true" />}
+          <div className={styles.controls}>
+            {coast ? <>
+              <div className={styles.steer}><button type="button" aria-label={t.left} onClick={() => run("left")}><ChevronLeft /></button><button type="button" aria-label={t.right} onClick={() => run("right")}><ChevronRight /></button></div>
+              <span className={styles.keyHint}>{t.worldKeys}</span>
+              <button className={styles.jump} type="button" onClick={() => run("jump")}><ArrowUp size={20} />{t.jump}</button>
+            </> : <>
+              {state.chapter === 2 ? <div className={styles.wind} aria-label={`${t.wind}: ${state.wind}`}><Wind size={18} /><span>{t.wind}</span>{state.wind < 0 ? <ArrowLeft size={16} /> : state.wind > 0 ? <ArrowRight size={16} /> : <span>–</span>}</div>
+                : <span className={styles.swipeHint}><ArrowUp size={15} />{lang === "sl" ? "Povleci in spusti" : "Swipe up to throw"}</span>}
+              <span className={styles.keyHint}>{t.paperKeys}</span>
+              <button className={styles.jump} type="button" onClick={() => toss(keyboardShot.current.aim, keyboardShot.current.power)}><ArrowUpRight size={19} />{t.toss}</button>
+            </>}
+          </div>
         </>}
-        {mode === "paper" && started && !loading && <div className={styles.paperDock}>
-          <label><span className="sr-only">{t.sheets}</span><select aria-label={t.sheets} value={activePaper} onChange={event => paper("open", Number(event.target.value))}>{notes.map((_, index) => <option key={index} value={index}>{t.sheet} {String(index + 1).padStart(2, "0")}</option>)}</select></label>
-          <div className={styles.paperActions}><button type="button" disabled={paused} onClick={() => paper("open")}>{t.open}</button><button type="button" disabled={paused} onClick={() => paper("crumple")}>{t.crumple}</button><button type="button" disabled={paused} onClick={() => paper("toss")}>{t.toss}</button><button type="button" disabled={paused} onClick={() => paper("reset")}><RotateCcw size={14} />{t.reset}</button></div>
+
+        {phase !== "playing" && <div className={styles.overlay} data-view={phase}>
+          <div className={styles.card}>
+            <p className={styles.kicker}>{phase === "finished" && newBest ? t.newBest : coast ? t.worldGenre : t.paperGenre}</p>
+            {phase === "ready" ? <>
+              <h1>{coast ? <>Stillwater<br /><em>Rush</em></> : <>Paper<br /><em>League</em></>}</h1>
+              <p className={styles.pitch}>{coast ? t.worldPitch : t.paperPitch}</p>
+              <p className={styles.instructions}><Gamepad2 size={17} /><span>{coast ? t.worldTouch : t.paperTouch}</span></p>
+              <div className={styles.cardActions}>
+                <button type="button" className={styles.primary} disabled={status === "loading"} onClick={() => {
+                  if (status === "error") { setStatus("loading"); setReload(value => value + 1); }
+                  else start(true);
+                }}><Play size={17} fill="currentColor" />{status === "loading" ? t.loading : status === "error" ? t.retry : coast ? t.worldStart : t.paperStart}</button>
+                {coast && tier !== "2d" && <label className={styles.graphics}>{t.quality}<select value={quality} onChange={selectedGraphics} aria-label={t.quality}>{graphicOptions.map(value => <option key={value} value={value}>{t[value]}</option>)}</select></label>}
+              </div>
+              {status === "error" && <p role="alert" className={styles.pitch}>{t.loadError}</p>}
+            </> : phase === "paused" ? <>
+              <h2>{t.paused}</h2>
+              <p className={styles.pitch}>{coast ? t.worldKeys : t.paperKeys}</p>
+              <div className={styles.cardActions}>
+                <button type="button" className={styles.primary} ref={primary} onClick={() => start(false)}><Play size={17} fill="currentColor" />{t.resume}</button>
+                <button type="button" className={styles.secondary} onClick={() => start(true)}><RotateCcw size={16} />{t.restart}</button>
+              </div>
+              {coast && tier !== "2d" && <label className={styles.graphics}>{t.quality}<select value={quality} onChange={selectedGraphics} aria-label={t.quality}>{graphicOptions.map(value => <option key={value} value={value}>{t[value]}</option>)}</select></label>}
+            </> : <>
+              <h2>{resultTitle}</h2>
+              <div className={styles.result}><div><span>{t.score}</span><strong>{state.score}</strong></div><div>{coast ? <Diamond size={16} /> : <CircleDot size={16} />}<span>{coast ? t.lights : t.baskets}</span><strong>{coast ? state.lights : `${state.hits}/${paperThrows}`}</strong></div></div>
+              <p className={styles.pitch}>{resultDetail}</p>
+              <div className={styles.cardActions}>
+                <button type="button" className={styles.primary} ref={primary} onClick={() => start(true)}><RotateCcw size={17} />{t.again}</button>
+                <Link className={styles.secondary} href={gameLink(coast ? "paper" : "world")} scroll={false}>{coast ? t.paperTab : t.worldTab}<ArrowUpRight size={16} /></Link>
+              </div>
+            </>}
+          </div>
         </div>}
       </div>
-      <div className={styles.belowScene}><p>{mode === "world" ? t.worldHelp : t.paperHelp}</p>{mode === "world" && <label className={styles.light}><Sun size={15} /><span className="sr-only">{t.daylight}</span><input type="range" aria-label={t.daylight} min="0" max="100" value={light} disabled={!started || loading || failed} onChange={event => { setLight(Number(event.target.value)); engine.current?.light(Number(event.target.value) / 100); }} /><Moon size={15} /></label>}</div>
-    </div>
-    {mode === "world" ? <section className={styles.worldDetails} aria-label={t.places}>
-      <div><p className="section-label">{t.places}</p><div className={styles.places}>{landmarks.map((item, index) => <button key={item.id} type="button" aria-pressed={place === item.id} onClick={() => travel(item.id)} disabled={!started || loading}><span>{String(index + 1).padStart(2, "0")}</span>{item[lang]}<span aria-hidden="true">{visited.includes(item.id) ? "●" : "○"}</span></button>)}</div></div>
-      <div className={styles.note} aria-live="polite"><span className="section-label">{t.note} / {visited.length} / 4 {t.discovered}</span><h2>{current[lang]}</h2><p>{lang === "en" ? current.noteEn : current.noteSl}</p></div>
-    </section> : <section className={styles.paperDetails} aria-label={t.paper}>
-      <div className={styles.paperReading}><p className="section-label">{t.sheet} {String(activePaper + 1).padStart(2, "0")} / 06</p><blockquote>{notes[activePaper]}</blockquote></div>
-      <label className={styles.write}><span>{t.write}</span><textarea maxLength={180} rows={3} value={notes[activePaper]} disabled={!started || loading} placeholder={t.placeholder} onChange={event => { const next = notes.map((note, index) => index === activePaper ? event.target.value : note); setNotes(next); noteRef.current = next; engine.current?.write(event.target.value); }} /><span>{t.temporary}</span></label>
-    </section>}
-    <footer className={styles.outro}><p>{t.qualityNote}</p><Link href="/">{t.backSite}<ArrowUpRight size={15} /></Link></footer>
-  </div>;
+    </section>
+  );
 }
