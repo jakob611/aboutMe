@@ -1,42 +1,54 @@
-# Stillwater Rush and Paper League
+# Field Studies
 
-The homepage Arcade section, navigation and footer lead to `/play`.
-`/play?scene=paper` opens Paper League directly. The arcade fills the available
-viewport in portrait and landscape. Both games have English and Slovenian text,
-touch and keyboard controls, pause, instant replay, optional sound, and personal
-bests saved on the current device.
+The homepage Simulations section, site navigation and footer lead to
+`/play`. `/play?scene=paper` opens Paper Bench directly. Each scene fills the
+available viewport and has English and Slovenian controls. There are no
+objectives, timers or scores.
 
-**Stillwater Rush:** Cross a 540 m course in three stages. Use the arrows, A/D,
-on-screen buttons, or horizontal swipes to change lanes. Use Space, Up, the Jump
-button, or an upward swipe to jump. Collect lights for points and a streak bonus;
-keep at least one heart to reach the finish gate. The course speeds up at each stage.
+## Strunjan Coast
 
-**Paper League:** Drag upward, use the dotted arc to judge direction and power,
-then release to shoot. Arrow keys adjust aim and power; Space throws. The Toss
-button uses the current keyboard aim, or a center throw by default. Score six
-baskets out of ten to clear the league. The target stands still for the first
-three throws, moves after that, and a crosswind comes in for the last four.
-Center shots and streaks earn extra points.
+A walkable, human-scale landscape inspired by the Strunjan coast. The
+visible ground, walkable slopes and wading limit use the same height model.
+Wind, light and water level are adjustable. Aim and throw a pebble with
+the on-screen button or the E key. Shallow, fast throws may skip and send
+ripples across the surface. The optional surf sound changes with the
+distance to shore and uses a recording from a Mediterranean rocky shore.
 
-## Rendering
+The water uses multiple wave components, a deep-water dispersion relationship
+and Fresnel reflection at an air–water interface. Its coastal breaking,
+foam, absorption and caustics are visual approximations. Higher tiers trace
+a shallow refracted ray through the seabed height model, and the top tier
+adds a planar reflection pass. Automatic graphics quality caps resolution
+and reduces the more expensive rendering passes when needed.
 
-Stillwater uses Three.js WebGL 2 with a chase camera and instanced scenery.
-Cinematic mode adds one analytically traced reflection ray per water fragment
-against simplified island geometry. The rest of the scene is rasterized. Auto
-chooses a starting tier based on device hints and lowers it when frame times
-stay high. WebGL initialization or context failure falls back to a playable
-2D version using the same course, collision rules, and scoring.
+See [Tessendorf, Simulating Ocean Water](https://people.computing.clemson.edu/~jtessen/reports/papers_files/coursenotes2002.pdf)
+for background on wave dispersion and [Clanet et al., Secrets of Successful
+Stone-Skipping](https://www.nature.com/articles/427029a) for the inspiration
+behind the approximate skip rule. The [model credits](public/simulation/props/CREDITS.md)
+list the optimized photo-scanned scene objects.
 
-| Tier | Pixel budget | Max DPR | Shadows | Island reflections | Target rate |
-| --- | ---: | ---: | ---: | --- | ---: |
-| Low | 350,000 | 0.85 | Off | Off | 30 fps |
-| Balanced | 850,000 | 1.2 | 1024 | Off | 60 fps |
-| Cinematic | 1,500,000 | 1.6 | 2048 | On | 60 fps |
+## Paper Bench
 
-Paper League uses a capped Canvas 2D renderer and analytic projectile motion.
-Both games generate their scenery locally. The homepage downloads neither
-renderer. The game clock pauses when the tab is hidden; reduced-motion
-preferences disable decorative effects such as confetti and damage flashes.
+The workbench models a 210 × 297 mm sheet of 80 g/m² stock, about 4.99 g.
+Drag the edge or corner to lift it, flick it and release to throw, or use the
+fold, crumple and flatten tools. Try the fan before and after crumpling to see
+how the shape changes the sheet's response. A fresh sheet clears its crease
+history. The view can be rotated and zoomed separately from manipulating the
+paper.
 
-`tests/play-model.test.ts` verifies tier selection, reachable lanes and jumps,
-a complete coastal run at 30 FPS, and paper scoring across all three rounds.
+The deformable sheet uses fixed simulation steps and approximate stretch,
+bend, self-contact, table contact, friction and air drag. Folds keep plastic
+deformation and leave visible crease marks; assisted tools approximate the
+motions of a hand. The model is not calibrated to the elastic and plastic
+properties of a specific paper stock. The [workbench notes](src/components/simulation/paper/README.md)
+describe its limits and materials.
+
+References: [ISO 216 paper dimensions](https://www.iso.org/standard/36631.html)
+and [Andrejevic et al., simulation of crumpled sheets](https://arxiv.org/abs/2112.13268).
+
+## Assets and review
+
+The simulations load only on their own routes. Sound stays off until enabled
+and does not download while muted. See the [field recording credits](public/simulation/audio/CREDITS.md).
+Real materials and recordings are combined with authored scene geometry;
+the presentation does not imply that the entire scene was photographed.

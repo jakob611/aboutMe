@@ -1,0 +1,142 @@
+.frame {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  overflow: hidden;
+  color: #f6f3e7;
+  background: radial-gradient(ellipse at 32% 20%, #c9b18b 0%, #828f91 36%, #244343 100%);
+  --edge: clamp(12px, 2.6vw, 36px);
+  --panel: #172a2c;
+  --muted: #cad4cf;
+  --accent: #f2d1a1;
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+.scene, .view, .vignette { position: absolute; inset: 0; }
+.scene canvas { width: 100%; height: 100%; display: block; }
+.view { touch-action: none; cursor: grab; outline: none; }
+.view:active { cursor: grabbing; }
+.view:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.vignette {
+  pointer-events: none;
+  background: linear-gradient(180deg, #1020255e, transparent 24%, transparent 74%, #1126267d);
+}
+.field { position: absolute; top: var(--edge); left: var(--edge); pointer-events: none; text-shadow: 0 1px 14px #162627, 0 1px 2px #1a282a; }
+.field p { margin: 0 0 6px; color: #f3dfbd; font: 600 10px ui-monospace, monospace; letter-spacing: .15em; text-transform: uppercase; }
+.field h1 { margin: 0; color: #fffaed; font: 500 clamp(27px, 3.6vw, 49px)/1 Georgia, serif; letter-spacing: -.05em; }
+.compass, .hint, .reading, .actions button, .mapNotice {
+  border: 1px solid #eef6ee47;
+  background: #152a2bce;
+  box-shadow: 0 2px 14px #0a20242a;
+  color: #fcf9ee;
+  border-radius: 8px;
+}
+.compass {
+  position: absolute; right: var(--edge); top: var(--edge);
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 9px;
+  font: 650 11px ui-monospace, monospace; pointer-events: none;
+}
+.compass svg, .compass span { color: var(--accent); }
+.compass b { font-weight: 500; }
+.hint {
+  position: absolute; pointer-events: none;
+  bottom: max(var(--edge), env(safe-area-inset-bottom));
+  left: var(--edge); padding: 8px 10px; font-size: 11px; font-weight: 650;
+}
+.mobile, .joystick { display: none; }
+.reading {
+  position: absolute; pointer-events: none;
+  bottom: calc(max(var(--edge), env(safe-area-inset-bottom)) + 56px); right: var(--edge);
+  padding: 7px 9px; margin: 0; font-size: 11px; color: var(--muted);
+}
+.reading b { color: #f9edd6; font-variant-numeric: tabular-nums; }
+.actions {
+  position: absolute; right: var(--edge); bottom: max(var(--edge), env(safe-area-inset-bottom));
+  display: flex; gap: 8px;
+}
+.actions button {
+  min-height: 46px; min-width: 46px; display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding-inline: 12px; font-size: 12px; font-weight: 700;
+  cursor: pointer; touch-action: manipulation;
+}
+.actions button:hover, .actions button[aria-expanded="true"] { background: #f0d4ae; color: #203232; border-color: #ffe3bc; }
+.actions .throw { background: #f2d9a9; border-color: #ffe7bb; color: #27322b; }
+.actions .throw:hover { background: #fff0d1; }
+.reticle {
+  position: absolute; pointer-events: none; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: grid; justify-items: center; opacity: 0; transition: opacity .18s ease; color: #fff2d5;
+}
+.reticle i { position: absolute; width: 6px; height: 6px; border: 1px solid currentColor; border-radius: 50%; }
+.reticle span { position: absolute; top: 10px; width: max-content; font-size: 10px; font-weight: 750; text-shadow: 0 1px 4px #101e21; }
+.frame:has(.throw:is(:hover,:focus-visible)) .reticle { opacity: .9; }
+.panel {
+  position: absolute; right: var(--edge); bottom: calc(max(var(--edge), env(safe-area-inset-bottom)) + 57px);
+  width: min(340px, calc(100% - var(--edge) * 2)); max-height: calc(100% - 73px); overflow: auto;
+  padding: 15px; border: 1px solid #e0e5d64b; background: var(--panel);
+  border-radius: 12px; box-shadow: 0 12px 45px #06191965;
+  font-size: 12px; overscroll-behavior: contain; touch-action: pan-y;
+}
+.panelHeader { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #fff3dc21; margin-bottom: 10px; }
+.panelHeader strong { font: 500 22px/1 Georgia, serif; letter-spacing: -.025em; }
+.panelHeader button { width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer; border-radius: 6px; }
+.panelHeader button:hover { background: #ffffff12; }
+.panel fieldset { margin: 0 0 11px; padding: 0; border: 0; min-width: 0; }
+.panel fieldset:last-child { margin-bottom: 0; }
+.panel legend { font-weight: 700; color: var(--muted); margin-bottom: 5px; }
+.segmented { display: flex; flex-wrap: wrap; gap: 4px; }
+.segmented button, .quality select, .loading button, .mapNotice button, .mapButton {
+  flex: 1; border: 1px solid #e4ead745; border-radius: 6px; padding: 7px 6px; min-height: 39px;
+  font-size: 11px; line-height: 1.1; font-weight: 700; background: #f4f2e510; color: #f9f5e9; cursor: pointer;
+}
+.segmented button[aria-pressed="true"], .segmented button:hover { background: #f0d4ae; color: #203232; }
+.range { display: block; margin: 7px 0; }
+.range > span { display: flex; align-items: center; gap: 6px; font-weight: 700; color: var(--muted); }
+.range output { margin-left: auto; color: #f6dcb4; font-family: ui-monospace, monospace; font-size: 11px; }
+.range input { display: block; width: 100%; height: 28px; accent-color: var(--accent); cursor: pointer; }
+.quality { display: flex; align-items: center; gap: 7px; font-weight: 700; color: var(--muted); margin: 6px 0 11px; }
+.quality select { max-width: 160px; margin-left: auto; padding-inline: 8px; color-scheme: dark; }
+.quality option { background: var(--panel); color: #fff6e4; }
+.loading { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 9px; padding: 15px; text-align: center; background: #1935375e; }
+.loading p { margin: 0; font-size: 13px; font-weight: 700; }
+.loading button { padding-inline: 14px; }
+.mapNotice { position: absolute; left: var(--edge); top: calc(var(--edge) + 76px); padding: 8px 10px; display: grid; gap: 7px; font-size: 11px; max-width: 210px; }
+.mapNotice button { text-align: center; padding-inline: 9px; }
+.mapButton { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding-inline: 10px; }
+.mapButton:hover { background: #f0d4ae; color: #203232; }
+
+@media (pointer: coarse), (max-width: 700px) {
+  .desktop { display: none; }
+  .mobile { display: inline; }
+  .hint {
+    bottom: calc(max(var(--edge), env(safe-area-inset-bottom)) + 104px);
+    left: var(--edge); max-width: min(53%, 175px); padding: 6px 8px; font-size: 10px;
+  }
+  .joystick {
+    position: absolute; width: clamp(84px, 22vw, 102px); aspect-ratio: 1; display: block;
+    left: var(--edge); bottom: max(var(--edge), env(safe-area-inset-bottom)); touch-action: none;
+    user-select: none; cursor: grab; border-radius: 50%; border: 1px solid #f0efdd78;
+    background: #1d3030a6; color: #f4e8cb; box-shadow: 0 1px 17px #0d212263;
+  }
+  .joystick svg { position: absolute; pointer-events: none; }
+  .stickUp { left: 50%; top: 5%; transform: translateX(-50%); }
+  .stickDown { left: 50%; bottom: 5%; transform: translateX(-50%); }
+  .stickRight { top: 50%; right: 5%; transform: translateY(-50%); }
+  .stickLeft { top: 50%; left: 5%; transform: translateY(-50%); }
+  .puck {
+    position: absolute; width: 40%; height: 40%; top: 30%; left: 30%; border-radius: 50%;
+    background: #efd5a5; box-shadow: inset 0 0 0 1px #ffedc6, 0 2px 7px #122524aa; pointer-events: none;
+  }
+  .actions .throw { position: absolute; right: 0; bottom: 54px; white-space: nowrap; }
+  .frame:not([data-coast-mode="map"]) .reading { bottom: calc(max(var(--edge), env(safe-area-inset-bottom)) + 107px); }
+  .reticle { opacity: .60; }
+  .reticle span { display: none; }
+  .panel .segmented button, .quality select { min-height: 44px; }
+}
+@media (orientation: landscape) and (max-height: 430px) {
+  .frame { --edge: 12px; }
+  .field h1 { font-size: 28px; }
+  .hint { bottom: calc(var(--edge) + 91px); }
+  .joystick { width: 84px; }
+  .panel { padding: 10px 12px; max-height: calc(100% - 68px); }
+}
+.frame :is(button, select, input):focus-visible { outline: 2px solid #ffdf9e; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .reticle { transition: none; } }

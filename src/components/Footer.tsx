@@ -70,6 +70,7 @@ export async function Footer({ lang, t }: Props) {
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  prefetch={link.href === "/play" ? false : undefined}
                   className="transition-colors hover:text-[color:var(--color-fg)]"
                 >
                   {link.label}
